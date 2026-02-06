@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables - IMPORTANT: don't commit secrets!
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+.next/
+out/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database files (if local)
+*.sqlite
+*.db
