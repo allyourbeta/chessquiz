@@ -34,3 +34,4 @@ npm-debug.log*
 # Database files (if local)
 *.sqlite
 *.db
+*.zip
