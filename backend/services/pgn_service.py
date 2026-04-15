@@ -1,0 +1,101 @@
+"""PGN parsing service. Pure functions — no DB, no FastAPI imports."""
+
+import io
+
+import chess
+import chess.pgn
+import chess.polyglot
+
+from backend.services.index_service import compute_pawn_sig, compute_zobrist
+
+
+def parse_single_pgn(pgn_text: str) -> dict:
+    """Parse a single PGN game.
+
+    Returns dict with headers, moves, FENs, hashes, and metadata.
+    """
+    try:
+        game = chess.pgn.read_game(io.StringIO(pgn_text))
+        if game is None:
+            return {"error": "No game found in PGN text"}
+    except Exception as e:
+        return {"error": str(e)}
+
+    headers = dict(game.headers)
+    board = game.board()
+
+    moves_san = []
+    moves_uci = []
+    fens = [board.fen()]
+    comments = []
+    zobrist_hashes = [compute_zobrist(board.fen())]
+    pawn_sigs = [compute_pawn_sig(board.fen())]
+    has_variations = False
+
+    for node in game.mainline():
+        if node.parent and len(node.parent.variations) > 1:
+            has_variations = True
+        moves_san.append(board.san(node.move))
+        moves_uci.append(node.move.uci())
+        board.push(node.move)
+        fens.append(board.fen())
+        comments.append(node.comment if node.comment else None)
+        zobrist_hashes.append(compute_zobrist(board.fen()))
+        pawn_sigs.append(compute_pawn_sig(board.fen()))
+
+    return {
+        "headers": headers,
+        "moves_san": moves_san,
+        "moves_uci": moves_uci,
+        "fens": fens,
+        "comments": comments,
+        "zobrist_hashes": zobrist_hashes,
+        "pawn_sigs": pawn_sigs,
+        "move_count": len(moves_san),
+        "has_variations": has_variations,
+        "error": None,
+    }
+
+
+def parse_multi_pgn(pgn_text: str) -> list[dict]:
+    """Parse multiple PGN games from a single text block."""
+    results = []
+    stream = io.StringIO(pgn_text)
+    while True:
+        game = chess.pgn.read_game(stream)
+        if game is None:
+            break
+        pgn_str = str(game)
+        parsed = parse_single_pgn(pgn_str)
+        parsed["pgn_text"] = pgn_str
+        results.append(parsed)
+    return results
+
+
+def extract_auto_tags(headers: dict) -> list[str]:
+    """Extract tags from PGN headers. Skips '?' placeholder values."""
+    tags = []
+    for key in ("ECO", "Opening"):
+        val = headers.get(key, "")
+        if val and val != "?" and val != "??":
+            tags.append(val.lower())
+    for key in ("White", "Black"):
+        val = headers.get(key, "")
+        if val and val != "?" and val != "??":
+            tags.append(val.lower())
+    return tags
+
+
+def get_fen_at_move(pgn_text: str, half_move: int) -> str:
+    """Get FEN at a specific ply index (0 = starting position)."""
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    if game is None:
+        return ""
+    board = game.board()
+    if half_move == 0:
+        return board.fen()
+    for i, node in enumerate(game.mainline()):
+        board.push(node.move)
+        if i + 1 == half_move:
+            return board.fen()
+    return board.fen()
