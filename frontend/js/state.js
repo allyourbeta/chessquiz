@@ -14,6 +14,13 @@ const AppState = {
     detailFlipped: false,
     boardFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
     lastTags: '',
+    allGames: [],
+    gameTagFilter: null,
+    gameCollectionFilter: null,
+    gameSearch: '',
+    allCollections: [],
+    currentGame: null,
+    currentPly: 0,
 };
 
 window.AppState = AppState;

@@ -72,17 +72,41 @@ def parse_multi_pgn(pgn_text: str) -> list[dict]:
     return results
 
 
+def _slugify(text: str) -> str:
+    """Convert text to a clean hyphenated tag: lowercase, no spaces."""
+    import re
+    s = text.lower().strip()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"\s+", "-", s).strip("-")
+    return s
+
+
 def extract_auto_tags(headers: dict) -> list[str]:
-    """Extract tags from PGN headers. Skips '?' placeholder values."""
+    """Extract tags from PGN headers. Skips '?' placeholder values.
+
+    ECO codes: as-is lowercase (e.g. "b21").
+    Opening names: take the variant (after last colon), slugified.
+    Player names: slugified.
+    """
     tags = []
-    for key in ("ECO", "Opening"):
-        val = headers.get(key, "")
-        if val and val != "?" and val != "??":
-            tags.append(val.lower())
+    eco = headers.get("ECO", "")
+    if eco and eco != "?" and eco != "??":
+        tags.append(eco.lower())
+
+    opening = headers.get("Opening", "")
+    if opening and opening != "?" and opening != "??":
+        parts = opening.split(":")
+        short = parts[-1].strip()
+        slug = _slugify(short)
+        if slug:
+            tags.append(slug)
+
     for key in ("White", "Black"):
         val = headers.get(key, "")
         if val and val != "?" and val != "??":
-            tags.append(val.lower())
+            slug = _slugify(val)
+            if slug:
+                tags.append(slug)
     return tags
 
 
