@@ -199,6 +199,34 @@ r = c.get("/api/games/")
 game_count_after = len(r.json())
 check("Games survive collection delete", game_count_after >= 3)
 
+print("\n--- Opening Tree API ---")
+
+r = c.get("/api/opening-tree/?fen=" + START_FEN)
+check("Opening tree status", r.status_code == 200, f"got {r.status_code}")
+tree = r.json()
+check("Opening tree has fen", tree["fen"] == START_FEN)
+check("Opening tree total_games > 0", tree["total_games"] > 0, f"got {tree['total_games']}")
+check("Opening tree has moves", len(tree["moves"]) > 0, f"got {len(tree['moves'])}")
+
+e4_move = next((m for m in tree["moves"] if m["san"] == "e4"), None)
+check("e4 in opening tree", e4_move is not None)
+check("e4 has games count", e4_move and e4_move["games"] >= 3, f"got {e4_move}")
+check("e4 has result stats", e4_move and (e4_move["white_wins"] + e4_move["draws"] + e4_move["black_wins"]) == e4_move["games"])
+check("e4 has fen", e4_move and "4P3" in e4_move["fen"])
+
+AFTER_E4 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+r = c.get("/api/opening-tree/?fen=" + AFTER_E4)
+tree2 = r.json()
+check("After e4: tree has moves", len(tree2["moves"]) >= 2, f"got {len(tree2['moves'])}")
+c5 = next((m for m in tree2["moves"] if m["san"] == "c5"), None)
+e5 = next((m for m in tree2["moves"] if m["san"] == "e5"), None)
+check("c5 in tree after e4", c5 is not None)
+check("e5 in tree after e4", e5 is not None)
+
+RARE_FEN = "8/8/8/8/8/8/8/4K3 w - - 0 1"
+r = c.get("/api/opening-tree/?fen=" + RARE_FEN)
+check("Rare position: empty tree", r.status_code == 200 and r.json()["total_games"] == 0)
+
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
 print(f"{'='*40}")

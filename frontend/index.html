@@ -69,6 +69,7 @@
     .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
     .toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--green); color:var(--green); padding:12px 20px; border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:13px; z-index:1000; animation:slideUp .3s ease; }
     .toast.error { border-color:var(--red); color:var(--red); }
+    .tree-row:hover { background:var(--surface-hover); }
     @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
     @media(max-width:860px) { .board-area{grid-template-columns:1fr} .board-wrap{width:100%;height:auto;aspect-ratio:1;max-width:400px} .container{padding:16px} }
   </style>
@@ -186,7 +187,12 @@
         <div id="gv-tags" style="margin-bottom:12px"></div>
         <div class="btn-row">
           <button class="btn btn-sm" onclick="showSavePositionModal()">Save Position</button>
+          <button class="btn btn-sm" id="opening-tree-btn" onclick="toggleOpeningTree()">Opening Explorer</button>
           <button class="btn btn-sm" onclick="backToGames()">Back to Games</button>
+        </div>
+        <div id="opening-tree-panel" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg)">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Opening Explorer</div>
+          <div id="opening-tree-content"></div>
         </div>
       </div>
     </div>
@@ -218,6 +224,7 @@
 <script src="/js/quiz.js"></script>
 <script src="/js/games.js"></script>
 <script src="/js/game-viewer.js"></script>
+<script src="/js/opening-tree.js"></script>
 <script src="/js/stockfish.js"></script>
 <script type="module" src="/js/board.js"></script>
 <script>

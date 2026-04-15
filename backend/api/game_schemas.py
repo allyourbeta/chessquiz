@@ -115,3 +115,18 @@ class PositionSearchResult(BaseModel):
     event: str | None
     result: str | None
     eco: str | None
+
+
+class OpeningTreeMove(BaseModel):
+    san: str
+    fen: str
+    games: int
+    white_wins: int
+    draws: int
+    black_wins: int
+
+
+class OpeningTreeResponse(BaseModel):
+    fen: str
+    total_games: int
+    moves: list[OpeningTreeMove]
