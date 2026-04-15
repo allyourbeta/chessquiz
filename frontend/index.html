@@ -89,7 +89,6 @@
   </nav>
 </header>
 <div class="container">
-  <!-- POSITIONS LIST -->
   <div id="view-positions" class="view active">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <h2 style="font-family:'Instrument Serif',serif;font-size:24px;font-weight:400">Your Positions</h2>
@@ -97,7 +96,6 @@
     </div>
     <div id="positions-list" class="pos-list"></div>
   </div>
-  <!-- ADD/EDIT -->
   <div id="view-add" class="view">
     <div class="board-area">
       <div>
@@ -136,7 +134,6 @@
       </div>
     </div>
   </div>
-  <!-- QUIZ -->
   <div id="view-quiz" class="view">
     <div class="quiz-board-area">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="quiz-tag-filters"></div>
@@ -157,7 +154,6 @@
       <div class="stats-bar" id="quiz-stats"></div>
     </div>
   </div>
-  <!-- DETAIL -->
   <div id="view-detail" class="view">
     <div class="board-area">
       <div>
@@ -179,98 +175,25 @@
     </div>
   </div>
 </div>
+<script src="/js/state.js"></script>
+<script src="/js/shared.js"></script>
+<script src="/js/board.js"></script>
+<script src="/js/positions.js"></script>
+<script src="/js/quiz.js"></script>
+<script src="/js/stockfish.js"></script>
 <script>
-const PIECE_SVG = {
-  "wK": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1Ii8+PHBhdGggZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDI1czQuNS03LjUgMy0xMC41YzAgMC0xLTIuNS0zLTIuNXMtMyAyLjUtMyAyLjVjLTEuNSAzIDMgMTAuNSAzIDEwLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6Ii8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==",
-  "wQ": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGQ9Ik04IDEyYTIgMiAwIDEgMS00IDAgMiAyIDAgMSAxIDQgMHptMTYuNS00LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwek00MSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTE2IDguNWEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTMzIDlhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAweiIvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAyNmM4LjUtMS41IDIxLTEuNSAyNyAwbDItMTItNyAxMVYxMWwtNS41IDEzLjUtMy0xNS0zIDE1LTUuNS0xNFYyNUw3IDE0bDIgMTJ6Ii8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik05IDI2YzAgMiAxLjUgMiAyLjUgNCAxIDEuNSAxIDEgLjUgMy41LTEuNSAxLTEuNSAyLjUtMS41IDIuNS0xLjUgMS41LjUgMi41LjUgMi41IDYuNSAxIDE2LjUgMSAyMyAwIDAgMCAxLjUtMSAwLTIuNSAwIDAgLjUtMS41LTEtMi41LS41LTIuNS0uNS0yIC41LTMuNSAxLTIgMi41LTIgMi41LTQtOC41LTEuNS0xOC41LTEuNS0yNyAweiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0xMS41IDMwYzMuNS0xIDE4LjUtMSAyMiAwTTEyIDMzLjVjNi0xIDE1LTEgMjEgMCIvPjwvZz48L3N2Zz4=",
-  "wR": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAzOWgyN3YtM0g5djN6bTMtM3YtNGgyMXY0SDEyem0tMS0yMlY5aDR2Mmg1VjloNXYyaDVWOWg0djUiLz48cGF0aCBkPSJtMzQgMTQtMyAzSDE0bC0zLTMiLz48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTMxIDE3djEyLjVIMTRWMTciLz48cGF0aCBkPSJtMzEgMjkuNSAxLjUgMi41aC0yMGwxLjUtMi41Ii8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTExIDE0aDIzIi8+PC9nPjwvc3ZnPg==",
-  "wB": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxnIGZpbGw9IiNmZmYiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjM5LS45NyAxMC4xMS40MyAxMy41LTIgMy4zOSAyLjQzIDEwLjExIDEuMDMgMTMuNSAyIDAgMCAxLjY1LjU0IDMgMi0uNjguOTctMS42NS45OS0zIC41LTMuMzktLjk3LTEwLjExLjQ2LTEzLjUtMS0zLjM5IDEuNDYtMTAuMTEuMDMtMTMuNSAxLTEuMzUuNDktMi4zMi40Ny0zLS41IDEuMzUtMS45NCAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMTcuNSAyNmgxME0xNSAzMGgxNW0tNy41LTE0LjV2NU0yMCAxOGg1Ii8+PC9nPjwvc3ZnPg==",
-  "wN": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiLz48cGF0aCBmaWxsPSIjMDAwIiBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6Ii8+PC9nPjwvc3ZnPg==",
-  "wP": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PHBhdGggZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41IiBkPSJNMjIuNSA5Yy0yLjIxIDAtNCAxLjc5LTQgNCAwIC44OS4yOSAxLjcxLjc4IDIuMzhDMTcuMzMgMTYuNSAxNiAxOC41OSAxNiAyMWMwIDIuMDMuOTQgMy44NCAyLjQxIDUuMDMtMyAxLjA2LTcuNDEgNS41NS03LjQxIDEzLjQ3aDIzYzAtNy45Mi00LjQxLTEyLjQxLTcuNDEtMTMuNDcgMS40Ny0xLjE5IDIuNDEtMyAyLjQxLTUuMDMgMC0yLjQxLTEuMzMtNC41LTMuMjgtNS42Mi40OS0uNjcuNzgtMS40OS43OC0yLjM4IDAtMi4yMS0xLjc5LTQtNC00eiIvPjwvc3ZnPg==",
-  "bK": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDExLjZWNiIvPjxwYXRoIGZpbGw9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBkPSJNMjIuNSAyNXM0LjUtNy41IDMtMTAuNWMwIDAtMS0yLjUtMy0yLjVzLTMgMi41LTMgMi41Yy0xLjUgMyAzIDEwLjUgMyAxMC41Ii8+PHBhdGggZmlsbD0iIzAwMCIgZD0iTTExLjUgMzdhMjIuMyAyMi4zIDAgMCAwIDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6Ii8+PHBhdGggc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTIwIDhoNSIvPjxwYXRoIHN0cm9rZT0iI2VjZWNlYyIgZD0iTTMyIDI5LjVzOC41LTQgNi05LjdDMzQuMSAxNCAyNSAxOCAyMi41IDI0LjZ2Mi4xLTIuMUMyMCAxOCA5LjkgMTQgNyAxOS45Yy0yLjUgNS42IDQuOCA5IDQuOCA5Ii8+PHBhdGggc3Ryb2tlPSIjZWNlY2VjIiBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiLz48L2c+PC9zdmc+",
-  "bQ": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxnIHN0cm9rZT0ibm9uZSI+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMTQiIGN5PSI5IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMjIuNSIgY3k9IjgiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzMSIgY3k9IjkiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzOSIgY3k9IjEyIiByPSIyLjc1Ii8+PC9nPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAyNmM4LjUtMS41IDIxLTEuNSAyNyAwbDIuNS0xMi41TDMxIDI1bC0uMy0xNC4xLTUuMiAxMy42LTMtMTQuNS0zIDE0LjUtNS4yLTEzLjZMMTQgMjUgNi41IDEzLjUgOSAyNnoiLz48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTkgMjZjMCAyIDEuNSAyIDIuNSA0IDEgMS41IDEgMSAuNSAzLjUtMS41IDEtMS41IDIuNS0xLjUgMi41LTEuNSAxLjUuNSAyLjUuNSAyLjUgNi41IDEgMTYuNSAxIDIzIDAgMCAwIDEuNS0xIDAtMi41IDAgMCAuNS0xLjUtMS0yLjUtLjUtMi41LS41LTIgLjUtMy41IDEtMiAyLjUtMiAyLjUtNC04LjUtMS41LTE4LjUtMS41LTI3IDB6Ii8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik0xMSAzOC41YTM1IDM1IDEgMCAwIDIzIDAiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiIGQ9Ik0xMSAyOWEzNSAzNSAxIDAgMSAyMyAwbS0yMS41IDIuNWgyMG0tMjEgM2EzNSAzNSAxIDAgMCAyMiAwbS0yMyAzYTM1IDM1IDEgMCAwIDI0IDAiLz48L2c+PC9zdmc+",
-  "bR": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAzOWgyN3YtM0g5djN6bTMuNS03IDEuNS0yLjVoMTdsMS41IDIuNWgtMjB6bS0uNSA0di00aDIxdjRIMTJ6Ii8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0xNCAyOS41di0xM2gxN3YxM0gxNHoiLz48cGF0aCBzdHJva2UtbGluZWNhcD0iYnV0dCIgZD0iTTE0IDE2LjUgMTEgMTRoMjNsLTMgMi41SDE0ek0xMSAxNFY5aDR2Mmg1VjloNXYyaDVWOWg0djVIMTF6Ii8+PHBhdGggZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWNlY2VjIiBzdHJva2UtbGluZWpvaW49Im1pdGVyIiBzdHJva2Utd2lkdGg9IjEiIGQ9Ik0xMiAzNS41aDIxbS0yMC00aDE5bS0xOC0yaDE3bS0xNy0xM2gxN00xMSAxNGgyMyIvPjwvZz48L3N2Zz4=",
-  "bB": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxnIGZpbGw9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjQtMSAxMC4xLjQgMTMuNS0yIDMuNCAyLjQgMTAuMSAxIDEzLjUgMiAwIDAgMS42LjUgMyAyLS43IDEtMS42IDEtMyAuNS0zLjQtMS0xMC4xLjUtMTMuNS0xLTMuNCAxLjUtMTAuMSAwLTEzLjUgMS0xLjQuNS0yLjMuNS0zLS41IDEuNC0yIDMtMiAzLTJ6Ii8+PHBhdGggZD0iTTE1IDMyYzIuNSAyLjUgMTIuNSAyLjUgMTUgMCAuNS0xLjUgMC0yIDAtMiAwLTIuNS0yLjUtNC0yLjUtNCA1LjUtMS41IDYtMTEuNS01LTE1LjUtMTEgNC0xMC41IDE0LTUgMTUuNSAwIDAtMi41IDEuNS0yLjUgNCAwIDAtLjUuNSAwIDJ6Ii8+PHBhdGggZD0iTTI1IDhhMi41IDIuNSAwIDEgMS01IDAgMi41IDIuNSAwIDEgMSA1IDB6Ii8+PC9nPjxwYXRoIHN0cm9rZT0iI2VjZWNlYyIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgZD0iTTE3LjUgMjZoMTBNMTUgMzBoMTVtLTcuNS0xNC41djVNMjAgMThoNSIvPjwvZz48L3N2Zz4=",
-  "bN": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGZpbGw9IiMwMDAiIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIvPjxwYXRoIGZpbGw9IiMwMDAiIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQtLjk0IDEuNDEtMy4wNCAwLTMtMSAwIC4xOSAxLjIzLTEgMi0xIDAtNCAxLTQtNCAwLTIgNi0xMiA2LTEyczEuODktMS45IDItMy41Yy0uNzMtMS0uNS0yLS41LTMgMS0xIDMgMi41IDMgMi41aDJzLjc4LTIgMi41LTNjMSAwIDEgMyAxIDMiLz48cGF0aCBmaWxsPSIjZWNlY2VjIiBzdHJva2U9IiNlY2VjZWMiIGQ9Ik05LjUgMjUuNWEuNS41IDAgMSAxLTEgMCAuNS41IDAgMSAxIDEgMHptNS40My05Ljc1YS41IDEuNSAzMCAxIDEtLjg2LS41LjUgMS41IDMwIDEgMSAuODYuNXoiLz48cGF0aCBmaWxsPSIjZWNlY2VjIiBzdHJva2U9Im5vbmUiIGQ9Im0yNC41NSAxMC40LS40NSAxLjQ1LjUuMTVjMy4xNSAxIDUuNjUgMi40OSA3LjkgNi43NVMzNS43NSAyOS4wNiAzNS4yNSAzOWwtLjA1LjVoMi4yNWwuMDUtLjVjLjUtMTAuMDYtLjg4LTE2Ljg1LTMuMjUtMjEuMzQtMi4zNy00LjQ5LTUuNzktNi42NC05LjE5LTcuMTZsLS41MS0uMXoiLz48L2c+PC9zdmc+",
-  "bP": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PHBhdGggc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41IiBkPSJNMjIuNSA5YTQgNCAwIDAgMC0zLjIyIDYuMzggNi40OCA2LjQ4IDAgMCAwLS44NyAxMC42NWMtMyAxLjA2LTcuNDEgNS41NS03LjQxIDEzLjQ3aDIzYzAtNy45Mi00LjQxLTEyLjQxLTcuNDEtMTMuNDdhNi40NiA2LjQ2IDAgMCAwLS44Ny0xMC42NUE0LjAxIDQuMDEgMCAwIDAgMjIuNSA5eiIvPjwvc3ZnPg==",
-};
-function pieceKey(ch){const c=ch===ch.toUpperCase()?'w':'b';return c+ch.toUpperCase()}
-const API='/api';
-let allPositions=[],allTags=[],currentTagFilter=null,quizTagFilters=[];
-let quizQueue=[],quizCurrent=null,quizCorrect=0,quizTotal=0;
-let currentDetailId=null,currentDetailFen=null,sfWorker=null;
-let boardFlipped=false,detailFlipped=false;
-let boardFen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
-function parseFenBoard(fen){const rows=fen.split(' ')[0].split('/');const b=[];for(const row of rows){const r=[];for(const ch of row){if(ch>='1'&&ch<='8')for(let i=0;i<+ch;i++)r.push(null);else r.push(ch)}b.push(r)}return b}
-
-function renderBoard(id,fen,flipped=false){const c=document.getElementById(id);if(!c)return;const b=parseFenBoard(fen);c.innerHTML='';const files='abcdefgh',ranks='87654321';for(let dr=0;dr<8;dr++)for(let dc=0;dc<8;dc++){const r=flipped?7-dr:dr,col=flipped?7-dc:dc;const isLight=(r+col)%2===0;const piece=b[r][col];const sq=document.createElement('div');sq.className='chess-sq '+(isLight?'light':'dark');if(dc===0){const l=document.createElement('span');l.className='coord coord-rank';l.textContent=ranks[r];sq.appendChild(l)}if(dr===7){const l=document.createElement('span');l.className='coord coord-file';l.textContent=files[col];sq.appendChild(l)}if(piece){const img=document.createElement('img');img.src=PIECE_SVG[pieceKey(piece)];img.style.cssText='position:absolute;width:85%;height:85%;pointer-events:none;';sq.appendChild(img)}c.appendChild(sq)}}
-
-function renderMiniBoard(fen){const b=parseFenBoard(fen);let h='<div class="mini-board">';for(let r=0;r<8;r++)for(let c=0;c<8;c++){const l=(r+c)%2===0;const p=b[r][c];const img=p?`<img src="${PIECE_SVG[pieceKey(p)]}" style="position:absolute;width:100%;height:100%">`:'';h+=`<div class="mini-sq ${l?'light':'dark'}">${img}</div>`}return h+'</div>'}
-
-function initStockfish(){fetch('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js').then(r=>r.blob()).then(blob=>{sfWorker=new Worker(URL.createObjectURL(blob));sfWorker.onmessage=e=>{const l=e.data;if(typeof l==='string'){const o=document.getElementById('sf-output');if(l.startsWith('bestmove')){document.getElementById('sf-status').textContent='Done';document.getElementById('sf-btn').disabled=false;document.getElementById('pos-stockfish').value=o.textContent.trim()}else if(l.startsWith('info depth')){const m=l.match(/depth (\d+).*score (cp|mate) (-?\d+).*pv (.+)/);if(m){const s=m[2]==='mate'?`Mate in ${m[3]}`:`${(+m[3]/100).toFixed(2)}`;const uciMoves=m[4].trim().split(/\s+/);const fen=document.getElementById('fen-input').value.trim();fetch(API+'/chess/uci-to-san',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fen,uci_moves:uciMoves})}).then(r=>r.json()).then(d=>{o.textContent=`Depth ${m[1]}: ${s}\nLine: ${d.san}`}).catch(()=>{o.textContent=`Depth ${m[1]}: ${s}\nLine: ${m[4]}`})}}}};sfWorker.postMessage('uci');console.log('Stockfish loaded')}).catch(e=>{console.log('Stockfish load failed:',e);document.getElementById('sf-status').textContent='Engine unavailable'})}
-
-function runStockfish(){const f=document.getElementById('fen-input').value.trim();if(!f){toast('Enter a FEN first',true);return}if(!sfWorker){toast('Stockfish not available',true);return}document.getElementById('sf-output').textContent='Analyzing...';document.getElementById('sf-status').textContent='Thinking...';document.getElementById('sf-btn').disabled=true;sfWorker.postMessage('ucinewgame');sfWorker.postMessage('position fen '+f);sfWorker.postMessage('go depth 20')}
-
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-'+name).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));const labels={positions:'Positions',add:'Add New',quiz:'Quiz'};document.querySelectorAll('nav button').forEach(b=>{if(b.textContent===labels[name])b.classList.add('active')});if(name==='positions'){loadPositions();loadTags()}if(name==='quiz')loadTags().then(renderQuizTagFilters);if(name==='add')renderBoard('board',boardFen,boardFlipped)}
-
-async function loadPositions(){let u=API+'/positions/';if(currentTagFilter)u+='?tag='+encodeURIComponent(currentTagFilter);allPositions=await(await fetch(u)).json();renderPositionsList()}
-async function loadTags(){allTags=await(await fetch(API+'/tags/')).json();renderTagFilters();return allTags}
-
-async function savePosition(){const editId=document.getElementById('edit-id').value;const fen=document.getElementById('fen-input').value.trim();const title=document.getElementById('pos-title').value.trim();const tags=document.getElementById('pos-tags').value.split(',').map(t=>t.trim()).filter(Boolean);const notes=document.getElementById('pos-notes').value.trim();const sf=document.getElementById('pos-stockfish').value.trim();if(!fen){toast('FEN is required',true);return}const body={fen,title:title||null,notes:notes||null,stockfish_analysis:sf||null,tags};let res;if(editId)res=await fetch(API+'/positions/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});else res=await fetch(API+'/positions/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(res.ok){toast(editId?'Position updated!':'Position saved!');clearForm();showView('positions')}else{const err=await res.json();toast(err.detail||'Error saving',true)}}
-
-async function deletePosition(){const id=document.getElementById('edit-id').value;if(!id||!confirm('Delete this position?'))return;if((await fetch(API+'/positions/'+id,{method:'DELETE'})).ok){toast('Position deleted');clearForm();showView('positions')}}
-
-async function showDetail(id){const pos=await(await fetch(API+'/positions/'+id)).json();currentDetailId=id;currentDetailFen=pos.fen;detailFlipped=false;document.getElementById('detail-title').textContent=pos.title||'Untitled';document.getElementById('detail-fen').textContent=pos.fen;document.getElementById('detail-notes').textContent=pos.notes||'(none)';document.getElementById('detail-stockfish').textContent=pos.stockfish_analysis||'(none)';document.getElementById('detail-tags').innerHTML=pos.tags.map(t=>`<span class="tag">#${t.name}</span>`).join('');const s=await(await fetch(API+'/quiz/stats/'+id)).json();document.getElementById('detail-stats').textContent=s.total_attempts>0?`${s.total_attempts} attempts, ${(s.accuracy*100).toFixed(0)}% accuracy`:'No quiz attempts yet';showView('detail');renderBoard('detail-board',pos.fen,false)}
-
-function editPosition(){if(!currentDetailId)return;fetch(API+'/positions/'+currentDetailId).then(r=>r.json()).then(pos=>{document.getElementById('edit-id').value=pos.id;document.getElementById('fen-input').value=pos.fen;document.getElementById('pos-title').value=pos.title||'';document.getElementById('pos-tags').value=pos.tags.map(t=>t.name).join(', ');document.getElementById('pos-notes').value=pos.notes||'';document.getElementById('pos-stockfish').value=pos.stockfish_analysis||'';document.getElementById('form-title').textContent='Edit Position';document.getElementById('delete-btn').style.display='inline-flex';boardFen=pos.fen;showView('add');renderBoard('board',boardFen,boardFlipped)})}
-
-async function startQuiz(){quizCorrect=0;quizTotal=0;document.getElementById('quiz-answer-area').style.display='none';let u=API+'/positions/';if(quizTagFilters.length>0)u+='?tag='+encodeURIComponent(quizTagFilters[0]);const positions=await(await fetch(u)).json();if(!positions.length){toast('No positions found',true);return}quizQueue=[...positions].sort(()=>Math.random()-.5);nextQuizQuestion()}
-
-function nextQuizQuestion(){if(!quizQueue.length){document.getElementById('quiz-controls').innerHTML=`<div style="text-align:center"><p style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:12px">Quiz Complete!</p><p style="color:var(--text-muted)">${quizCorrect}/${quizTotal} correct</p><button class="btn btn-primary" onclick="startQuiz()" style="margin-top:12px">Restart</button></div>`;return}quizCurrent=quizQueue.pop();document.getElementById('quiz-answer-area').style.display='none';document.getElementById('quiz-title').textContent=quizCurrent.title||'What is the best continuation?';document.getElementById('quiz-tags-display').innerHTML=quizCurrent.tags.map(t=>`<span class="tag">#${t.name}</span>`).join('');renderBoard('quiz-board',quizCurrent.fen,false);document.getElementById('quiz-controls').innerHTML=`<button class="btn btn-primary" onclick="revealAnswer()">Reveal Answer</button><button class="btn" onclick="skipQuestion()">Skip</button>`;updateQuizStats()}
-
-async function revealAnswer(){const pos=await(await fetch(API+'/quiz/reveal/'+quizCurrent.id)).json();document.getElementById('quiz-notes').textContent=pos.notes||'(no notes)';document.getElementById('quiz-stockfish').textContent=pos.stockfish_analysis||'(no engine analysis)';document.getElementById('quiz-answer-area').style.display='block';document.getElementById('quiz-controls').innerHTML=`<button class="btn btn-success" onclick="recordAttempt(true)">✓ Got it</button><button class="btn btn-danger" onclick="recordAttempt(false)">✗ Missed it</button>`}
-
-async function recordAttempt(correct){quizTotal++;if(correct)quizCorrect++;await fetch(API+'/quiz/attempt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({position_id:quizCurrent.id,correct})});updateQuizStats();nextQuizQuestion()}
-function skipQuestion(){nextQuizQuestion()}
-function updateQuizStats(){const el=document.getElementById('quiz-stats');el.innerHTML=quizTotal===0?`<span>${quizQueue.length+1} positions remaining</span>`:`<span class="correct">✓ ${quizCorrect}</span><span class="incorrect">✗ ${quizTotal-quizCorrect}</span><span>${quizQueue.length} remaining</span>`}
-
-function renderPositionsList(){const el=document.getElementById('positions-list');if(!allPositions.length){el.innerHTML=`<div class="empty-state"><p style="font-family:'Instrument Serif',serif;font-size:20px">No positions yet</p><p>Click "Add New" to save your first chess position.</p></div>`;return}el.innerHTML=allPositions.map(p=>`<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title||'Untitled'}</div><div>${p.tags.map(t=>`<span class="tag">#${t.name}</span>`).join('')}</div></div>`).join('')}
-
-function renderTagFilters(){document.getElementById('tag-filters').innerHTML=`<span class="tag tag-filter ${!currentTagFilter?'selected':''}" onclick="filterByTag(null)">All</span>`+allTags.map(t=>`<span class="tag tag-filter ${currentTagFilter===t.name?'selected':''}" onclick="filterByTag('${t.name}')">#${t.name}</span>`).join('')}
-
-function renderQuizTagFilters(){document.getElementById('quiz-tag-filters').innerHTML=`<span style="font-size:12px;color:var(--text-muted);margin-right:8px">Filter:</span><span class="tag tag-filter ${!quizTagFilters.length?'selected':''}" onclick="toggleQuizTag(null)">All</span>`+allTags.map(t=>`<span class="tag tag-filter ${quizTagFilters.includes(t.name)?'selected':''}" onclick="toggleQuizTag('${t.name}')">#${t.name}</span>`).join('')}
-
-function filterByTag(t){currentTagFilter=t;loadPositions();renderTagFilters()}
-function toggleQuizTag(t){quizTagFilters=t?[t]:[];renderQuizTagFilters()}
-function loadFen(){const f=document.getElementById('fen-input').value.trim();if(f){boardFen=f;renderBoard('board',boardFen,boardFlipped)}}
-function setStartPos(){const f='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';document.getElementById('fen-input').value=f;boardFen=f;renderBoard('board',boardFen,boardFlipped)}
-function flipBoard(){boardFlipped=!boardFlipped;renderBoard('board',boardFen,boardFlipped)}
-function flipDetailBoard(){detailFlipped=!detailFlipped;renderBoard('detail-board',currentDetailFen,detailFlipped)}
-function clearForm(){document.getElementById('edit-id').value='';document.getElementById('fen-input').value='';document.getElementById('pos-title').value='';document.getElementById('pos-tags').value='';document.getElementById('pos-notes').value='';document.getElementById('pos-stockfish').value='';document.getElementById('sf-output').textContent='Engine output will appear here...';document.getElementById('form-title').textContent='New Position';document.getElementById('delete-btn').style.display='none';boardFen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';boardFlipped=false;renderBoard('board',boardFen,false)}
-function toast(msg,err=false){const el=document.createElement('div');el.className='toast'+(err?' error':'');el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
-
-
-// --- UX: Auto-load on paste ---
-function setupAutoLoad(){const inp=document.getElementById('fen-input');inp.addEventListener('input',()=>{const v=inp.value.trim();if(v.includes('/')&&v.length>10){boardFen=v;renderBoard('board',boardFen,boardFlipped)}})}
-
-// --- UX: Cmd+S / Ctrl+S to save-and-clear ---
-function setupKeyboardSave(){document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='s'){e.preventDefault();const addView=document.getElementById('view-add');if(addView&&addView.classList.contains('active')){savePosition()}}})}
-
-// --- UX: Remember last tags ---
-let lastTags='';
-const _origSave=savePosition;
-savePosition=async function(){const tagsField=document.getElementById('pos-tags');lastTags=tagsField.value;localStorage.setItem('chessquiz-last-tags',lastTags);return _origSave.apply(this,arguments)};
-const _origClear=clearForm;
-clearForm=function(){_origClear.apply(this,arguments);const saved=lastTags||localStorage.getItem('chessquiz-last-tags')||'';if(saved)document.getElementById('pos-tags').value=saved};
-
-// --- UX: ?fen= URL param (bookmarklet support) ---
-function setupUrlParams(){const p=new URLSearchParams(window.location.search);const fen=p.get('fen');if(fen){document.getElementById('fen-input').value=fen;boardFen=fen;showView('add');renderBoard('board',boardFen,false);window.history.replaceState({},'',window.location.pathname)}}
-
-document.addEventListener('DOMContentLoaded',()=>{renderBoard('board',boardFen,false);renderBoard('quiz-board',boardFen,false);renderBoard('detail-board',boardFen,false);loadPositions();loadTags();initStockfish();setupAutoLoad();setupKeyboardSave();setupUrlParams()});
-
-// --- PWA: Service Worker Registration ---
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW failed:',e))}
+document.addEventListener('DOMContentLoaded', () => {
+    BoardManager.create('board', AppState.boardFen);
+    BoardManager.create('quiz-board', AppState.boardFen);
+    BoardManager.create('detail-board', AppState.boardFen);
+    loadPositions();
+    loadTags();
+    initStockfish();
+    setupAutoLoad();
+    setupKeyboardSave();
+    setupUrlParams();
+});
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(e => console.log('SW failed:', e)); }
 </script>
 </body>
 </html>

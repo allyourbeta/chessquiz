@@ -31,6 +31,8 @@ app.include_router(chess_router, prefix="/api")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
+app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+
 
 @app.get("/api/health")
 def health_check():
