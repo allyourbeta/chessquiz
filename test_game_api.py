@@ -6,9 +6,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-db_path = os.path.join(os.path.dirname(__file__), "chessquiz.db")
-if os.path.exists(db_path):
-    os.remove(db_path)
+os.environ["CHESSQUIZ_DB_URL"] = "sqlite:///:memory:"
 
 from backend.main import app
 from fastapi.testclient import TestClient
@@ -230,10 +228,5 @@ check("Rare position: empty tree", r.status_code == 200 and r.json()["total_game
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
 print(f"{'='*40}")
-
-try:
-    os.remove("chessquiz.db")
-except FileNotFoundError:
-    pass
 
 sys.exit(1 if failed else 0)

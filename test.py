@@ -4,13 +4,9 @@
 import sys
 import os
 
-# Ensure we can import backend
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Clean slate — remove any existing DB so counts are predictable
-db_path = os.path.join(os.path.dirname(__file__), "chessquiz.db")
-if os.path.exists(db_path):
-    os.remove(db_path)
+os.environ["CHESSQUIZ_DB_URL"] = "sqlite:///:memory:"
 
 from backend.main import app
 from fastapi.testclient import TestClient
@@ -119,12 +115,5 @@ check("UCI to SAN (black to move)", "1... e5" in r.json()["san"])
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
 print(f"{'='*40}")
-
-# Cleanup
-import os
-try:
-    os.remove("chessquiz.db")
-except FileNotFoundError:
-    pass
 
 sys.exit(1 if failed else 0)
