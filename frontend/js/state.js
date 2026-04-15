@@ -21,6 +21,12 @@ const AppState = {
     allCollections: [],
     currentGame: null,
     currentPly: 0,
+    engineOn: false,
+    engineEval: null,
+    playMode: false,
+    playBoardId: null,
+    playStartFen: null,
+    playChess: null,
 };
 
 window.AppState = AppState;

@@ -55,8 +55,10 @@ async function showDetail(id) {
     document.getElementById('detail-tags').innerHTML = pos.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
     const s = await (await fetch(API + '/quiz/stats/' + id)).json();
     document.getElementById('detail-stats').textContent = s.total_attempts > 0 ? `${s.total_attempts} attempts, ${(s.accuracy * 100).toFixed(0)}% accuracy` : 'No quiz attempts yet';
+    if (AppState.playMode) stopPlayMode();
     showView('detail');
     BoardManager.create('detail-board', pos.fen, { flipped: false });
+    if (AppState.engineOn) requestEval('detail-board');
 }
 
 function editPosition() {

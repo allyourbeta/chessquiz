@@ -14,10 +14,13 @@ async function openGame(id) {
     document.getElementById('gv-opening').textContent = ecoStr;
     document.getElementById('gv-tags').innerHTML = game.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
 
+    if (AppState.playMode) stopPlayMode();
+
     renderMoveList();
     showView('game-viewer');
     BoardManager.create('game-board', game.fens[0], { flipped: false });
     highlightCurrentMove();
+    if (AppState.engineOn) requestEval('game-board');
 }
 
 function renderMoveList() {
@@ -56,6 +59,7 @@ function goToPly(ply) {
     AppState.currentPly = ply;
     BoardManager.setPosition('game-board', g.fens[ply]);
     highlightCurrentMove();
+    if (AppState.engineOn && !AppState.playMode) requestEval('game-board');
 }
 
 function highlightCurrentMove() {
