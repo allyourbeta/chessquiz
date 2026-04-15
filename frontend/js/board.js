@@ -1,3 +1,12 @@
+import {Chessboard, COLOR, FEN, INPUT_EVENT_TYPE}
+    from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/Chessboard.js";
+import {Markers, MARKER_TYPE}
+    from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/extensions/markers/Markers.js";
+import {Arrows, ARROW_TYPE}
+    from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/extensions/arrows/Arrows.js";
+
+const CM_ASSETS = "https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/";
+
 function parseFenBoard(fen) {
     const rows = fen.split(' ')[0].split('/');
     const b = [];
@@ -10,40 +19,6 @@ function parseFenBoard(fen) {
         b.push(r);
     }
     return b;
-}
-
-function _renderBoardToElement(id, fen, flipped = false) {
-    const c = document.getElementById(id);
-    if (!c) return;
-    const b = parseFenBoard(fen);
-    c.innerHTML = '';
-    const files = 'abcdefgh', ranks = '87654321';
-    for (let dr = 0; dr < 8; dr++) for (let dc = 0; dc < 8; dc++) {
-        const r = flipped ? 7 - dr : dr, col = flipped ? 7 - dc : dc;
-        const isLight = (r + col) % 2 === 0;
-        const piece = b[r][col];
-        const sq = document.createElement('div');
-        sq.className = 'chess-sq ' + (isLight ? 'light' : 'dark');
-        if (dc === 0) {
-            const l = document.createElement('span');
-            l.className = 'coord coord-rank';
-            l.textContent = ranks[r];
-            sq.appendChild(l);
-        }
-        if (dr === 7) {
-            const l = document.createElement('span');
-            l.className = 'coord coord-file';
-            l.textContent = files[col];
-            sq.appendChild(l);
-        }
-        if (piece) {
-            const img = document.createElement('img');
-            img.src = PIECE_SVG[pieceKey(piece)];
-            img.style.cssText = 'position:absolute;width:85%;height:85%;pointer-events:none;';
-            sq.appendChild(img);
-        }
-        c.appendChild(sq);
-    }
 }
 
 function renderMiniBoard(fen) {
@@ -62,46 +37,112 @@ const BoardManager = {
     boards: {},
 
     create(elementId, fen, options = {}) {
-        this.boards[elementId] = {
-            fen: fen,
-            flipped: options.flipped || false,
-        };
-        _renderBoardToElement(elementId, fen, options.flipped || false);
+        if (this.boards[elementId]) {
+            this.boards[elementId].destroy();
+        }
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        el.innerHTML = '';
+        const orientation = options.flipped ? COLOR.black : COLOR.white;
+        const board = new Chessboard(el, {
+            position: fen,
+            orientation: orientation,
+            assetsUrl: CM_ASSETS,
+            style: {
+                cssClass: "default",
+                showCoordinates: true,
+                pieces: { file: "pieces/staunty.svg" },
+                animationDuration: 200,
+            },
+            extensions: [
+                { class: Markers },
+                { class: Arrows },
+            ],
+        });
+        this.boards[elementId] = board;
+        this.boards[elementId]._fen = fen;
+        this.boards[elementId]._flipped = options.flipped || false;
+
+        if (options.mode === 'play' && options.onMove) {
+            board.enableMoveInput((event) => {
+                if (event.type === INPUT_EVENT_TYPE.moveInputStarted) {
+                    return true;
+                }
+                if (event.type === INPUT_EVENT_TYPE.validateMoveInput) {
+                    return options.onMove(event);
+                }
+            });
+        }
     },
 
     setPosition(elementId, fen) {
-        if (!this.boards[elementId]) {
-            this.boards[elementId] = { fen: fen, flipped: false };
+        const board = this.boards[elementId];
+        if (!board) {
+            this.create(elementId, fen);
+            return;
         }
-        this.boards[elementId].fen = fen;
-        _renderBoardToElement(elementId, fen, this.boards[elementId].flipped);
+        board._fen = fen;
+        board.setPosition(fen, true);
     },
 
     flip(elementId) {
-        if (!this.boards[elementId]) return;
-        this.boards[elementId].flipped = !this.boards[elementId].flipped;
-        _renderBoardToElement(
-            elementId,
-            this.boards[elementId].fen,
-            this.boards[elementId].flipped
-        );
+        const board = this.boards[elementId];
+        if (!board) return;
+        board._flipped = !board._flipped;
+        board.setOrientation(board._flipped ? COLOR.black : COLOR.white, true);
     },
 
     destroy(elementId) {
-        delete this.boards[elementId];
-        const el = document.getElementById(elementId);
-        if (el) el.innerHTML = '';
+        const board = this.boards[elementId];
+        if (board) {
+            board.destroy();
+            delete this.boards[elementId];
+        }
     },
 
     getPosition(elementId) {
-        return this.boards[elementId] ? this.boards[elementId].fen : null;
+        const board = this.boards[elementId];
+        return board ? board._fen : null;
     },
 
     isFlipped(elementId) {
-        return this.boards[elementId] ? this.boards[elementId].flipped : false;
-    }
+        const board = this.boards[elementId];
+        return board ? board._flipped : false;
+    },
+
+    addMarker(elementId, square, type) {
+        const board = this.boards[elementId];
+        if (board) board.addMarker(type || MARKER_TYPE.square, square);
+    },
+
+    removeMarkers(elementId) {
+        const board = this.boards[elementId];
+        if (board) board.removeMarkers();
+    },
+
+    addArrow(elementId, from, to) {
+        const board = this.boards[elementId];
+        if (board) board.addArrow(ARROW_TYPE.default, from, to);
+    },
+
+    removeArrows(elementId) {
+        const board = this.boards[elementId];
+        if (board) board.removeArrows();
+    },
 };
 
 window.parseFenBoard = parseFenBoard;
 window.renderMiniBoard = renderMiniBoard;
 window.BoardManager = BoardManager;
+window.MARKER_TYPE = MARKER_TYPE;
+window.ARROW_TYPE = ARROW_TYPE;
+
+BoardManager.create('board', AppState.boardFen);
+BoardManager.create('quiz-board', AppState.boardFen);
+BoardManager.create('detail-board', AppState.boardFen);
+loadPositions();
+loadTags();
+initStockfish();
+setupAutoLoad();
+setupKeyboardSave();
+setupUrlParams();

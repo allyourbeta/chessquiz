@@ -11,6 +11,7 @@
   <link rel="icon" href="/favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChessQuiz</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/chessboard.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
     :root {
@@ -30,14 +31,7 @@
     nav button.active { color:var(--accent); border-color:var(--accent-dim); background:var(--surface); }
     .container { max-width:1100px; margin:0 auto; padding:32px; }
     .view { display:none; } .view.active { display:block; }
-    .chess-board { display:inline-grid; grid-template-columns:repeat(8,1fr); border:2px solid var(--border); border-radius:4px; overflow:hidden; width:400px; height:400px; }
-    .chess-sq { display:flex; align-items:center; justify-content:center; font-size:38px; line-height:1; cursor:default; user-select:none; position:relative; aspect-ratio:1; overflow:hidden; }
-    .chess-sq.light { background:var(--light-sq); } .chess-sq.dark { background:var(--dark-sq); }
-    .chess-sq .coord { position:absolute; font-size:9px; font-family:'DM Mono',monospace; opacity:.5; }
-    .chess-sq .coord-file { bottom:1px; right:3px; } .chess-sq .coord-rank { top:1px; left:3px; }
-    .chess-sq.light .coord { color:var(--dark-sq); } .chess-sq.dark .coord { color:var(--light-sq); }
-    .white-piece { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.8), 0 1px 3px rgba(0,0,0,.6); }
-    .black-piece { color:#1a1a1a; text-shadow:none; }
+    .board-wrap { width:400px; height:400px; }
     .board-area { display:grid; grid-template-columns:400px 1fr; gap:32px; align-items:start; }
     .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
     .panel h2 { font-family:'Instrument Serif',serif; font-size:20px; font-weight:400; margin-bottom:16px; color:var(--accent); }
@@ -76,7 +70,7 @@
     .toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--green); color:var(--green); padding:12px 20px; border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:13px; z-index:1000; animation:slideUp .3s ease; }
     .toast.error { border-color:var(--red); color:var(--red); }
     @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-    @media(max-width:860px) { .board-area{grid-template-columns:1fr} .chess-board{width:100%;height:auto;aspect-ratio:1;max-width:400px} .container{padding:16px} }
+    @media(max-width:860px) { .board-area{grid-template-columns:1fr} .board-wrap{width:100%;height:auto;aspect-ratio:1;max-width:400px} .container{padding:16px} }
   </style>
 </head>
 <body>
@@ -99,7 +93,7 @@
   <div id="view-add" class="view">
     <div class="board-area">
       <div>
-        <div id="board" class="chess-board"></div>
+        <div id="board" class="board-wrap"></div>
         <div style="margin-top:12px">
           <label>FEN</label>
           <input type="text" id="fen-input" placeholder="Paste FEN here...">
@@ -137,7 +131,7 @@
   <div id="view-quiz" class="view">
     <div class="quiz-board-area">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="quiz-tag-filters"></div>
-      <div id="quiz-board" class="chess-board"></div>
+      <div id="quiz-board" class="board-wrap"></div>
       <div id="quiz-info" style="text-align:center">
         <p id="quiz-title" style="font-family:'Instrument Serif',serif;font-size:22px;margin-bottom:4px"></p>
         <div id="quiz-tags-display" style="margin-bottom:12px"></div>
@@ -157,7 +151,7 @@
   <div id="view-detail" class="view">
     <div class="board-area">
       <div>
-        <div id="detail-board" class="chess-board"></div>
+        <div id="detail-board" class="board-wrap"></div>
         <div class="btn-row" style="margin-top:8px"><button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button></div>
       </div>
       <div class="panel">
@@ -177,22 +171,11 @@
 </div>
 <script src="/js/state.js"></script>
 <script src="/js/shared.js"></script>
-<script src="/js/board.js"></script>
 <script src="/js/positions.js"></script>
 <script src="/js/quiz.js"></script>
 <script src="/js/stockfish.js"></script>
+<script type="module" src="/js/board.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    BoardManager.create('board', AppState.boardFen);
-    BoardManager.create('quiz-board', AppState.boardFen);
-    BoardManager.create('detail-board', AppState.boardFen);
-    loadPositions();
-    loadTags();
-    initStockfish();
-    setupAutoLoad();
-    setupKeyboardSave();
-    setupUrlParams();
-});
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(e => console.log('SW failed:', e)); }
 </script>
 </body>
