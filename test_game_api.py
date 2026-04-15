@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""Phase 4 tests: Game CRUD, bulk import, position search, collections."""
+
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+db_path = os.path.join(os.path.dirname(__file__), "chessquiz.db")
+if os.path.exists(db_path):
+    os.remove(db_path)
+
+from backend.main import app
+from fastapi.testclient import TestClient
+
+c = TestClient(app)
+
+passed = 0
+failed = 0
+
+
+def check(name, condition, detail=""):
+    global passed, failed
+    if condition:
+        print(f"  ✓ {name}")
+        passed += 1
+    else:
+        print(f"  ✗ {name} — {detail}")
+        failed += 1
+
+
+VALID_PGN = """[Event "Smith-Morra Gambit"]
+[Site "Chess.com"]
+[Date "2024.01.15"]
+[White "Player1"]
+[Black "Player2"]
+[Result "1-0"]
+[ECO "B21"]
+[Opening "Sicilian Defense: Smith-Morra Gambit"]
+
+1. e4 c5 2. d4 cxd4 3. c3 dxc3 4. Nxc3 Nc6 5. Nf3 d6 6. Bc4 e6 7. O-O Nf6 8. Qe2 Be7 9. Rd1 e5 10. Be3 O-O 11. Rac1 Bg4 12. Nd5 Bxf3 13. gxf3 Nxd5 14. Bxd5 Rc8 15. Bb6 Qd7 16. Rxc6 1-0"""
+
+MULTI_PGN = """[Event "Smith-Morra Gambit"]
+[Site "Chess.com"]
+[Date "2024.01.15"]
+[White "Player1"]
+[Black "Player2"]
+[Result "1-0"]
+[ECO "B21"]
+[Opening "Sicilian Defense: Smith-Morra Gambit"]
+
+1. e4 c5 2. d4 cxd4 3. c3 dxc3 4. Nxc3 Nc6 5. Nf3 d6 6. Bc4 e6 7. O-O Nf6 8. Qe2 Be7 9. Rd1 e5 10. Be3 O-O 11. Rac1 Bg4 12. Nd5 Bxf3 13. gxf3 Nxd5 14. Bxd5 Rc8 15. Bb6 Qd7 16. Rxc6 1-0
+
+[Event "Another Smith-Morra"]
+[Site "Lichess"]
+[Date "2024.03.10"]
+[White "Player3"]
+[Black "Player4"]
+[Result "0-1"]
+[ECO "B21"]
+[Opening "Sicilian Defense: Smith-Morra Gambit"]
+
+1. e4 c5 2. d4 cxd4 3. c3 dxc3 4. Nxc3 Nc6 5. Nf3 e6 6. Bc4 a6 7. O-O Nge7 8. Bg5 h6 9. Be3 Ng6 10. Bb3 Be7 11. Qd2 O-O 12. Rad1 b5 13. f4 Bb7 14. f5 exf5 15. exf5 Nge5 16. Nxe5 Nxe5 17. Qf2 Nc4 0-1
+
+[Event "Elephant Gambit"]
+[Site "Online"]
+[Date "2024.05.20"]
+[White "Opponent"]
+[Black "Ashish"]
+[Result "0-1"]
+[ECO "C40"]
+[Opening "Elephant Gambit"]
+
+1. e4 e5 2. Nf3 d5 3. exd5 Bd6 4. d4 e4 5. Ne5 Nf6 6. Bc4 O-O 7. O-O Bxe5 8. dxe5 Nxd5 9. Qh5 Nc6 10. Bxd5 Qxd5 11. Nc3 Qxe5 0-1"""
+
+START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+print("Running Phase 4 tests...\n")
+
+print("--- Game API ---")
+
+r = c.post("/api/games/", json={"pgn_text": VALID_PGN, "tags": ["test"]})
+check("Create game", r.status_code == 201, f"got {r.status_code}: {r.text[:200]}")
+game1_id = r.json()["id"]
+check("Game has auto-tags", len(r.json()["tags"]) > 1)
+
+r = c.post("/api/games/", json={"pgn_text": ""})
+check("Reject empty PGN", r.status_code == 400, f"got {r.status_code}")
+
+r = c.post("/api/games/import", json={"pgn_text": MULTI_PGN, "tags": ["bulk"]})
+check("Bulk import status", r.status_code == 200, f"got {r.status_code}: {r.text[:200]}")
+check("Bulk import count", r.json()["imported"] == 3, f"got {r.json()}")
+check("Bulk import game_ids", len(r.json()["game_ids"]) == 3)
+bulk_ids = r.json()["game_ids"]
+
+r = c.get("/api/games/")
+check("List games", r.status_code == 200 and len(r.json()) == 4,
+      f"got {r.status_code}, count={len(r.json()) if r.status_code == 200 else 'N/A'}")
+
+r = c.get("/api/games/?tag=bulk")
+check("Filter by tag", len(r.json()) == 3, f"got {len(r.json())}")
+
+r = c.get("/api/games/?eco=B21")
+check("Filter by ECO", len(r.json()) >= 2, f"got {len(r.json())}")
+
+r = c.get("/api/games/?search=Player1")
+check("Search by player", len(r.json()) >= 1, f"got {len(r.json())}")
+
+r = c.get(f"/api/games/{game1_id}")
+check("Get game detail", r.status_code == 200)
+detail = r.json()
+check("Detail has moves_san", len(detail["moves_san"]) == 31, f"got {len(detail['moves_san'])}")
+check("Detail has fens", len(detail["fens"]) == 32, f"got {len(detail['fens'])}")
+check("Detail has comments", "comments" in detail)
+
+r = c.get("/api/games/9999")
+check("404 for missing game", r.status_code == 404)
+
+r = c.put(f"/api/games/{game1_id}", json={"tags": ["updated", "sicilian"]})
+check("Update game tags", r.status_code == 200, f"got {r.status_code}")
+check("Tags updated", len(r.json()["tags"]) == 2)
+
+r = c.post("/api/games/search-position", json={"fen": START_FEN, "search_type": "exact"})
+check("Position search (exact)", r.status_code == 200, f"got {r.status_code}")
+check("Start pos found in all games", len(r.json()) == 4, f"got {len(r.json())}")
+
+AFTER_E4_C5 = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2"
+r = c.post("/api/games/search-position", json={"fen": AFTER_E4_C5, "search_type": "exact"})
+check("Position search (1.e4 c5)", len(r.json()) >= 2, f"got {len(r.json())}")
+
+r = c.post("/api/games/search-position", json={"fen": START_FEN, "search_type": "pawn"})
+check("Pawn structure search", r.status_code == 200)
+check("Start pawn sig found in all", len(r.json()) == 4, f"got {len(r.json())}")
+
+r = c.post("/api/games/search-position", json={"fen": START_FEN, "search_type": "bad"})
+check("Invalid search type rejected", r.status_code == 400)
+
+r = c.delete(f"/api/games/{game1_id}")
+check("Delete game", r.status_code == 204)
+r = c.get(f"/api/games/{game1_id}")
+check("Deleted game gone", r.status_code == 404)
+
+r = c.post("/api/games/search-position", json={"fen": START_FEN, "search_type": "exact"})
+check("Position index cascade", len(r.json()) == 3, f"got {len(r.json())}")
+
+print("\n--- Collection API ---")
+
+r = c.post("/api/collections/", json={"name": "Smith-Morra", "description": "SM Gambit games"})
+check("Create collection", r.status_code == 201, f"got {r.status_code}: {r.text[:200]}")
+coll_id = r.json()["id"]
+check("Collection has name", r.json()["name"] == "Smith-Morra")
+
+r = c.post("/api/collections/", json={"name": "Smith-Morra"})
+check("Reject duplicate name", r.status_code == 409)
+
+r = c.get("/api/collections/")
+check("List collections", r.status_code == 200 and len(r.json()) >= 1)
+
+r = c.post(f"/api/collections/{coll_id}/games?game_id={bulk_ids[0]}")
+check("Add game to collection", r.status_code == 204)
+r = c.post(f"/api/collections/{coll_id}/games?game_id={bulk_ids[1]}")
+check("Add second game", r.status_code == 204)
+
+r = c.get(f"/api/collections/{coll_id}")
+check("Collection detail", r.status_code == 200)
+check("Collection has 2 games", len(r.json()["games"]) == 2,
+      f"got {len(r.json()['games'])}")
+
+r = c.get(f"/api/games/?collection_id={coll_id}")
+check("Filter by collection", len(r.json()) == 2, f"got {len(r.json())}")
+
+r = c.put(f"/api/collections/{coll_id}", json={"name": "Morra Gambit"})
+check("Update collection", r.status_code == 200 and r.json()["name"] == "Morra Gambit")
+
+r = c.delete(f"/api/collections/{coll_id}/games/{bulk_ids[0]}")
+check("Remove game from collection", r.status_code == 204)
+r = c.get(f"/api/collections/{coll_id}")
+check("Collection now has 1 game", len(r.json()["games"]) == 1)
+
+r = c.post("/api/collections/", json={"name": "Elephant"})
+check("Create second collection", r.status_code == 201)
+coll2_id = r.json()["id"]
+
+r = c.post("/api/games/import", json={
+    "pgn_text": VALID_PGN,
+    "tags": ["coll-test"],
+    "collection_ids": [coll2_id],
+})
+check("Import with collection", r.json()["imported"] == 1)
+r = c.get(f"/api/collections/{coll2_id}")
+check("Imported game in collection", len(r.json()["games"]) == 1)
+
+r = c.delete(f"/api/collections/{coll_id}")
+check("Delete collection", r.status_code == 204)
+r = c.get("/api/collections/")
+check("Collection gone", all(ci["id"] != coll_id for ci in r.json()))
+
+r = c.get("/api/games/")
+game_count_after = len(r.json())
+check("Games survive collection delete", game_count_after >= 3)
+
+print(f"\n{'='*40}")
+print(f"  {passed} passed, {failed} failed")
+print(f"{'='*40}")
+
+try:
+    os.remove("chessquiz.db")
+except FileNotFoundError:
+    pass
+
+sys.exit(1 if failed else 0)

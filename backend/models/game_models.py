@@ -51,7 +51,7 @@ class Game(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    tags = relationship("Tag", secondary=game_tags, backref="games")
+    tags = relationship("Tag", secondary=game_tags, back_populates="games")
     collections = relationship(
         "GameCollection", secondary=game_collection_assoc, back_populates="games"
     )

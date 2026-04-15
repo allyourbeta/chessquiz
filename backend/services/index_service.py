@@ -8,9 +8,15 @@ import chess.polyglot
 
 
 def compute_zobrist(fen: str) -> int:
-    """Zobrist hash for exact position lookup."""
+    """Zobrist hash for exact position lookup.
+
+    Converts unsigned 64-bit to signed 64-bit for SQLite compatibility.
+    """
     board = chess.Board(fen)
-    return chess.polyglot.zobrist_hash(board)
+    h = chess.polyglot.zobrist_hash(board)
+    if h >= (1 << 63):
+        h -= (1 << 64)
+    return h
 
 
 def compute_pawn_sig(fen: str) -> str:

@@ -55,6 +55,9 @@ class Tag(Base):
     positions = relationship(
         "Position", secondary=position_tags, back_populates="tags"
     )
+    games = relationship(
+        "Game", secondary="game_tags", back_populates="tags"
+    )
 
 
 class QuizAttempt(Base):

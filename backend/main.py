@@ -7,7 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api import chess_router, positions_router, quiz_router, tags_router
+from backend.api import (
+    chess_router,
+    collections_router,
+    games_router,
+    positions_router,
+    quiz_router,
+    tags_router,
+)
 from backend.database import Base, engine
 
 # Create all tables on startup
@@ -28,6 +35,8 @@ app.include_router(positions_router, prefix="/api")
 app.include_router(quiz_router, prefix="/api")
 app.include_router(tags_router, prefix="/api")
 app.include_router(chess_router, prefix="/api")
+app.include_router(games_router, prefix="/api")
+app.include_router(collections_router, prefix="/api")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
