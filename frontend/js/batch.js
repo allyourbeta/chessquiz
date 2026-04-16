@@ -18,7 +18,17 @@ async function startBatchReview(collectionId, collectionName) {
 async function openBatchGame() {
     const id = AppState.batchGameIds[AppState.batchIndex];
     if (id == null) return;
-    await openGame(id);
+    // Navigate updates URL + fires render. Then await loadGameDetail so the
+    // batch nav update reflects the loaded game.
+    const route = { view: 'gameDetail', id };
+    history.pushState(route, '', Router.build(route));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-game-viewer').classList.add('active');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => {
+        if (b.textContent === 'Games') b.classList.add('active');
+    });
+    await loadGameDetail(id);
     updateBatchNav();
 }
 
@@ -64,7 +74,7 @@ function exitBatchMode() {
     AppState.batchGameIds = [];
     AppState.batchIndex = 0;
     updateBatchNav();
-    showView('collections');
+    Router.navigate({ view: 'collections' });
 }
 
 function setupBatchKeys() {

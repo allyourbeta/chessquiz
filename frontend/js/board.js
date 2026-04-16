@@ -141,9 +141,9 @@ window.ARROW_TYPE = ARROW_TYPE;
 BoardManager.create('board', AppState.boardFen);
 BoardManager.create('quiz-board', AppState.boardFen);
 BoardManager.create('detail-board', AppState.boardFen);
-loadPositions();
-loadTags();
 initStockfish();
 setupAutoLoad();
 setupKeyboardSave();
 setupUrlParams();
+// Start the router: parse current URL and render the matching view.
+Router.init();

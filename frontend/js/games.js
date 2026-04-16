@@ -2,6 +2,7 @@ function _buildGameQuery(extra) {
     const params = [];
     (AppState.gameTagFilters || []).forEach(t => params.push('tags=' + encodeURIComponent(t)));
     if (AppState.gameCollectionFilter) params.push('collection_id=' + AppState.gameCollectionFilter);
+    if (AppState.gameResultFilter) params.push('result=' + encodeURIComponent(AppState.gameResultFilter));
     if (AppState.gameSearch) params.push('search=' + encodeURIComponent(AppState.gameSearch));
     if (extra) Object.entries(extra).forEach(([k, v]) => params.push(k + '=' + encodeURIComponent(v)));
     return params.join('&');
@@ -29,6 +30,32 @@ async function loadGames() {
     renderGamesList();
 }
 
+// Build current Games-view route params from AppState.
+function _currentGamesParams() {
+    const p = {};
+    if (AppState.gameTagFilters && AppState.gameTagFilters.length) p.tags = AppState.gameTagFilters.slice();
+    if (AppState.gameCollectionFilter) p.collection_id = AppState.gameCollectionFilter;
+    if (AppState.gameResultFilter) p.result = AppState.gameResultFilter;
+    if (AppState.gameSearch) p.search = AppState.gameSearch;
+    if (AppState.gamePage) p.page = AppState.gamePage;
+    return p;
+}
+
+// Push a new history entry reflecting current filter state WITHOUT
+// re-rendering (caller is already on Games view and will call loadGames()).
+function _pushGamesUrl() {
+    if (Router.isRendering()) return;
+    const route = { view: 'games', params: _currentGamesParams() };
+    history.pushState(route, '', Router.build(route));
+}
+
+// Update URL in place (no new history entry) — for debounced/typed input.
+function _replaceGamesUrl() {
+    if (Router.isRendering()) return;
+    const route = { view: 'games', params: _currentGamesParams() };
+    history.replaceState(route, '', Router.build(route));
+}
+
 function mountGameTagFilter() {
     TagFilter.mount({
         containerId: 'game-tag-filters',
@@ -36,6 +63,7 @@ function mountGameTagFilter() {
         onChange: tags => {
             AppState.gameTagFilters = tags;
             AppState.gamePage = 0;
+            _pushGamesUrl();
             loadGames();
         },
         placeholder: 'Filter by tag...',
@@ -53,10 +81,21 @@ function _esc(s) {
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const _MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _gameDate(g) {
     if (!g.date_played) return '';
-    // PGN date often "YYYY.MM.DD" — keep as-is for compact display
-    return g.date_played.replace(/\.(\?\?|0{1,2})/g, '').replace(/^\.|\.$/g, '');
+    // PGN dates are "YYYY.MM.DD" with "??" or "0" for unknown parts.
+    const parts = g.date_played.split('.');
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    const yOk = year && /^\d{4}$/.test(year);
+    const mOk = month && /^\d{1,2}$/.test(month) && +month >= 1 && +month <= 12;
+    const dOk = day && /^\d{1,2}$/.test(day) && +day >= 1 && +day <= 31;
+    if (yOk && mOk && dOk) return `${_MONTHS[+month - 1]} ${+day}, ${year}`;
+    if (yOk && mOk) return `${_MONTHS[+month - 1]} ${year}`;
+    if (yOk) return year;
+    return '';
 }
 
 function _gameOpening(g) {
@@ -134,6 +173,7 @@ function renderPager() {
 function gamesPrevPage() {
     if (AppState.gamePage > 0) {
         AppState.gamePage--;
+        _pushGamesUrl();
         loadGames();
     }
 }
@@ -142,6 +182,7 @@ function gamesNextPage() {
     const totalPages = Math.max(1, Math.ceil(AppState.gameTotalCount / AppState.gamePageSize));
     if (AppState.gamePage + 1 < totalPages) {
         AppState.gamePage++;
+        _pushGamesUrl();
         loadGames();
     }
 }
@@ -197,6 +238,14 @@ function renderCollectionFilter() {
 function onCollectionFilterChange(sel) {
     AppState.gameCollectionFilter = sel.value || null;
     AppState.gamePage = 0;
+    _pushGamesUrl();
+    loadGames();
+}
+
+function onResultFilterChange(sel) {
+    AppState.gameResultFilter = sel.value || '';
+    AppState.gamePage = 0;
+    _pushGamesUrl();
     loadGames();
 }
 
@@ -206,6 +255,8 @@ function onGameSearch() {
     _gameSearchTimer = setTimeout(() => {
         AppState.gameSearch = document.getElementById('game-search-input').value.trim();
         AppState.gamePage = 0;
+        // Typed search = replace URL (don't pollute history per keystroke).
+        _replaceGamesUrl();
         loadGames();
     }, 300);
 }
@@ -218,6 +269,7 @@ window.gamesPrevPage = gamesPrevPage;
 window.gamesNextPage = gamesNextPage;
 window.renderCollectionFilter = renderCollectionFilter;
 window.onCollectionFilterChange = onCollectionFilterChange;
+window.onResultFilterChange = onResultFilterChange;
 window.onGameSearch = onGameSearch;
 window.toggleGameSelect = toggleGameSelect;
 window.toggleSelectAllGames = toggleSelectAllGames;

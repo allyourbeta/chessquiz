@@ -42,8 +42,7 @@ function escapeJs(s) {
 }
 
 function openCollection(id) {
-    AppState.gameCollectionFilter = String(id);
-    showView('games');
+    Router.navigate({ view: 'collectionDetail', id });
 }
 
 function showCollectionModal() {

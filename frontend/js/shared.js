@@ -28,27 +28,125 @@ function toast(msg, err = false) {
     setTimeout(() => el.remove(), 3000);
 }
 
-function showView(name) {
+// DOM swap + nav highlight. Does NOT load data — that happens in renderRoute.
+function _activateView(viewId, navLabel) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + name).classList.add('active');
+    const el = document.getElementById('view-' + viewId);
+    if (el) el.classList.add('active');
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    const labels = {positions: 'Positions', add: 'Add New', quiz: 'Quiz', games: 'Games', collections: 'Collections', search: 'Search'};
-    document.querySelectorAll('nav button').forEach(b => {
-        if (b.textContent === labels[name]) b.classList.add('active');
-    });
-    if (name === 'positions') { mountPositionTagFilter(); loadPositions(); }
-    if (name === 'quiz') mountQuizTagFilter();
-    if (name === 'add') BoardManager.setPosition('board', AppState.boardFen);
-    if (name === 'games') { mountGameTagFilter(); loadGames(); loadCollections(); }
-    if (name === 'collections') { loadCollectionsView(); }
-    if (name === 'search') { loadCollections().then(renderSearchScope); initSearchBoard(); }
-    if (name === 'import') {
-        loadCollections().then(resetImportView);
-        document.querySelectorAll('nav button').forEach(b => { if (b.textContent === 'Games') b.classList.add('active'); });
+    if (navLabel) {
+        document.querySelectorAll('nav button').forEach(b => {
+            if (b.textContent === navLabel) b.classList.add('active');
+        });
     }
-    if (name === 'game-viewer') {
-        document.querySelectorAll('nav button').forEach(b => { if (b.textContent === 'Games') b.classList.add('active'); });
+}
+
+// Apply query-string filters from route.params into AppState so data
+// loaders pick them up. Safe to call during render (no navigate calls).
+function _applyGameFilters(params) {
+    const tags = Array.isArray(params.tags) ? params.tags.slice() : [];
+    AppState.gameTagFilters = tags;
+    AppState.gameCollectionFilter = params.collection_id ? params.collection_id : null;
+    AppState.gameResultFilter = params.result || '';
+    AppState.gameSearch = params.search || '';
+    AppState.gamePage = params.page ? Math.max(0, parseInt(params.page, 10) || 0) : 0;
+    const si = document.getElementById('game-search-input');
+    if (si) si.value = AppState.gameSearch;
+    const rf = document.getElementById('game-result-filter');
+    if (rf) rf.value = AppState.gameResultFilter;
+}
+
+function _applyPositionFilters(params) {
+    const tags = Array.isArray(params.tags) ? params.tags.slice() : [];
+    AppState.positionTagFilters = tags;
+}
+
+// Main route renderer. Called by Router on navigate() / popstate / init.
+function renderRoute(route) {
+    const params = (route && route.params) || {};
+    switch (route.view) {
+        case 'positions':
+            _applyPositionFilters(params);
+            _activateView('positions', 'Positions');
+            mountPositionTagFilter();
+            loadPositions();
+            break;
+        case 'positionDetail':
+            _activateView('detail', 'Positions');
+            loadPositionDetail(route.id);
+            break;
+        case 'addPosition':
+            _activateView('add', 'Add New');
+            BoardManager.setPosition('board', AppState.boardFen);
+            break;
+        case 'games':
+            _applyGameFilters(params);
+            _activateView('games', 'Games');
+            mountGameTagFilter();
+            loadGames();
+            loadCollections();
+            break;
+        case 'gameDetail':
+            _activateView('game-viewer', 'Games');
+            loadGameDetail(route.id);
+            break;
+        case 'gameImport':
+            _activateView('import', 'Games');
+            loadCollections().then(resetImportView);
+            break;
+        case 'collections':
+            _activateView('collections', 'Collections');
+            loadCollectionsView();
+            break;
+        case 'collectionDetail':
+            // Collection detail = games list filtered by collection id
+            AppState.gameCollectionFilter = String(route.id);
+            _activateView('games', 'Games');
+            mountGameTagFilter();
+            loadGames();
+            loadCollections();
+            break;
+        case 'search':
+            _activateView('search', 'Search');
+            loadCollections().then(renderSearchScope);
+            initSearchBoard();
+            break;
+        case 'quiz':
+            _activateView('quiz', 'Quiz');
+            mountQuizTagFilter();
+            break;
+        default:
+            _activateView('positions', 'Positions');
+            loadPositions();
     }
+}
+
+// Backwards-compat shim: map legacy showView(name) calls to router navigate.
+// Also used internally by renderRoute for views that don't need custom logic.
+const _LEGACY_VIEWS = {
+    positions: { view: 'positions' },
+    add: { view: 'addPosition' },
+    games: { view: 'games' },
+    collections: { view: 'collections' },
+    search: { view: 'search' },
+    quiz: { view: 'quiz' },
+    import: { view: 'gameImport' },
+};
+
+function showView(name) {
+    const route = _LEGACY_VIEWS[name];
+    if (route) {
+        // Preserve current filters when navigating to games via legacy call
+        if (route.view === 'games' && AppState.gameCollectionFilter) {
+            route.params = { collection_id: AppState.gameCollectionFilter };
+        }
+        Router.navigate(route);
+        return;
+    }
+    // Views like 'detail' / 'game-viewer' are reached via renderRoute; legacy
+    // callers for these are replaced elsewhere. Fall back to plain activation.
+    const labels = { detail: 'Positions', 'game-viewer': 'Games' };
+    _activateView(name, labels[name]);
 }
 
 window.API = API;
@@ -56,3 +154,4 @@ window.PIECE_SVG = PIECE_SVG;
 window.pieceKey = pieceKey;
 window.toast = toast;
 window.showView = showView;
+window.renderRoute = renderRoute;

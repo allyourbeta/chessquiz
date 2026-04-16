@@ -12,7 +12,14 @@ function mountPositionTagFilter() {
     TagFilter.mount({
         containerId: 'tag-filters',
         state: { tags: AppState.positionTagFilters },
-        onChange: tags => { AppState.positionTagFilters = tags; loadPositions(); },
+        onChange: tags => {
+            AppState.positionTagFilters = tags;
+            if (!Router.isRendering()) {
+                const route = { view: 'positions', params: tags.length ? { tags: tags.slice() } : {} };
+                history.pushState(route, '', Router.build(route));
+            }
+            loadPositions();
+        },
         placeholder: 'Filter by tag...',
     });
 }
@@ -32,7 +39,7 @@ async function savePosition() {
     if (res.ok) {
         toast(editId ? 'Position updated!' : 'Position saved!');
         clearForm();
-        showView('positions');
+        Router.navigate({ view: 'positions' });
     } else {
         const err = await res.json();
         toast(err.detail || 'Error saving', true);
@@ -45,11 +52,17 @@ async function deletePosition() {
     if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
         toast('Position deleted');
         clearForm();
-        showView('positions');
+        Router.navigate({ view: 'positions' });
     }
 }
 
-async function showDetail(id) {
+// Navigation entry: push history and let router render.
+function showDetail(id) {
+    Router.navigate({ view: 'positionDetail', id });
+}
+
+// Called by renderRoute for deep link /positions/:id.
+async function loadPositionDetail(id) {
     const pos = await (await fetch(API + '/positions/' + id)).json();
     AppState.currentDetailId = id;
     AppState.currentDetailFen = pos.fen;
@@ -62,7 +75,6 @@ async function showDetail(id) {
     const s = await (await fetch(API + '/quiz/stats/' + id)).json();
     document.getElementById('detail-stats').textContent = s.total_attempts > 0 ? `${s.total_attempts} attempts, ${(s.accuracy * 100).toFixed(0)}% accuracy` : 'No quiz attempts yet';
     if (AppState.playMode) stopPlayMode();
-    showView('detail');
     BoardManager.create('detail-board', pos.fen, { flipped: false });
     if (AppState.engineOn) requestEval('detail-board');
 }
@@ -79,7 +91,7 @@ function editPosition() {
         document.getElementById('form-title').textContent = 'Edit Position';
         document.getElementById('delete-btn').style.display = 'inline-flex';
         AppState.boardFen = pos.fen;
-        showView('add');
+        Router.navigate({ view: 'addPosition' });
         BoardManager.setPosition('board', AppState.boardFen);
     });
 }
@@ -123,7 +135,7 @@ async function deleteFromDetail() {
     if (!id || !confirm('Delete this position?')) return;
     if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
         toast('Position deleted');
-        showView('positions');
+        Router.navigate({ view: 'positions' });
     }
 }
 
@@ -167,14 +179,15 @@ function setupKeyboardSave() {
 }
 
 function setupUrlParams() {
+    // Legacy ?fen= query shortcut: if present on initial load, open Add view.
+    // Rewrite URL to /positions/new before Router.init() so it renders that.
     const p = new URLSearchParams(window.location.search);
     const fen = p.get('fen');
     if (fen) {
         document.getElementById('fen-input').value = fen;
         AppState.boardFen = fen;
-        showView('add');
         BoardManager.setPosition('board', AppState.boardFen);
-        window.history.replaceState({}, '', window.location.pathname);
+        window.history.replaceState(null, '', '/positions/new');
     }
 }
 
@@ -191,6 +204,7 @@ window.mountPositionTagFilter = mountPositionTagFilter;
 window.savePosition = savePosition;
 window.deletePosition = deletePosition;
 window.showDetail = showDetail;
+window.loadPositionDetail = loadPositionDetail;
 window.editPosition = editPosition;
 window.renderPositionsList = renderPositionsList;
 window.loadFen = loadFen;

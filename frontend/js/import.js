@@ -91,7 +91,7 @@ async function doImport() {
         if (res.ok) {
             _renderImportResult(resultEl, data);
             if (data.imported > 0) {
-                setTimeout(() => { showView('games'); loadGames(); }, 1500);
+                setTimeout(() => { Router.navigate({ view: 'games' }); }, 1500);
             }
         } else {
             resultEl.innerHTML = `<p style="color:var(--red)">${data.detail || 'Import failed'}</p>`;

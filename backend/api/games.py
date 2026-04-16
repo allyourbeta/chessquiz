@@ -85,20 +85,10 @@ def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/", response_model=list[GameBrief])
-def list_games(
-    tag: str | None = None,
-    tags: list[str] | None = Query(default=None),
-    collection_id: int | None = None,
-    search: str | None = None,
-    eco: str | None = None,
-    limit: int = Query(default=100, ge=1, le=1000),
-    offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
-):
-    query = db.query(Game).options(joinedload(Game.tags))
+_VALID_RESULTS = {"1-0", "0-1", "1/2-1/2"}
 
-    # Combine single-tag and multi-tag filters (AND across all supplied tags)
+
+def _apply_game_filters(query, tag, tags, collection_id, search, eco, result):
     tag_names = []
     if tag:
         tag_names.append(tag)
@@ -127,6 +117,28 @@ def list_games(
     if eco:
         query = query.filter(Game.eco == eco.upper())
 
+    if result and result in _VALID_RESULTS:
+        query = query.filter(Game.result == result)
+
+    return query
+
+
+@router.get("/", response_model=list[GameBrief])
+def list_games(
+    tag: str | None = None,
+    tags: list[str] | None = Query(default=None),
+    collection_id: int | None = None,
+    search: str | None = None,
+    eco: str | None = None,
+    result: str | None = None,
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Game).options(joinedload(Game.tags))
+    query = _apply_game_filters(
+        query, tag, tags, collection_id, search, eco, result
+    )
     return (
         query.order_by(Game.created_at.desc())
         .offset(offset)
@@ -142,38 +154,13 @@ def count_games(
     collection_id: int | None = None,
     search: str | None = None,
     eco: str | None = None,
+    result: str | None = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Game.id)
-
-    tag_names = []
-    if tag:
-        tag_names.append(tag)
-    if tags:
-        tag_names.extend(tags)
-    for t in tag_names:
-        name = t.strip().lower().lstrip("#")
-        if not name:
-            continue
-        query = query.filter(Game.tags.any(Tag.name == name))
-
-    if collection_id:
-        query = query.filter(
-            Game.collections.any(GameCollection.id == collection_id)
-        )
-
-    if search:
-        pattern = f"%{search}%"
-        query = query.filter(
-            Game.white.ilike(pattern)
-            | Game.black.ilike(pattern)
-            | Game.event.ilike(pattern)
-            | Game.opening.ilike(pattern)
-        )
-
-    if eco:
-        query = query.filter(Game.eco == eco.upper())
-
+    query = _apply_game_filters(
+        query, tag, tags, collection_id, search, eco, result
+    )
     return {"count": query.count()}
 
 

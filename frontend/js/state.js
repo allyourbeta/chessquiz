@@ -17,6 +17,7 @@ const AppState = {
     allGames: [],
     gameTagFilters: [],
     gameCollectionFilter: null,
+    gameResultFilter: '',
     gameSearch: '',
     gamePage: 0,
     gamePageSize: 50,

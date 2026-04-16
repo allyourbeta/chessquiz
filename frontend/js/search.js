@@ -123,7 +123,17 @@ function renderSearchResults(data) {
 }
 
 async function openSearchResult(gameId, halfMove) {
-    await openGame(gameId);
+    // Push URL + activate view manually (not via navigate) so we can await
+    // the fetch and THEN jump to the ply. navigate() would fire-and-forget.
+    const route = { view: 'gameDetail', id: gameId };
+    history.pushState(route, '', Router.build(route));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-game-viewer').classList.add('active');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => {
+        if (b.textContent === 'Games') b.classList.add('active');
+    });
+    await loadGameDetail(gameId);
     if (typeof goToPly === 'function') {
         goToPly(halfMove);
     }

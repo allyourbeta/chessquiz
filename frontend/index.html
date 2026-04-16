@@ -20,12 +20,12 @@
 <header>
   <h1>ChessQuiz</h1>
   <nav>
-    <button class="active" onclick="showView('positions')">Positions</button>
-    <button onclick="showView('add')">Add New</button>
-    <button onclick="showView('games')">Games</button>
-    <button onclick="showView('collections')">Collections</button>
-    <button onclick="showView('search')">Search</button>
-    <button onclick="showView('quiz')">Quiz</button>
+    <button class="active" onclick="Router.navigate({view:'positions'})">Positions</button>
+    <button onclick="Router.navigate({view:'addPosition'})">Add New</button>
+    <button onclick="Router.navigate({view:'games'})">Games</button>
+    <button onclick="Router.navigate({view:'collections'})">Collections</button>
+    <button onclick="Router.navigate({view:'search'})">Search</button>
+    <button onclick="Router.navigate({view:'quiz'})">Quiz</button>
     <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
 </header>
@@ -100,8 +100,14 @@
       <h2>Games</h2>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="game-search-input" placeholder="Search players, events..." style="width:200px" onkeyup="onGameSearch()">
+        <select id="game-result-filter" class="select-input" onchange="onResultFilterChange(this)">
+          <option value="">All Results</option>
+          <option value="1-0">White wins (1-0)</option>
+          <option value="1/2-1/2">Draw (1/2-1/2)</option>
+          <option value="0-1">Black wins (0-1)</option>
+        </select>
         <select id="game-collection-filter" class="select-input" onchange="onCollectionFilterChange(this)"></select>
-        <button class="btn btn-primary btn-sm" onclick="showView('import')">Import PGN</button>
+        <button class="btn btn-primary btn-sm" onclick="Router.navigate({view:'gameImport'})">Import PGN</button>
       </div>
     </div>
     <div id="game-tag-filters" class="tag-row" style="margin-bottom:16px"></div>
@@ -206,7 +212,7 @@
   <div id="view-import" class="view">
     <div class="view-header">
       <h2>Import PGN</h2>
-      <button class="btn btn-sm" onclick="showView('games')">Back to Games</button>
+      <button class="btn btn-sm" onclick="history.back()">Back to Games</button>
     </div>
     <div class="panel" style="max-width:720px">
       <label>PGN Text</label>
@@ -227,7 +233,7 @@
       <div id="import-result" style="margin-top:12px"></div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="doImport()">Import</button>
-        <button class="btn" onclick="showView('games')">Cancel</button>
+        <button class="btn" onclick="history.back()">Cancel</button>
       </div>
     </div>
   </div>
@@ -257,13 +263,14 @@
           <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Eval: OFF</button>
           <button class="btn btn-sm" onclick="playFromHereDetail()">Play from here</button>
           <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
-          <button class="btn" onclick="showView('positions')">Back</button>
+          <button class="btn" onclick="history.back()">Back</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 <script src="/js/state.js"></script>
+<script src="/js/router.js"></script>
 <script src="/js/shared.js"></script>
 <script src="/js/tagfilter.js"></script>
 <script src="/js/positions.js"></script>

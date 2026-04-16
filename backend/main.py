@@ -82,3 +82,31 @@ def serve_icon_512():
 @app.get("/")
 def serve_frontend():
     return FileResponse(FRONTEND_DIR / "index.html")
+
+
+# SPA catch-all: any non-API, non-static path serves index.html so the
+# client-side router can read the URL and render the correct view.
+_SPA_ROUTES = {
+    "positions",
+    "games",
+    "collections",
+    "search",
+    "quiz",
+    "add",
+}
+
+
+@app.get("/{top}")
+def spa_top(top: str):
+    if top in _SPA_ROUTES:
+        return FileResponse(FRONTEND_DIR / "index.html")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404)
+
+
+@app.get("/{top}/{rest:path}")
+def spa_nested(top: str, rest: str):
+    if top in _SPA_ROUTES:
+        return FileResponse(FRONTEND_DIR / "index.html")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404)

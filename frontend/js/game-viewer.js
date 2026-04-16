@@ -1,4 +1,13 @@
-async function openGame(id) {
+// Navigation entry: push history and let router render.
+function openGame(id) {
+    // If called during render (deep link), skip pushState — router is already
+    // rendering; just load data into the already-active view.
+    if (Router.isRendering()) return loadGameDetail(id);
+    Router.navigate({ view: 'gameDetail', id });
+}
+
+// Data loader — called by renderRoute for /games/:id.
+async function loadGameDetail(id) {
     const res = await fetch(API + '/games/' + id);
     if (!res.ok) { toast('Failed to load game', true); return; }
     const game = await res.json();
@@ -17,7 +26,6 @@ async function openGame(id) {
     if (AppState.playMode) stopPlayMode();
 
     renderMoveList();
-    showView('game-viewer');
     BoardManager.create('game-board', game.fens[0], { flipped: false });
     highlightCurrentMove();
     if (typeof updateBatchNav === 'function') updateBatchNav();
@@ -144,7 +152,9 @@ function backToGames() {
         AppState.batchIndex = 0;
         if (typeof updateBatchNav === 'function') updateBatchNav();
     }
-    showView('games');
+    // Prefer history.back() so user returns to their filtered list state.
+    if (history.length > 1) history.back();
+    else Router.navigate({ view: 'games' });
 }
 
 async function deleteCurrentGame() {
@@ -166,6 +176,7 @@ async function deleteCurrentGame() {
 setupGameKeys();
 
 window.openGame = openGame;
+window.loadGameDetail = loadGameDetail;
 window.goToPly = goToPly;
 window.gvFirst = gvFirst;
 window.gvPrev = gvPrev;
