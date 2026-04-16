@@ -17,11 +17,13 @@ class BulkPGNImport(BaseModel):
     pgn_text: str
     tags: list[str] = []
     collection_ids: list[int] = []
+    force: bool = False
 
 
 class BulkPGNImportResult(BaseModel):
     imported: int
     failed: int
+    duplicates: int = 0
     errors: list[str]
     game_ids: list[int]
 

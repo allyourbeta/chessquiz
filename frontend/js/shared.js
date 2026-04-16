@@ -42,6 +42,10 @@ function showView(name) {
     if (name === 'games') { loadGames(); loadCollections(); loadTags().then(renderGameTagFilters); }
     if (name === 'collections') { loadCollectionsView(); }
     if (name === 'search') { loadCollections().then(renderSearchScope); initSearchBoard(); }
+    if (name === 'import') {
+        loadCollections().then(resetImportView);
+        document.querySelectorAll('nav button').forEach(b => { if (b.textContent === 'Games') b.classList.add('active'); });
+    }
     if (name === 'game-viewer') {
         document.querySelectorAll('nav button').forEach(b => { if (b.textContent === 'Games') b.classList.add('active'); });
     }

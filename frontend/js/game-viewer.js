@@ -147,6 +147,22 @@ function backToGames() {
     showView('games');
 }
 
+async function deleteCurrentGame() {
+    const g = AppState.currentGame;
+    if (!g) return;
+    const label = `${g.white || '?'} vs ${g.black || '?'}`;
+    if (!confirm(`Delete this game (${label})? This cannot be undone.`)) return;
+    const res = await fetch(API + '/games/' + g.id, { method: 'DELETE' });
+    if (res.ok) {
+        toast('Game deleted');
+        AppState.currentGame = null;
+        backToGames();
+        if (typeof loadGames === 'function') loadGames();
+    } else {
+        toast('Failed to delete game', true);
+    }
+}
+
 setupGameKeys();
 
 window.openGame = openGame;
@@ -160,3 +176,4 @@ window.showSavePositionModal = showSavePositionModal;
 window.hideSavePositionModal = hideSavePositionModal;
 window.doSavePosition = doSavePosition;
 window.backToGames = backToGames;
+window.deleteCurrentGame = deleteCurrentGame;

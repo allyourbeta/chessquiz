@@ -1,8 +1,13 @@
 """Game API routes. All DB calls for games happen here."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
+from backend.api.game_helpers import (
+    create_game_from_parsed,
+    get_or_create_tags,
+    is_duplicate_game,
+)
 from backend.api.game_schemas import (
     BulkPGNImport,
     BulkPGNImportResult,
@@ -18,74 +23,11 @@ from backend.models import Game, GameCollection, PositionIndex, Tag
 from backend.services import (
     compute_position_index,
     compute_zobrist,
-    extract_auto_tags,
     parse_multi_pgn,
     parse_single_pgn,
 )
 
 router = APIRouter(prefix="/games", tags=["games"])
-
-
-def _get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:
-    tags = []
-    for name in tag_names:
-        name = name.strip().lower().lstrip("#")
-        if not name:
-            continue
-        tag = db.query(Tag).filter(Tag.name == name).first()
-        if not tag:
-            tag = Tag(name=name)
-            db.add(tag)
-            db.flush()
-        tags.append(tag)
-    return tags
-
-
-def _create_game_from_parsed(
-    db: Session, parsed: dict, user_tags: list[str], collection_ids: list[int]
-) -> Game:
-    headers = parsed["headers"]
-    auto_tags = extract_auto_tags(headers)
-    all_tag_names = list(set(user_tags + auto_tags))
-    tags = _get_or_create_tags(db, all_tag_names)
-
-    collections = []
-    if collection_ids:
-        collections = (
-            db.query(GameCollection)
-            .filter(GameCollection.id.in_(collection_ids))
-            .all()
-        )
-
-    game = Game(
-        pgn_text=parsed["pgn_text"],
-        white=headers.get("White"),
-        black=headers.get("Black"),
-        event=headers.get("Event"),
-        site=headers.get("Site"),
-        date_played=headers.get("Date"),
-        result=headers.get("Result"),
-        eco=headers.get("ECO"),
-        opening=headers.get("Opening"),
-        move_count=parsed["move_count"],
-        tags=tags,
-        collections=collections,
-    )
-    db.add(game)
-    db.flush()
-
-    index_data = compute_position_index(parsed["pgn_text"])
-    for entry in index_data:
-        pi = PositionIndex(
-            game_id=game.id,
-            half_move=entry["half_move"],
-            zobrist_hash=entry["zobrist_hash"],
-            fen=entry["fen"],
-            pawn_sig=entry["pawn_sig"],
-        )
-        db.add(pi)
-
-    return game
 
 
 @router.post("/", response_model=GameBrief, status_code=201)
@@ -95,7 +37,7 @@ def create_game(data: GameCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=parsed["error"])
     parsed["pgn_text"] = data.pgn_text
 
-    game = _create_game_from_parsed(db, parsed, data.tags, data.collection_ids)
+    game = create_game_from_parsed(db, parsed, data.tags, data.collection_ids)
     db.commit()
     db.refresh(game)
     return game
@@ -109,6 +51,7 @@ def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
 
     imported = 0
     failed = 0
+    duplicates = 0
     errors = []
     game_ids = []
 
@@ -118,8 +61,12 @@ def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
             errors.append(f"Game {i + 1}: {parsed['error']}")
             continue
         try:
-            game = _create_game_from_parsed(
-                db, parsed, data.tags, data.collection_ids
+            index_data = compute_position_index(parsed["pgn_text"])
+            if not data.force and is_duplicate_game(db, parsed, index_data):
+                duplicates += 1
+                continue
+            game = create_game_from_parsed(
+                db, parsed, data.tags, data.collection_ids, index_data=index_data
             )
             db.flush()
             game_ids.append(game.id)
@@ -130,7 +77,11 @@ def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
 
     db.commit()
     return BulkPGNImportResult(
-        imported=imported, failed=failed, errors=errors, game_ids=game_ids
+        imported=imported,
+        failed=failed,
+        duplicates=duplicates,
+        errors=errors,
+        game_ids=game_ids,
     )
 
 
@@ -210,7 +161,7 @@ def update_game(
         raise HTTPException(status_code=404, detail="Game not found")
 
     if data.tags is not None:
-        game.tags = _get_or_create_tags(db, data.tags)
+        game.tags = get_or_create_tags(db, data.tags)
 
     if data.collection_ids is not None:
         game.collections = (

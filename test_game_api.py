@@ -85,7 +85,7 @@ check("Game has auto-tags", len(r.json()["tags"]) > 1)
 r = c.post("/api/games/", json={"pgn_text": ""})
 check("Reject empty PGN", r.status_code == 400, f"got {r.status_code}")
 
-r = c.post("/api/games/import", json={"pgn_text": MULTI_PGN, "tags": ["bulk"]})
+r = c.post("/api/games/import", json={"pgn_text": MULTI_PGN, "tags": ["bulk"], "force": True})
 check("Bulk import status", r.status_code == 200, f"got {r.status_code}: {r.text[:200]}")
 check("Bulk import count", r.json()["imported"] == 3, f"got {r.json()}")
 check("Bulk import game_ids", len(r.json()["game_ids"]) == 3)
@@ -183,6 +183,7 @@ r = c.post("/api/games/import", json={
     "pgn_text": VALID_PGN,
     "tags": ["coll-test"],
     "collection_ids": [coll2_id],
+    "force": True,
 })
 check("Import with collection", r.json()["imported"] == 1)
 r = c.get(f"/api/collections/{coll2_id}")
@@ -292,6 +293,48 @@ check("Delete Phase 9 collection", r.status_code == 204)
 r = c.get(f"/api/games/")
 check("Games preserved after collection delete",
       len(r.json()) >= len(all_game_ids))
+
+print("\n--- Duplicate detection on import ---")
+
+DUP_PGN = """[Event "Dup Test"]
+[Site "Test"]
+[Date "2024.06.01"]
+[White "A"]
+[Black "B"]
+[Result "1-0"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 1-0"""
+
+r = c.post("/api/games/import", json={"pgn_text": DUP_PGN, "tags": ["dup"]})
+check("Import unique game", r.status_code == 200 and r.json()["imported"] == 1,
+      f"got {r.json()}")
+check("No duplicates initially", r.json()["duplicates"] == 0)
+first_import_ids = r.json()["game_ids"]
+
+r = c.post("/api/games/import", json={"pgn_text": DUP_PGN, "tags": ["dup"]})
+check("Re-import detects duplicate", r.status_code == 200 and r.json()["imported"] == 0,
+      f"got {r.json()}")
+check("Duplicates count == 1", r.json()["duplicates"] == 1, f"got {r.json()}")
+
+r = c.post("/api/games/import",
+           json={"pgn_text": DUP_PGN, "tags": ["dup"], "force": True})
+check("Force re-import bypasses check", r.json()["imported"] == 1, f"got {r.json()}")
+check("No duplicates counted when forced", r.json()["duplicates"] == 0)
+
+for gid in first_import_ids + r.json()["game_ids"]:
+    c.delete(f"/api/games/{gid}")
+
+print("\n--- Single game delete ---")
+
+r = c.post("/api/games/", json={"pgn_text": DUP_PGN, "tags": ["del"]})
+check("Create game for delete", r.status_code == 201)
+del_gid = r.json()["id"]
+r = c.delete(f"/api/games/{del_gid}")
+check("Delete single game", r.status_code == 204)
+r = c.get(f"/api/games/{del_gid}")
+check("Game gone after single delete", r.status_code == 404)
+r = c.delete(f"/api/games/{del_gid}")
+check("Delete non-existent game returns 404", r.status_code == 404)
 
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
