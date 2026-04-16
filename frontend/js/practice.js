@@ -1,11 +1,5 @@
-// Practice sessions (Phase 10) — core state + API calls.
-// UI rendering lives in practice-ui.js.
-//
-// Failure modes:
-//   - PGN must be collected from playChess before stopPlayMode destroys it.
-//   - If user clicks Stop we still prompt to save — only Discard should skip.
-//   - After save, reload detail so history reflects the new row.
-
+// Practice sessions (Phase 10) — core state + API calls. UI in practice-ui.js.
+// Failure modes: PGN must be captured before stopPlayMode tears down playChess.
 const Practice = (function () {
     let engineLevels = null;
     let active = null;       // { rootPositionId, startFen, userColor, level, startingEval }
@@ -43,15 +37,16 @@ const Practice = (function () {
             const s = parseFloat(AppState.engineEval.score);
             if (!isNaN(s)) active.startingEval = s;
         }
-        _showResignButtons(true);
+        _showPracticeButtons(true);
         toast(`Practice started: ${userColor} vs Stockfish (${level})`);
     }
 
-    function _showResignButtons(show) {
-        ['gv-resign-btn', 'detail-resign-btn'].forEach(id => {
-            const b = document.getElementById(id);
-            if (b) b.style.display = show ? '' : 'none';
-        });
+    function _showPracticeButtons(show) {
+        ['gv-resign-btn', 'detail-resign-btn', 'gv-draw-btn', 'detail-draw-btn']
+            .forEach(id => {
+                const b = document.getElementById(id);
+                if (b) b.style.display = show ? '' : 'none';
+            });
     }
 
     function _movesToPgn(chess, startFen) {
@@ -111,9 +106,56 @@ const Practice = (function () {
         if (!active) { toast('No practice game in progress', true); return; }
         if (!confirm('Resign this game? It will be saved as a loss.')) return;
         forcedVerdict = 'loss';
-        _showResignButtons(false);
+        _showPracticeButtons(false);
         stopPlayMode();  // wrapper calls captureEndOfGame -> confirmSave('loss')
         toast('Resigned');
+    }
+
+    // Offer draw: probe Stockfish for an eval of the current position at
+    // depth 12, flip to Stockfish's own perspective, accept iff sf is <= 0.
+    // On accept, save as draw and stop. On decline, toast and continue.
+    function offerDraw() {
+        if (!active) { toast('No practice game in progress', true); return; }
+        if (!AppState.sfWorker || !AppState.playChess) {
+            toast('Engine not available', true); return;
+        }
+        const fen = AppState.playChess.fen();
+        const sideToMove = fen.split(' ')[1];
+        const sfIsWhite = active.userColor === 'black';
+        const sfToMove = (sideToMove === 'w' && sfIsWhite) || (sideToMove === 'b' && !sfIsWhite);
+        toast('Offering draw...');
+        let latest = null;
+        const onMsg = (e) => {
+            const l = e.data;
+            if (typeof l !== 'string') return;
+            if (l.startsWith('info depth')) {
+                const m = l.match(/depth (\d+).*score (cp|mate) (-?\d+)/);
+                if (m) latest = { type: m[2], val: parseInt(m[3], 10) };
+            } else if (l.startsWith('bestmove')) {
+                AppState.sfWorker.onmessage = null;
+                _handleDrawResponse(latest, sfToMove);
+            }
+        };
+        AppState.sfWorker.onmessage = onMsg;
+        AppState.sfWorker.postMessage('ucinewgame');
+        AppState.sfWorker.postMessage('position fen ' + fen);
+        AppState.sfWorker.postMessage('go depth 12');
+    }
+
+    function _handleDrawResponse(latest, sfToMove) {
+        if (!latest) { toast('Stockfish declined the draw'); return; }
+        // latest.val is from side-to-move's perspective. Normalize to Stockfish's.
+        let sfScore = latest.val * (sfToMove ? 1 : -1);
+        if (latest.type === 'mate') sfScore = sfScore > 0 ? 99999 : -99999;
+        // Accept only if Stockfish is equal or worse. Threshold in centipawns.
+        if (sfScore <= 0) {
+            forcedVerdict = 'draw';
+            _showPracticeButtons(false);
+            toast('Stockfish accepted the draw');
+            stopPlayMode();
+        } else {
+            toast('Stockfish declined the draw');
+        }
     }
 
     function stopAndAbandon() {
@@ -174,7 +216,7 @@ const Practice = (function () {
         active = null;
         pendingSave = null;
         forcedVerdict = null;
-        _showResignButtons(false);
+        _showPracticeButtons(false);
     }
     function isActive() { return !!active; }
     function getActive() { return active; }
@@ -236,7 +278,7 @@ const Practice = (function () {
         startFromDetail, captureEndOfGame, confirmSave, discard, isActive,
         loadPracticeHistory, loadPracticeTab, loadLevels, getLevels,
         editVerdict, deleteGame, guessVerdict, getActive, getPendingSave,
-        resign, stopAndAbandon,
+        resign, stopAndAbandon, offerDraw,
     };
 })();
 

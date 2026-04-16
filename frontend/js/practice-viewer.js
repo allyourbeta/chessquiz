@@ -32,6 +32,9 @@ const PracticeViewer = (function () {
             toast('Failed to load practice game', true); return;
         }
 
+        // Ensure engine level metadata is loaded so we can show depth/skill.
+        try { if (window.Practice) await Practice.loadLevels(); } catch (_) {}
+
         // Fetch root position FEN so we can anchor the replay.
         try {
             const rp = await fetch(`${API}/positions/${_game.root_position_id}`);
@@ -95,21 +98,34 @@ const PracticeViewer = (function () {
         const youColor = g.user_color === 'white' ? 'White' : 'Black';
         const sfColor = g.user_color === 'white' ? 'Black' : 'White';
         const date = g.created_at ? new Date(g.created_at).toLocaleString() : '';
-        const verdict = g.user_verdict || g.engine_verdict || '?';
-        const vcls = verdict === 'win' ? 'correct' : (verdict === 'loss' ? 'incorrect' : 'text-muted');
+        const verdict = g.user_verdict || g.engine_verdict;
+        const result = PracticeUI.formatResult(verdict, g.user_color);
+        const vcls = PracticeUI.resultClass(verdict);
+        const sfLabel = _engineLabel(g.engine_level);
 
         document.getElementById('pv-title').textContent =
-            `You (${youColor}) vs Stockfish ${g.engine_level} (${sfColor})`;
+            `You (${youColor}) vs ${sfLabel} (${sfColor})`;
         document.getElementById('pv-meta').textContent =
             `${date} · ${g.move_count} moves · starting eval ${_fmtEval(g.starting_eval)} · final eval ${_fmtEval(g.final_eval)}`;
+        const verdictLabel = verdict || 'unknown';
         document.getElementById('pv-verdict').innerHTML =
-            `Verdict: <span class="${vcls}"><strong>${verdict}</strong></span>` +
+            `Result: <span class="${vcls}"><strong>${result}</strong></span>` +
+            ` <span class="text-muted" style="font-size:11px">(${verdictLabel})</span>` +
             (g.user_verdict && g.engine_verdict && g.user_verdict !== g.engine_verdict
-                ? ` <span class="text-muted" style="font-size:11px">(engine: ${g.engine_verdict})</span>` : '');
+                ? ` <span class="text-muted" style="font-size:11px">engine suggested: ${g.engine_verdict}</span>` : '');
         document.getElementById('pv-notes').value = g.notes || '';
 
         _renderMoves();
         BoardManager.create('pv-board', _fens[_ply] || _rootFen, { flipped: _flipped });
+    }
+
+    function _engineLabel(level) {
+        const levels = window.Practice ? Practice.getLevels() : null;
+        if (levels && levels[level]) {
+            const l = levels[level];
+            return `Stockfish (${level} — depth ${l.depth}, skill ${l.skill})`;
+        }
+        return `Stockfish (${level})`;
     }
 
     function _fmtEval(v) { return (v == null || isNaN(v)) ? '—' : (+v).toFixed(2); }

@@ -3,17 +3,38 @@
 
 const PracticeUI = (function () {
 
+    // Map (verdict, user_color) -> standard chess result notation.
+    // Abandoned / unknown -> em-dash. Draw -> ½-½. Wins/losses resolved
+    // to the absolute "1-0" / "0-1" from the game's perspective.
+    function formatResult(verdict, userColor) {
+        if (!verdict) return '—';
+        if (verdict === 'draw') return '½-½';
+        if (verdict === 'abandoned') return '—';
+        const isWhite = userColor === 'white';
+        if (verdict === 'win') return isWhite ? '1-0' : '0-1';
+        if (verdict === 'loss') return isWhite ? '0-1' : '1-0';
+        return '—';
+    }
+
+    function resultClass(verdict) {
+        if (verdict === 'win') return 'correct';
+        if (verdict === 'loss') return 'incorrect';
+        return 'text-muted';
+    }
+
     function showSaveModal(active, pending) {
         const m = document.getElementById('practice-save-modal');
         if (!m) return;
         const body = document.getElementById('practice-save-body');
         const verdict = Practice.guessVerdict();
+        const suggestedResult = formatResult(verdict, active.userColor);
         body.innerHTML = `
             <p style="margin-bottom:8px">
                 <strong>${pending.moveCount} moves</strong> as ${active.userColor} vs Stockfish (${active.level})
             </p>
             <p class="text-muted" style="font-size:12px;margin-bottom:12px">
-                Suggested verdict: <strong>${verdict}</strong>
+                Suggested result: <strong>${suggestedResult}</strong>
+                ${verdict !== '?' ? `<span style="margin-left:6px">(${verdict})</span>` : ''}
             </p>
             <label>Notes (optional)</label>
             <textarea id="practice-save-notes" placeholder="Your reflections on this game..."></textarea>
@@ -41,6 +62,7 @@ const PracticeUI = (function () {
             return;
         }
         const wr = (s.win_rate * 100).toFixed(0);
+        const decided = s.wins + s.draws + s.losses;
         let html = `
             <div style="font-size:13px;margin-bottom:6px">
                 <strong>${s.total_games}</strong> games &mdash;
@@ -50,17 +72,23 @@ const PracticeUI = (function () {
                 ${s.abandoned ? `(${s.abandoned} abandoned)` : ''}
                 &middot; win rate <strong>${wr}%</strong>
             </div>
+            <div style="font-size:12px;margin-bottom:4px">
+                vs Stockfish: <strong>${s.wins}/${decided}</strong> wins (${wr}%)
+            </div>
             <div class="text-muted" style="font-size:12px;margin-bottom:8px">
                 Avg ${s.avg_move_count.toFixed(1)} moves, avg final eval
                 ${s.avg_final_eval != null ? s.avg_final_eval.toFixed(2) : '—'}
             </div>`;
-        if (s.by_engine_level && s.by_engine_level.length) {
-            html += '<div style="font-size:12px">';
+        if (s.by_engine_level && s.by_engine_level.length > 1) {
+            html += `<details style="font-size:12px;margin-bottom:6px">
+                <summary class="text-muted" style="cursor:pointer">Breakdown by level</summary>
+                <div style="padding:4px 0 0 12px">`;
             s.by_engine_level.forEach(b => {
                 const br = (b.win_rate * 100).toFixed(0);
-                html += `<div>vs Stockfish <strong>${b.engine_level}</strong>: ${b.wins}/${b.total} wins (${br}%)</div>`;
+                const bd = b.wins + b.draws + b.losses;
+                html += `<div>Stockfish <strong>${b.engine_level}</strong>: ${b.wins}/${bd} wins (${br}%)</div>`;
             });
-            html += '</div>';
+            html += '</div></details>';
         }
         el.innerHTML = html;
     }
@@ -68,11 +96,12 @@ const PracticeUI = (function () {
     function _renderRecent(el, games) {
         if (!games || !games.length) { el.innerHTML = ''; return; }
         const rows = games.slice(0, 10).map(g => {
-            const v = g.user_verdict || g.engine_verdict || '?';
-            const vcls = v === 'win' ? 'correct' : (v === 'loss' ? 'incorrect' : 'text-muted');
+            const v = g.user_verdict || g.engine_verdict;
+            const vcls = resultClass(v);
+            const result = formatResult(v, g.user_color);
             const date = g.created_at ? new Date(g.created_at).toLocaleDateString() : '';
             return `<div class="pos-item" style="padding:6px 10px;font-size:12px;cursor:pointer" onclick="PracticeViewer.open(${g.id})" title="Click to review this game">
-                <span style="flex:1">${date} &mdash; ${g.user_color} vs ${g.engine_level}, ${g.move_count} moves &middot; <span class="${vcls}">${v}</span></span>
+                <span style="flex:1">${date} &mdash; ${g.user_color} vs Stockfish, ${g.move_count} moves &middot; <span class="${vcls}"><strong>${result}</strong></span></span>
                 <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();Practice.editVerdict(${g.id})">verdict</button>
                 <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();Practice.deleteGame(${g.id})">×</button>
             </div>`;
@@ -127,6 +156,7 @@ const PracticeUI = (function () {
     return {
         showSaveModal, hideSaveModal, renderHistory,
         renderPositionsList, populateLevelSelect,
+        formatResult, resultClass,
     };
 })();
 

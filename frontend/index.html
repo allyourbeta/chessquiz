@@ -145,6 +145,7 @@
         <div id="play-side-msg" class="play-msg" style="display:none"></div>
         <div id="play-controls" class="nav-btns" style="display:none">
           <button class="btn btn-sm" onclick="if(window.Practice&&Practice.isActive())Practice.stopAndAbandon();stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-sm" onclick="Practice.offerDraw()" id="gv-draw-btn" style="display:none">Offer Draw</button>
           <button class="btn btn-danger btn-sm" onclick="Practice.resign()" id="gv-resign-btn" style="display:none">Resign</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="gvFlip()">Flip</button>
@@ -249,6 +250,7 @@
         <div id="detail-play-side-msg" class="play-msg" style="display:none"></div>
         <div id="detail-play-controls" class="nav-btns" style="display:none">
           <button class="btn btn-sm" onclick="if(window.Practice&&Practice.isActive())Practice.stopAndAbandon();stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-sm" onclick="Practice.offerDraw()" id="detail-draw-btn" style="display:none">Offer Draw</button>
           <button class="btn btn-danger btn-sm" onclick="Practice.resign()" id="detail-resign-btn" style="display:none">Resign</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
