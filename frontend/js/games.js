@@ -21,23 +21,23 @@ async function loadCollections() {
 function renderGamesList() {
     const el = document.getElementById('games-list');
     if (!AppState.allGames.length) {
-        el.innerHTML = '<div class="empty-state"><p style="font-family:\'Instrument Serif\',serif;font-size:20px">No games yet</p><p>Import PGN games to get started.</p></div>';
+        el.innerHTML = '<div class="empty-state"><p>No games yet</p><p>Import PGN games to get started.</p></div>';
         return;
     }
     el.innerHTML = AppState.allGames.map(g => {
         const w = g.white || '?';
         const b = g.black || '?';
         const res = g.result || '*';
-        const eco = g.eco ? `<span style="color:var(--text-muted);font-size:12px">${g.eco}</span>` : '';
-        const opening = g.opening ? `<span style="font-size:12px;color:var(--text-muted)">${g.opening}</span>` : '';
+        const eco = g.eco ? `<span class="text-muted" style="font-size:12px">${g.eco}</span>` : '';
+        const opening = g.opening ? `<span class="text-muted" style="font-size:12px">${g.opening}</span>` : '';
         const tags = g.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
         return `<div class="pos-item" onclick="openGame(${g.id})">
             <div style="flex:1">
-                <div style="font-size:14px">${w} vs ${b} <span style="color:var(--text-muted)">${res}</span></div>
+                <div style="font-size:14px;font-weight:500">${w} vs ${b} <span class="text-muted">${res}</span></div>
                 <div style="margin-top:4px">${eco} ${opening}</div>
                 <div style="margin-top:4px">${tags}</div>
             </div>
-            <div style="font-size:12px;color:var(--text-muted)">${g.move_count || 0} moves</div>
+            <div class="text-muted" style="font-size:12px">${g.move_count || 0} moves</div>
         </div>`;
     }).join('');
 }

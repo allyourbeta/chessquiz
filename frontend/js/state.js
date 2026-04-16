@@ -27,6 +27,7 @@ const AppState = {
     playBoardId: null,
     playStartFen: null,
     playChess: null,
+    soundMuted: false,
 };
 
 window.AppState = AppState;

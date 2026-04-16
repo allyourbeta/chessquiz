@@ -69,8 +69,8 @@ function highlightCurrentMove() {
     });
     const active = document.querySelector(`#gv-moves .move-cell[data-ply="${AppState.currentPly}"]`);
     if (active) {
-        active.style.background = 'var(--accent-dim)';
-        active.style.color = 'var(--bg)';
+        active.style.background = 'var(--accent-light)';
+        active.style.color = 'var(--accent-dim)';
         active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 }

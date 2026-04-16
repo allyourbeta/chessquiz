@@ -13,7 +13,7 @@ async function startQuiz() {
 function nextQuizQuestion() {
     if (!AppState.quizQueue.length) {
         document.getElementById('quiz-controls').innerHTML =
-            `<div style="text-align:center"><p style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:12px">Quiz Complete!</p><p style="color:var(--text-muted)">${AppState.quizCorrect}/${AppState.quizTotal} correct</p><button class="btn btn-primary" onclick="startQuiz()" style="margin-top:12px">Restart</button></div>`;
+            `<div style="text-align:center"><p class="section-title" style="margin-bottom:12px">Quiz Complete!</p><p class="text-muted">${AppState.quizCorrect}/${AppState.quizTotal} correct</p><button class="btn btn-primary" onclick="startQuiz()" style="margin-top:12px">Restart</button></div>`;
         return;
     }
     AppState.quizCurrent = AppState.quizQueue.pop();
@@ -58,7 +58,7 @@ function updateQuizStats() {
 
 function renderQuizTagFilters() {
     document.getElementById('quiz-tag-filters').innerHTML =
-        `<span style="font-size:12px;color:var(--text-muted);margin-right:8px">Filter:</span><span class="tag tag-filter ${!AppState.quizTagFilters.length ? 'selected' : ''}" onclick="toggleQuizTag(null)">All</span>` +
+        `<span class="text-muted" style="font-size:12px;margin-right:8px">Filter:</span><span class="tag tag-filter ${!AppState.quizTagFilters.length ? 'selected' : ''}" onclick="toggleQuizTag(null)">All</span>` +
         AppState.allTags.map(t => `<span class="tag tag-filter ${AppState.quizTagFilters.includes(t.name) ? 'selected' : ''}" onclick="toggleQuizTag('${t.name}')">#${t.name}</span>`).join('');
 }
 

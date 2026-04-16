@@ -81,7 +81,7 @@ function editPosition() {
 function renderPositionsList() {
     const el = document.getElementById('positions-list');
     if (!AppState.allPositions.length) {
-        el.innerHTML = `<div class="empty-state"><p style="font-family:'Instrument Serif',serif;font-size:20px">No positions yet</p><p>Click "Add New" to save your first chess position.</p></div>`;
+        el.innerHTML = `<div class="empty-state"><p>No positions yet</p><p>Click "Add New" to save your first chess position.</p></div>`;
         return;
     }
     el.innerHTML = AppState.allPositions.map(p =>
@@ -122,6 +122,15 @@ function flipBoard() {
 
 function flipDetailBoard() {
     BoardManager.flip('detail-board');
+}
+
+async function deleteFromDetail() {
+    const id = AppState.currentDetailId;
+    if (!id || !confirm('Delete this position?')) return;
+    if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
+        toast('Position deleted');
+        showView('positions');
+    }
 }
 
 function clearForm() {
@@ -196,6 +205,7 @@ window.loadFen = loadFen;
 window.setStartPos = setStartPos;
 window.flipBoard = flipBoard;
 window.flipDetailBoard = flipDetailBoard;
+window.deleteFromDetail = deleteFromDetail;
 window.clearForm = clearForm;
 window.setupAutoLoad = setupAutoLoad;
 window.setupKeyboardSave = setupKeyboardSave;

@@ -70,7 +70,7 @@ function renderEvalDisplay() {
     const el = document.getElementById('engine-eval-display');
     if (!el || !AppState.engineEval) return;
     const ev = AppState.engineEval;
-    el.innerHTML = `<span style="font-weight:500;font-size:14px">${ev.score}</span> <span style="color:var(--text-muted);font-size:11px">d${ev.depth}</span> <span style="font-size:12px">${ev.line}</span>`;
+    el.innerHTML = `<span style="font-weight:600;font-size:14px">${ev.score}</span> <span class="text-muted" style="font-size:11px">d${ev.depth}</span> <span style="font-size:12px">${ev.line}</span>`;
 }
 
 function updateEvalBar(fen, scoreType, scoreVal) {

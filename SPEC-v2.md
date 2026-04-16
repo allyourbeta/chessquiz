@@ -844,7 +844,185 @@ Panel alongside game viewer or standalone:
 
 ---
 
-## Phase 10: Repertoire Builder + Trainer
+## Phase 10: Practice Sessions (Drill from Saved Positions)
+
+**Goal**: Make every saved Position a practice arena. Play the engine repeatedly from any saved position, auto-save each game, aggregate stats across all attempts, and surface a per-position opening tree built from your own practice games.
+
+**The study loop this enables**:
+1. Save an interesting position (a Smith-Morra tabiya, a tactic you missed, an endgame study)
+2. Click "Practice this position" — play the engine from there
+3. Game ends or you stop — it's auto-saved as a PracticeGame linked to that root Position
+4. Over time, accumulate dozens or hundreds of attempts per position
+5. See your win rate, common mistakes, and which moves you tend to play (per-position opening tree of YOUR games)
+
+This is fundamentally different from "Play from here" in Phase 7 (which is throwaway). Practice games are persistent, indexed, and aggregated.
+
+### 10A: Models
+
+Add to `backend/models/practice_models.py`:
+
+```python
+class PracticeGame(Base):
+    __tablename__ = "practice_games"
+    id              = Column(Integer, primary_key=True, index=True)
+    root_position_id = Column(Integer, ForeignKey("positions.id"),
+                              nullable=False, index=True)
+    pgn_text        = Column(Text, nullable=False)   # Full game from root position
+    user_color      = Column(String, nullable=False) # "white" or "black"
+    final_fen       = Column(String, nullable=False)
+    move_count      = Column(Integer, nullable=False)
+
+    # Outcome tracking — both engine judgment and user override
+    engine_verdict  = Column(String, nullable=True)  # "win"/"draw"/"loss" (auto-computed)
+    user_verdict    = Column(String, nullable=True)  # "win"/"draw"/"loss"/"abandoned"
+    final_eval      = Column(Float, nullable=True)   # Stockfish eval at end
+    starting_eval   = Column(Float, nullable=True)   # Stockfish eval at root position
+
+    # Engine details — for tracking which engine/strength played
+    engine_name     = Column(String, nullable=False, default="Stockfish")
+    engine_level    = Column(String, nullable=False) # e.g. "depth-12", "skill-15"
+
+    notes           = Column(Text, nullable=True)    # User's reflections on this game
+    created_at      = Column(DateTime, default=utcnow)
+
+    root_position   = relationship("Position", back_populates="practice_games")
+```
+
+Update Position model to add reverse relationship:
+```python
+practice_games = relationship("PracticeGame", back_populates="root_position",
+                              cascade="all, delete-orphan")
+```
+
+Reuse existing PositionIndex table for Zobrist indexing of practice game positions
+(so the per-position opening tree can use the same query infrastructure).
+
+### 10B: Engine Configuration
+
+Create `backend/services/engine_service.py`:
+
+```python
+ENGINE_LEVELS = {
+    "easy":   {"name": "Stockfish", "depth": 5,  "skill": 5},
+    "medium": {"name": "Stockfish", "depth": 10, "skill": 12},
+    "hard":   {"name": "Stockfish", "depth": 15, "skill": 18},
+    "max":    {"name": "Stockfish", "depth": 20, "skill": 20},
+}
+```
+
+Frontend reads this config to populate a difficulty dropdown. Each PracticeGame
+records the engine name and level used, so future engines (Lc0, Komodo, etc.)
+can be added without breaking existing data.
+
+### 10C: API Endpoints
+
+Create `backend/api/practice.py`:
+
+```
+POST   /api/practice/                  — Save a practice game (called when game ends or user stops)
+                                         body: { root_position_id, pgn_text, user_color,
+                                                 engine_name, engine_level,
+                                                 final_eval, starting_eval, user_verdict? }
+GET    /api/practice/                   — List practice games (filter: ?root_position_id=)
+GET    /api/practice/{id}              — Full detail
+PUT    /api/practice/{id}              — Update verdict, notes
+DELETE /api/practice/{id}              — Delete
+GET    /api/practice/stats/{position_id} — Aggregate stats for a root position:
+                                         { total_games, wins, draws, losses, abandoned,
+                                           win_rate, avg_move_count, avg_final_eval,
+                                           by_engine_level: {...} }
+GET    /api/practice/tree/{position_id} — Per-position opening tree (Phase 6 logic
+                                         scoped to practice games from this position)
+```
+
+**Engine verdict logic** (auto-computed when game saved):
+```python
+def compute_engine_verdict(starting_eval, final_eval, user_color):
+    """Determine win/draw/loss based on eval change."""
+    # If final position is checkmate, that's clear
+    # Otherwise: did eval improve significantly for user_color?
+    delta = final_eval - starting_eval
+    if user_color == "black":
+        delta = -delta
+    if delta > 1.0:  return "win"
+    if delta < -1.0: return "loss"
+    return "draw"
+```
+
+User can override via PUT to /api/practice/{id} with user_verdict.
+
+### 10D: Frontend — Practice from Position
+
+In Position detail view, add "Practice this position" button (replaces or supplements
+"Play from here"). When clicked:
+1. Show difficulty dropdown (Easy/Medium/Hard/Max — from ENGINE_LEVELS)
+2. Show color selector (White/Black, defaults to whose turn it is in the FEN)
+3. Click "Start" — board switches to play mode, engine plays at chosen level
+4. Game proceeds normally
+5. When game ends (checkmate/stalemate/draw) OR user clicks "Stop":
+   - Show modal: "Save this practice game?"
+   - Pre-filled with engine verdict, color played, move count
+   - Buttons: "Save" (default), "Save & Add Notes", "Discard"
+   - Easy delete from saved list later
+
+Default behavior: save unless user explicitly discards. This matches your stated
+preference of "saved as default but easy to delete."
+
+### 10E: Frontend — Practice History (per-position)
+
+In Position detail view, add new section "Practice History":
+- Total games / wins / draws / losses / win rate
+- "Per-engine-level" breakdown (e.g. "vs Stockfish Easy: 8/10 wins, vs Stockfish Hard: 2/15 wins")
+- List of recent practice games (date, color, verdict, move count)
+- Click a practice game -> opens it in game viewer (read-only, can step through moves)
+- Per-position opening tree: "From this position, you played Bc4 in 12 games (75% win rate),
+  Qe2 in 8 games (50% win rate)"
+- Buttons on each practice game: edit verdict, add notes, delete
+
+### 10F: Frontend — Dedicated Practice Tab
+
+New nav tab: "Practice"
+- Lists all positions that have practice games, sorted by recent activity
+- Each row: position thumbnail, title, total practice games, win rate, last played
+- Click row -> opens that Position's detail view (which has the Practice History section)
+- Filter/sort: by tag, by win rate (find your weakest positions to drill), by
+  engine level, by recency
+- Quick "Practice again" button per row
+
+### 10G: Tests
+
+Create `test_practice.py`:
+- Save practice game with valid data -> 201
+- Engine verdict auto-computed correctly (eval delta > 1.0 -> win, etc.)
+- User can override verdict via PUT
+- Stats endpoint returns correct aggregates
+- Stats breakdown by engine_level works
+- Per-position opening tree returns correct moves/counts/win-rates
+- Delete practice game does not delete root position
+- Delete root position cascades to delete practice games
+- Filter practice list by root_position_id
+
+### Checkpoint 10
+```
+Manual testing:
+- [ ] "Practice this position" button in Position detail view
+- [ ] Difficulty dropdown shows Easy/Medium/Hard/Max
+- [ ] Color selector works
+- [ ] Engine plays at selected difficulty (visibly weaker on Easy)
+- [ ] On game end: prompt to save with engine verdict pre-filled
+- [ ] Saved game appears in Practice History section
+- [ ] Stats update (win rate, total games, etc.)
+- [ ] Per-position opening tree shows moves played in your practice games
+- [ ] Click a practice game -> opens in viewer, can step through
+- [ ] Can edit verdict, add notes, delete
+- [ ] Practice tab in nav shows all positions with practice activity
+- [ ] Filter/sort works on Practice tab
+- [ ] python test.py && python test_games.py && python test_game_api.py && python test_practice.py
+```
+
+---
+
+## Phase 11: Repertoire Builder + Trainer
 
 **Goal**: Define your opening repertoire as a move tree and train it with spaced repetition.
 
@@ -861,7 +1039,7 @@ Panel alongside game viewer or standalone:
 
 ---
 
-## Phase 11: Game Auto-Annotation + Eval Graph
+## Phase 12: Game Auto-Annotation + Eval Graph
 
 ### 10A: Auto-Annotation
 - Run Stockfish WASM through every move of a game
@@ -890,8 +1068,9 @@ Panel alongside game viewer or standalone:
 | 7 | Engine integration + play vs engine | Phase 5 |
 | 8 | Variation tree navigation (clickable sub-lines) | Phase 5 |
 | 9 | Collection browser + batch review + search UI | Phase 5 |
-| 10 | Repertoire builder + trainer | Phase 6 + 8 |
-| 11 | Auto-annotation + eval graph | Phase 7 |
+| 10 | Practice sessions (drill from saved positions) | Phase 6 + 7 |
+| 11 | Repertoire builder + trainer | Phase 6 + 8 |
+| 12 | Auto-annotation + eval graph | Phase 7 |
 
 **Phases 1+2 can run in parallel with 3+4** (frontend vs backend).
 

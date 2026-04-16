@@ -83,6 +83,7 @@ const BoardManager = {
         }
         board._fen = fen;
         board.setPosition(fen, true);
+        if (window.playMoveSound) playMoveSound();
     },
 
     flip(elementId) {

@@ -45,7 +45,7 @@ function renderOpeningTree() {
     }
 
     let html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html += '<tr style="color:var(--text-muted);border-bottom:1px solid var(--border)">';
+    html += '<tr class="text-muted" style="border-bottom:1px solid var(--border)">';
     html += '<th style="text-align:left;padding:4px 8px">Move</th>';
     html += '<th style="text-align:right;padding:4px 6px">Games</th>';
     html += '<th style="text-align:right;padding:4px 6px">White</th>';
@@ -68,9 +68,9 @@ function renderOpeningTree() {
         html += `<td style="text-align:right;padding:4px 6px;color:var(--text-muted)">${bPct}%</td>`;
         html += '<td style="padding:4px 6px">';
         html += `<div style="display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--border)">`;
-        if (wPct > 0) html += `<div style="width:${wPct}%;background:#e8e6e3"></div>`;
+        if (wPct > 0) html += `<div style="width:${wPct}%;background:#f0f0f0"></div>`;
         if (dPct > 0) html += `<div style="width:${dPct}%;background:var(--text-muted)"></div>`;
-        if (bPct > 0) html += `<div style="width:${bPct}%;background:#333"></div>`;
+        if (bPct > 0) html += `<div style="width:${bPct}%;background:#555"></div>`;
         html += '</div></td>';
         html += '</tr>';
     }

@@ -3,94 +3,34 @@
 <head>
   <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#c9a84c">
+  <meta name="theme-color" content="#4a90d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="ChessQuiz">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="icon" href="/favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChessQuiz</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cm-chessboard@8/assets/chessboard.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
-    :root {
-      --bg: #1a1a1f; --surface: #242429; --surface-hover: #2e2e35;
-      --border: #3a3a42; --text: #e8e6e3; --text-muted: #8a8a95;
-      --accent: #c9a84c; --accent-dim: #8a7535; --green: #6abf69;
-      --red: #e05555; --tag-bg: #2a2a35; --radius: 8px;
-      --light-sq: #f0d9b5; --dark-sq: #b58863;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'DM Mono',monospace; background:var(--bg); color:var(--text); min-height:100vh; }
-    header { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; border-bottom:1px solid var(--border); }
-    header h1 { font-family:'Instrument Serif',serif; font-size:28px; font-weight:400; color:var(--accent); }
-    nav { display:flex; gap:4px; }
-    nav button { background:none; border:1px solid transparent; color:var(--text-muted); font-family:'DM Mono',monospace; font-size:13px; padding:8px 16px; border-radius:var(--radius); cursor:pointer; transition:all .2s; }
-    nav button:hover { color:var(--text); background:var(--surface); }
-    nav button.active { color:var(--accent); border-color:var(--accent-dim); background:var(--surface); }
-    .container { max-width:1100px; margin:0 auto; padding:32px; }
-    .view { display:none; } .view.active { display:block; }
-    .board-wrap { width:400px; height:400px; }
-    .board-area { display:grid; grid-template-columns:auto 1fr; gap:32px; align-items:start; }
-    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
-    .panel h2 { font-family:'Instrument Serif',serif; font-size:20px; font-weight:400; margin-bottom:16px; color:var(--accent); }
-    label { display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; margin-top:16px; }
-    label:first-child { margin-top:0; }
-    input[type="text"],textarea { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:'DM Mono',monospace; font-size:13px; padding:10px 12px; border-radius:var(--radius); outline:none; transition:border-color .2s; }
-    input[type="text"]:focus,textarea:focus { border-color:var(--accent-dim); }
-    textarea { resize:vertical; min-height:80px; }
-    .btn { display:inline-flex; align-items:center; gap:6px; font-family:'DM Mono',monospace; font-size:13px; padding:10px 20px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; transition:all .2s; }
-    .btn:hover { background:var(--surface-hover); border-color:var(--accent-dim); }
-    .btn-primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:500; }
-    .btn-primary:hover { background:#d4b35a; }
-    .btn-success { border-color:var(--green); color:var(--green); } .btn-success:hover { background:rgba(106,191,105,.1); }
-    .btn-danger { border-color:var(--red); color:var(--red); } .btn-danger:hover { background:rgba(224,85,85,.1); }
-    .btn-sm { padding:6px 12px; font-size:12px; }
-    .btn-row { display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; }
-    .tag { display:inline-block; background:var(--tag-bg); color:var(--accent); font-size:12px; padding:4px 10px; border-radius:20px; margin:2px 4px 2px 0; border:1px solid var(--border); }
-    .tag-filter { cursor:pointer; transition:all .2s; }
-    .tag-filter:hover,.tag-filter.selected { background:var(--accent-dim); color:var(--bg); border-color:var(--accent); }
-    .pos-list { display:flex; flex-direction:column; gap:8px; }
-    .pos-item { display:flex; align-items:center; gap:16px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all .2s; }
-    .pos-item:hover { border-color:var(--accent-dim); background:var(--surface-hover); }
-    .pos-item .title { flex:1; font-size:14px; }
-    .mini-board { display:inline-grid; grid-template-columns:repeat(8,1fr); width:48px; height:48px; border-radius:3px; overflow:hidden; flex-shrink:0; }
-    .mini-board .mini-sq { display:flex; align-items:center; justify-content:center; font-size:4.5px; line-height:1; position:relative; aspect-ratio:1; overflow:hidden; }
-    .mini-board .mini-sq.light { background:var(--light-sq); } .mini-board .mini-sq.dark { background:var(--dark-sq); }
-    .quiz-board-area { display:flex; flex-direction:column; align-items:center; gap:24px; }
-    .quiz-answer { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; max-width:600px; width:100%; }
-    .quiz-answer h3 { font-family:'Instrument Serif',serif; font-weight:400; font-size:18px; color:var(--accent); margin-bottom:12px; }
-    .quiz-answer pre { white-space:pre-wrap; font-family:'DM Mono',monospace; font-size:13px; color:var(--text-muted); line-height:1.6; }
-    .quiz-controls { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-    .stats-bar { text-align:center; font-size:13px; color:var(--text-muted); }
-    .stats-bar span { margin:0 12px; } .stats-bar .correct { color:var(--green); } .stats-bar .incorrect { color:var(--red); }
-    .engine-output { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:12px; font-size:12px; color:var(--text-muted); min-height:60px; margin-top:8px; white-space:pre-wrap; font-family:'DM Mono',monospace; }
-    .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
-    .toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--green); color:var(--green); padding:12px 20px; border-radius:var(--radius); font-family:'DM Mono',monospace; font-size:13px; z-index:1000; animation:slideUp .3s ease; }
-    .toast.error { border-color:var(--red); color:var(--red); }
-    .tree-row:hover { background:var(--surface-hover); }
-    .eval-bar { width:20px; height:400px; background:#333; border-radius:4px; position:relative; overflow:hidden; flex-shrink:0; }
-    .eval-bar-fill { position:absolute; bottom:0; width:100%; height:50%; background:#e8e6e3; transition:height .3s ease; }
-    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-    @media(max-width:860px) { .board-area{grid-template-columns:1fr} .board-wrap{width:100%;height:auto;aspect-ratio:1;max-width:400px} .container{padding:16px} }
-  </style>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/components.css">
 </head>
 <body>
 <header>
-  <h1>♔ ChessQuiz</h1>
+  <h1>ChessQuiz</h1>
   <nav>
     <button class="active" onclick="showView('positions')">Positions</button>
     <button onclick="showView('add')">Add New</button>
     <button onclick="showView('games')">Games</button>
     <button onclick="showView('quiz')">Quiz</button>
+    <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
 </header>
 <div class="container">
   <div id="view-positions" class="view active">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <h2 style="font-family:'Instrument Serif',serif;font-size:24px;font-weight:400">Your Positions</h2>
-      <div id="tag-filters" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    <div class="view-header">
+      <h2>Your Positions</h2>
+      <div id="tag-filters" class="tag-row"></div>
     </div>
     <div id="positions-list" class="pos-list"></div>
   </div>
@@ -120,7 +60,7 @@
         <label>Stockfish Analysis</label>
         <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-sm" onclick="runStockfish()" id="sf-btn">Run Stockfish</button>
-          <span id="sf-status" style="font-size:12px;color:var(--text-muted)"></span>
+          <span id="sf-status" class="text-muted" style="font-size:12px"></span>
         </div>
         <div class="engine-output" id="sf-output">Engine output will appear here...</div>
         <textarea id="pos-stockfish" placeholder="Or paste analysis manually..." style="margin-top:8px"></textarea>
@@ -134,10 +74,10 @@
   </div>
   <div id="view-quiz" class="view">
     <div class="quiz-board-area">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="quiz-tag-filters"></div>
+      <div class="tag-row" id="quiz-tag-filters" style="margin-bottom:8px"></div>
       <div id="quiz-board" class="board-wrap"></div>
       <div id="quiz-info" style="text-align:center">
-        <p id="quiz-title" style="font-family:'Instrument Serif',serif;font-size:22px;margin-bottom:4px"></p>
+        <p id="quiz-title" class="section-title" style="margin-bottom:4px"></p>
         <div id="quiz-tags-display" style="margin-bottom:12px"></div>
       </div>
       <div class="quiz-controls" id="quiz-controls">
@@ -153,15 +93,15 @@
     </div>
   </div>
   <div id="view-games" class="view">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <h2 style="font-family:'Instrument Serif',serif;font-size:24px;font-weight:400">Games</h2>
+    <div class="view-header">
+      <h2>Games</h2>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="game-search-input" placeholder="Search players, events..." style="width:200px" onkeyup="onGameSearch()">
-        <select id="game-collection-filter" class="btn btn-sm" onchange="onCollectionFilterChange(this)" style="background:var(--surface);color:var(--text);border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;padding:6px 10px;border-radius:var(--radius)"></select>
+        <select id="game-collection-filter" class="select-input" onchange="onCollectionFilterChange(this)"></select>
         <button class="btn btn-primary btn-sm" onclick="showImportModal()">Import PGN</button>
       </div>
     </div>
-    <div id="game-tag-filters" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div id="game-tag-filters" class="tag-row" style="margin-bottom:16px"></div>
     <div id="games-list" class="pos-list"></div>
   </div>
   <div id="view-game-viewer" class="view">
@@ -171,16 +111,16 @@
           <div class="eval-bar"><div class="eval-bar-fill" id="eval-bar-fill"></div></div>
           <div id="game-board" class="board-wrap"></div>
         </div>
-        <div id="engine-eval-display" style="font-size:12px;color:var(--text);margin-top:6px;min-height:18px;font-family:'DM Mono',monospace"></div>
-        <div id="gv-nav-btns" style="display:flex;gap:6px;margin-top:6px;justify-content:center">
+        <div id="engine-eval-display" class="eval-display"></div>
+        <div id="gv-nav-btns" class="nav-btns">
           <button class="btn btn-sm" onclick="gvFirst()">|&lt;</button>
           <button class="btn btn-sm" onclick="gvPrev()">&lt;</button>
           <button class="btn btn-sm" onclick="gvNext()">&gt;</button>
           <button class="btn btn-sm" onclick="gvLast()">&gt;|</button>
           <button class="btn btn-sm" onclick="gvFlip()" style="margin-left:8px">Flip</button>
         </div>
-        <div id="play-side-msg" style="display:none;text-align:center;font-size:12px;color:var(--accent);margin-top:4px"></div>
-        <div id="play-controls" style="display:none;gap:6px;margin-top:6px;justify-content:center">
+        <div id="play-side-msg" class="play-msg" style="display:none"></div>
+        <div id="play-controls" class="nav-btns" style="display:none">
           <button class="btn btn-sm" onclick="stopPlayMode()">Stop Playing</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="gvFlip()">Flip</button>
@@ -188,14 +128,14 @@
       </div>
       <div class="panel">
         <div style="margin-bottom:16px">
-          <span id="gv-white" style="font-size:15px;font-weight:500"></span>
-          <span style="color:var(--text-muted)"> vs </span>
-          <span id="gv-black" style="font-size:15px;font-weight:500"></span>
-          <span id="gv-result" style="color:var(--accent);margin-left:8px"></span>
+          <span id="gv-white" style="font-size:15px;font-weight:600"></span>
+          <span class="text-muted"> vs </span>
+          <span id="gv-black" style="font-size:15px;font-weight:600"></span>
+          <span id="gv-result" class="accent-text" style="margin-left:8px"></span>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px"><span id="gv-event"></span> <span id="gv-date"></span></div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px" id="gv-opening"></div>
-        <div id="gv-moves" style="max-height:280px;overflow-y:auto;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);padding:8px"></div>
+        <div class="text-muted" style="font-size:12px;margin-bottom:4px"><span id="gv-event"></span> <span id="gv-date"></span></div>
+        <div class="text-muted" style="font-size:12px;margin-bottom:12px" id="gv-opening"></div>
+        <div id="gv-moves" class="moves-panel"></div>
         <div id="gv-tags" style="margin-bottom:12px"></div>
         <div class="btn-row">
           <button class="btn btn-sm" onclick="showSavePositionModal()">Save Position</button>
@@ -204,8 +144,8 @@
           <button class="btn btn-sm" id="opening-tree-btn" onclick="toggleOpeningTree()">Opening Explorer</button>
           <button class="btn btn-sm" onclick="backToGames()">Back to Games</button>
         </div>
-        <div id="opening-tree-panel" style="display:none;margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--bg)">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Opening Explorer</div>
+        <div id="opening-tree-panel" class="tree-panel" style="display:none">
+          <div class="tree-panel-header">Opening Explorer</div>
           <div id="opening-tree-content"></div>
         </div>
       </div>
@@ -218,8 +158,8 @@
         <div class="btn-row" style="margin-top:8px">
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button>
         </div>
-        <div id="detail-play-side-msg" style="display:none;text-align:center;font-size:12px;color:var(--accent);margin-top:4px"></div>
-        <div id="detail-play-controls" style="display:none;gap:6px;margin-top:6px;justify-content:center">
+        <div id="detail-play-side-msg" class="play-msg" style="display:none"></div>
+        <div id="detail-play-controls" class="nav-btns" style="display:none">
           <button class="btn btn-sm" onclick="stopPlayMode()">Stop Playing</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
@@ -228,15 +168,16 @@
       <div class="panel">
         <h2 id="detail-title">Position</h2>
         <div id="detail-tags" style="margin-bottom:12px"></div>
-        <label>FEN</label><div id="detail-fen" style="font-size:12px;color:var(--text-muted);word-break:break-all"></div>
-        <label>Your Notes</label><pre id="detail-notes" style="white-space:pre-wrap;font-size:13px;color:var(--text-muted);line-height:1.6"></pre>
-        <label>Stockfish Analysis</label><pre id="detail-stockfish" style="white-space:pre-wrap;font-size:13px;color:var(--text-muted);line-height:1.6"></pre>
-        <label>Quiz Stats</label><div id="detail-stats" style="font-size:13px;color:var(--text-muted)"></div>
+        <label>FEN</label><div id="detail-fen" class="fen-display"></div>
+        <label>Your Notes</label><pre id="detail-notes" class="detail-pre"></pre>
+        <label>Stockfish Analysis</label><pre id="detail-stockfish" class="detail-pre"></pre>
+        <label>Quiz Stats</label><div id="detail-stats" class="text-muted" style="font-size:13px"></div>
         <div class="btn-row">
           <button class="btn" onclick="editPosition()">Edit</button>
           <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Eval: OFF</button>
           <button class="btn btn-sm" onclick="playFromHereDetail()">Play from here</button>
-          <button class="btn" onclick="showView('positions')">← Back</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
+          <button class="btn" onclick="showView('positions')">Back</button>
         </div>
       </div>
     </div>
@@ -252,21 +193,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="/js/engine.js"></script>
 <script src="/js/stockfish.js"></script>
+<script src="/js/sound.js"></script>
 <script type="module" src="/js/board.js"></script>
 <script>
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(e => console.log('SW failed:', e)); }
 </script>
-<div id="import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center">
-  <div class="panel" style="width:560px;max-width:90vw;max-height:90vh;overflow-y:auto">
+<div id="import-modal" class="modal-overlay" style="display:none">
+  <div class="panel modal-content" style="width:560px">
     <h2>Import PGN</h2>
     <label>PGN Text</label>
     <textarea id="import-pgn" style="min-height:160px" placeholder="Paste one or more PGN games..."></textarea>
     <label style="margin-top:12px">Or upload .pgn file</label>
-    <input type="file" accept=".pgn" onchange="handlePgnFile(this)" style="font-size:12px;color:var(--text-muted)">
+    <input type="file" accept=".pgn" onchange="handlePgnFile(this)" class="text-muted" style="font-size:12px">
     <label>Tags (comma separated)</label>
     <input type="text" id="import-tags" placeholder="e.g. sicilian, tournament">
     <label>Collection</label>
-    <select id="import-collection-select" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:13px;padding:10px 12px;border-radius:var(--radius)"></select>
+    <select id="import-collection-select" class="select-input" style="width:100%"></select>
     <label>Or create new collection</label>
     <input type="text" id="import-new-coll" placeholder="New collection name">
     <div id="import-result" style="margin-top:12px"></div>
@@ -276,11 +218,11 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').t
     </div>
   </div>
 </div>
-<div id="save-pos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center">
-  <div class="panel" style="width:480px;max-width:90vw">
+<div id="save-pos-modal" class="modal-overlay" style="display:none">
+  <div class="panel modal-content" style="width:480px">
     <h2>Save Position</h2>
     <label>FEN</label>
-    <input type="text" id="save-pos-fen" readonly style="color:var(--text-muted)">
+    <input type="text" id="save-pos-fen" readonly class="text-muted">
     <label>Title</label>
     <input type="text" id="save-pos-title">
     <label>Tags (comma separated)</label>
