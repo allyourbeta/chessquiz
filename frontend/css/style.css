@@ -1,171 +1,417 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* ------------------------------------------------------------------
+   Design tokens
+   Palette: indigo primary + cool-grey neutrals (Refactoring UI palette 10)
+   ------------------------------------------------------------------ */
 :root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --surface-hover: #f5f5f5;
-  --border: #e0e0e0;
-  --text: #1a1a1a;
-  --text-muted: #777777;
-  --accent: #4a90d9;
-  --accent-dim: #3a7bc8;
-  --accent-light: #e8f0fb;
-  --green: #34a853;
-  --red: #d93025;
-  --tag-bg: #eef3fa;
-  --radius: 8px;
-  --light-sq: #f0d9b5;
-  --dark-sq: #b58863;
-  --shadow: 0 1px 3px rgba(0,0,0,.08);
-  --shadow-md: 0 2px 8px rgba(0,0,0,.1);
+  /* Primary — indigo */
+  --primary-050: #E0E8F9;
+  --primary-100: #BED0F7;
+  --primary-200: #98AEEB;
+  --primary-300: #7B93DB;
+  --primary-400: #647ACB;
+  --primary-500: #4C63B6;
+  --primary-600: #4055A8;
+  --primary-700: #35469C;
+  --primary-800: #2D3A8C;
+  --primary-900: #19216C;
+
+  /* Neutral — cool grey */
+  --grey-050: #F5F7FA;
+  --grey-100: #E4E7EB;
+  --grey-200: #CBD2D9;
+  --grey-300: #9AA5B1;
+  --grey-400: #7B8794;
+  --grey-500: #616E7C;
+  --grey-600: #52606D;
+  --grey-700: #3E4C59;
+  --grey-800: #323F4B;
+  --grey-900: #1F2933;
+
+  /* Semantic */
+  --success-050: #E3F9E5;
+  --success-100: #C1EAC5;
+  --success-500: #3F9142;
+  --success-700: #207227;
+  --danger-050:  #FFEEEE;
+  --danger-100:  #FACDCD;
+  --danger-500:  #BA2525;
+  --danger-700:  #911111;
+  --warning-050: #FFFAEB;
+  --warning-100: #FCEFC7;
+  --warning-500: #E9B949;
+  --warning-700: #A27C1A;
+
+  /* Semantic alias tokens used throughout components */
+  --bg:             var(--grey-050);
+  --surface:        #ffffff;
+  --surface-sunken: var(--grey-050);
+  --surface-hover:  var(--grey-100);
+  --border:         var(--grey-100);
+  --border-strong:  var(--grey-200);
+
+  --text:           var(--grey-900);
+  --text-secondary: var(--grey-600);
+  --text-muted:     var(--grey-500);
+  --text-subtle:    var(--grey-400);
+  --text-on-primary:#ffffff;
+
+  --accent:      var(--primary-500);
+  --accent-dim:  var(--primary-700);
+  --accent-light:var(--primary-050);
+  --tag-bg:      var(--primary-050);
+
+  --green: var(--success-500);
+  --red:   var(--danger-500);
+
+  --light-sq: #EEE5CF;
+  --dark-sq:  #7B8FAA;
+
+  /* Type scale
+     Body reads at 16px; all UI controls use 12/13/14 so the interface feels
+     tight without making text unreadable. Headings cap at 22 to stay calm. */
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-22: 22px;
+  --fs-24: 24px;
+  --fs-30: 30px;
+
+  /* Spacing scale (4/8 grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10:40px;
+  --sp-12:48px;
+
+  /* Radius scale */
+  --radius-sm: 4px;
+  --radius:    6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* Shadow scale (5 levels, two-layer composites) */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.03);
+  --shadow-xl: 0 20px 25px rgba(15, 23, 42, 0.1), 0 10px 10px rgba(15, 23, 42, 0.03);
+  --shadow-inset-input: inset 0 1px 2px rgba(15, 23, 42, 0.05);
+  --focus-ring: 0 0 0 3px rgba(76, 99, 182, 0.2);
+
+  /* Back-compat aliases (kept so existing rules referencing these keep working) */
+  --shadow: var(--shadow-sm);
+
+  /* Layout */
+  --content-max: 1180px;
+  --nav-height: 64px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  font-size: var(--fs-16);
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv02','cv03','cv04','cv11';
 }
 
+/* ------------------------------------------------------------------
+   Header / top nav
+   ------------------------------------------------------------------ */
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 32px;
+  padding: 12px var(--sp-6);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-xs);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
-header h1 { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+header h1 {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
 
-nav { display: flex; gap: 4px; align-items: center; }
+nav { display: flex; gap: 2px; align-items: center; }
 nav button {
+  position: relative;
   background: none;
   border: 1px solid transparent;
-  color: var(--text-muted);
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--fs-13);
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 6px var(--sp-3);
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all .2s;
+  transition: color .15s ease, background-color .15s ease;
 }
-nav button:hover { color: var(--text); background: var(--surface-hover); }
-nav button.active { color: var(--accent); background: var(--accent-light); }
+nav button:hover { color: var(--text); background: var(--grey-050); }
+nav button.active {
+  color: var(--primary-700);
+  background: var(--primary-050);
+  font-weight: 600;
+}
+nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 .mute-btn {
-  font-size: 16px !important;
-  padding: 6px 10px !important;
+  font-size: var(--fs-14) !important;
+  padding: 4px 6px !important;
   border: none !important;
   background: none !important;
   cursor: pointer;
-  opacity: 0.6;
-  transition: opacity .2s;
+  opacity: 0.55;
+  transition: opacity .15s;
 }
-.mute-btn:hover { opacity: 1; }
+.mute-btn:hover { opacity: 1; background: var(--grey-050) !important; }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+/* ------------------------------------------------------------------
+   Layout primitives
+   ------------------------------------------------------------------ */
+.container {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-6);
+}
 .view { display: none; } .view.active { display: block; }
 .board-wrap { width: 400px; height: 400px; }
-.board-area { display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: start; }
+.board-area {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-6);
+  align-items: start;
+  min-width: 0;
+}
+.board-area > * { min-width: 0; }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-md);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-xs);
 }
-.panel h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
-.section-title { font-size: 20px; font-weight: 600; }
+.panel h2 {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  margin-bottom: var(--sp-3);
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.section-title {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
 
 .view-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--sp-2);
 }
-.view-header h2 { font-size: 22px; font-weight: 600; }
+.view-header h2 {
+  font-size: var(--fs-20);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
 
+/* ------------------------------------------------------------------
+   Form fields
+   ------------------------------------------------------------------ */
 label {
   display: block;
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: var(--fs-11);
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-weight: 600;
   margin-bottom: 6px;
-  margin-top: 16px;
+  margin-top: var(--sp-3);
 }
 label:first-child { margin-top: 0; }
 
-input[type="text"], textarea {
+input[type="text"], input[type="search"], input[type="number"], textarea {
   width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   color: var(--text);
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
-  font-size: 13px;
-  padding: 10px 12px;
+  font-family: inherit;
+  font-size: var(--fs-13);
+  line-height: 1.4;
+  padding: 7px 10px;
   border-radius: var(--radius);
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  box-shadow: var(--shadow-inset-input);
 }
-input[type="text"]:focus, textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+input[type="text"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder { color: var(--text-subtle); }
+
+input[type="text"]:hover, input[type="search"]:hover, textarea:hover {
+  border-color: var(--grey-300);
 }
-textarea { resize: vertical; min-height: 80px; }
+input[type="text"]:focus, input[type="search"]:focus, input[type="number"]:focus, textarea:focus {
+  border-color: var(--primary-500);
+  box-shadow: var(--focus-ring);
+}
+textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
 
 .select-input {
   background: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border);
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
-  font-size: 12px;
-  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  font-family: inherit;
+  font-size: var(--fs-13);
+  font-weight: 500;
+  padding: 5px 24px 5px 10px;
   border-radius: var(--radius);
   outline: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-inset-input);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%237B8794' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 100%;
+}
+.select-input:hover { border-color: var(--grey-300); }
+.select-input:focus-visible {
+  border-color: var(--primary-500);
+  box-shadow: var(--focus-ring);
 }
 
+/* ------------------------------------------------------------------
+   Buttons (primary / secondary / tertiary / semantic)
+   ------------------------------------------------------------------ */
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  font-family: 'Inter', -apple-system, system-ui, sans-serif;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: var(--fs-13);
   font-weight: 500;
-  padding: 10px 20px;
+  line-height: 1.2;
+  padding: 6px 12px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  transition: all .2s;
+  white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+  box-shadow: var(--shadow-xs);
 }
-.btn:hover { background: var(--surface-hover); border-color: #ccc; }
-.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn-primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
-.btn-success { border-color: var(--green); color: var(--green); }
-.btn-success:hover { background: rgba(52,168,83,.08); }
-.btn-danger { border-color: var(--red); color: var(--red); }
-.btn-danger:hover { background: rgba(217,48,37,.08); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
-.btn-row { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.btn:hover {
+  background: var(--grey-050);
+  border-color: var(--grey-300);
+}
+.btn:active { transform: translateY(1px); box-shadow: none; }
+.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
+/* Primary — filled brand */
+.btn-primary {
+  background: var(--primary-500);
+  color: var(--text-on-primary);
+  border-color: var(--primary-500);
+  box-shadow: var(--shadow-xs);
+}
+.btn-primary:hover {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+}
+.btn-primary:active { background: var(--primary-700); border-color: var(--primary-700); }
+
+/* Semantic — soft background + colored text */
+.btn-success {
+  background: var(--success-050);
+  border-color: var(--success-100);
+  color: var(--success-700);
+}
+.btn-success:hover { background: var(--success-100); border-color: var(--success-500); }
+
+.btn-danger {
+  background: var(--danger-050);
+  border-color: var(--danger-100);
+  color: var(--danger-700);
+}
+.btn-danger:hover { background: var(--danger-100); border-color: var(--danger-500); }
+
+/* Sizes */
+.btn-sm { padding: 4px 9px; font-size: var(--fs-12); }
+.btn-lg { padding: 9px 16px; font-size: var(--fs-14); }
+
+/* Tertiary / text-only link button */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+.btn-ghost:hover { background: var(--grey-050); color: var(--text); border-color: transparent; }
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------------
+   Utility text colors
+   ------------------------------------------------------------------ */
 .text-muted { color: var(--text-muted); }
-.accent-text { color: var(--accent); font-weight: 600; }
+.accent-text { color: var(--primary-700); font-weight: 600; }
 
+/* ------------------------------------------------------------------
+   Responsive
+   ------------------------------------------------------------------ */
 @media (max-width: 860px) {
   .board-area { grid-template-columns: 1fr; }
   .board-wrap { width: 100%; height: auto; aspect-ratio: 1; max-width: 400px; }
-  .container { padding: 16px; }
-  header { padding: 12px 16px; }
+  .container { padding: var(--sp-4); }
+  header { padding: var(--sp-3) var(--sp-4); }
+  .view-header h2 { font-size: var(--fs-20); }
 }
