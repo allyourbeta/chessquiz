@@ -77,6 +77,10 @@ async function loadPositionDetail(id) {
     if (AppState.playMode) stopPlayMode();
     BoardManager.create('detail-board', pos.fen, { flipped: false });
     if (AppState.engineOn) requestEval('detail-board');
+    if (window.Practice) {
+        Practice.loadPracticeHistory(id);
+        Practice.loadLevels().then(() => PracticeUI.populateLevelSelect(Practice.getLevels()));
+    }
 }
 
 function editPosition() {

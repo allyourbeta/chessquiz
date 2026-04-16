@@ -68,6 +68,7 @@ const Router = (function () {
         }
         if (a === 'search') return { view: 'search', params: q };
         if (a === 'quiz') return { view: 'quiz', params: q };
+        if (a === 'practice') return { view: 'practice', params: q };
         if (a === 'add') return { view: 'addPosition', params: q };
 
         return { view: 'positions', params: q };
@@ -87,6 +88,7 @@ const Router = (function () {
             case 'collectionDetail': return `/collections/${route.id}` + _qs(p);
             case 'search':         return '/search' + _qs(p);
             case 'quiz':           return '/quiz' + _qs(p);
+            case 'practice':       return '/practice' + _qs(p);
             default:               return '/positions';
         }
     }

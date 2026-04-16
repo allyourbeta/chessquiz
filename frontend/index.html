@@ -26,6 +26,7 @@
     <button onclick="Router.navigate({view:'collections'})">Collections</button>
     <button onclick="Router.navigate({view:'search'})">Search</button>
     <button onclick="Router.navigate({view:'quiz'})">Quiz</button>
+    <button onclick="Router.navigate({view:'practice'})">Practice</button>
     <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
 </header>
@@ -265,8 +266,33 @@
           <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
           <button class="btn" onclick="history.back()">Back</button>
         </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+          <label style="margin-top:0">Practice this position</label>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <select id="practice-level" class="select-input"></select>
+            <select id="practice-color" class="select-input">
+              <option value="">Turn color</option>
+              <option value="white">Play White</option>
+              <option value="black">Play Black</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="Practice.startFromDetail()">Start practice</button>
+          </div>
+          <div style="margin-top:12px">
+            <label style="margin-top:0">Practice history</label>
+            <div id="practice-stats" class="text-muted" style="font-size:13px"></div>
+            <div id="practice-recent-list" class="pos-list" style="margin-top:8px"></div>
+            <div id="practice-tree" class="tree-panel" style="margin-top:10px"></div>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
+  <div id="view-practice" class="view">
+    <div class="view-header">
+      <h2>Practice</h2>
+      <span class="text-muted" style="font-size:13px">Positions you've drilled — most recent first</span>
+    </div>
+    <div id="practice-positions-list" class="pos-list"></div>
   </div>
 </div>
 <script src="/js/state.js"></script>
@@ -284,6 +310,8 @@
 <script src="/js/batch.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="/js/engine.js"></script>
+<script src="/js/practice-ui.js"></script>
+<script src="/js/practice.js"></script>
 <script src="/js/stockfish.js"></script>
 <script src="/js/sound.js"></script>
 <script type="module" src="/js/board.js"></script>
@@ -307,6 +335,20 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').t
     <label>Name</label><input type="text" id="collection-name" placeholder="e.g. Smith-Morra Games">
     <label>Description</label><textarea id="collection-description" placeholder="Optional description..."></textarea>
     <div class="btn-row"><button class="btn btn-primary" onclick="saveCollection()">Save</button><button class="btn" onclick="hideCollectionModal()">Cancel</button></div>
+  </div>
+</div>
+<div id="practice-save-modal" class="modal-overlay" style="display:none">
+  <div class="panel modal-content" style="width:480px">
+    <h2>Save Practice Game?</h2>
+    <div id="practice-save-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="Practice.confirmSave()">Save</button>
+      <button class="btn btn-success btn-sm" onclick="Practice.confirmSave('win')">Save as Win</button>
+      <button class="btn btn-sm" onclick="Practice.confirmSave('draw')">Save as Draw</button>
+      <button class="btn btn-danger btn-sm" onclick="Practice.confirmSave('loss')">Save as Loss</button>
+      <button class="btn btn-ghost btn-sm" onclick="Practice.confirmSave('abandoned')">Abandoned</button>
+      <button class="btn btn-danger" onclick="Practice.discard()">Discard</button>
+    </div>
   </div>
 </div>
 </body>

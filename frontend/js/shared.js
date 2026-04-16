@@ -115,6 +115,10 @@ function renderRoute(route) {
             _activateView('quiz', 'Quiz');
             mountQuizTagFilter();
             break;
+        case 'practice':
+            _activateView('practice', 'Practice');
+            Practice.loadPracticeTab();
+            break;
         default:
             _activateView('positions', 'Positions');
             loadPositions();
@@ -130,6 +134,7 @@ const _LEGACY_VIEWS = {
     collections: { view: 'collections' },
     search: { view: 'search' },
     quiz: { view: 'quiz' },
+    practice: { view: 'practice' },
     import: { view: 'gameImport' },
 };
 

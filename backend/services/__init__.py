@@ -16,6 +16,10 @@ from backend.services.pgn_service import (
     parse_multi_pgn,
     parse_single_pgn,
 )
+from backend.services.engine_service import (
+    ENGINE_LEVELS,
+    compute_engine_verdict,
+)
 
 __all__ = [
     "validate_fen",
@@ -30,4 +34,6 @@ __all__ = [
     "parse_multi_pgn",
     "extract_auto_tags",
     "get_fen_at_move",
+    "ENGINE_LEVELS",
+    "compute_engine_verdict",
 ]

@@ -13,6 +13,7 @@ from backend.api import (
     games_router,
     opening_tree_router,
     positions_router,
+    practice_router,
     quiz_router,
     tags_router,
 )
@@ -41,6 +42,7 @@ app.include_router(chess_router, prefix="/api")
 app.include_router(games_router, prefix="/api")
 app.include_router(collections_router, prefix="/api")
 app.include_router(opening_tree_router, prefix="/api")
+app.include_router(practice_router, prefix="/api")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -93,6 +95,7 @@ _SPA_ROUTES = {
     "search",
     "quiz",
     "add",
+    "practice",
 }
 
 

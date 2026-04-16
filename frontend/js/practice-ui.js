@@ -1,0 +1,133 @@
+// Practice sessions (Phase 10) — pure rendering helpers.
+// Split from practice.js to honor the 300-line limit.
+
+const PracticeUI = (function () {
+
+    function showSaveModal(active, pending) {
+        const m = document.getElementById('practice-save-modal');
+        if (!m) return;
+        const body = document.getElementById('practice-save-body');
+        const verdict = Practice.guessVerdict();
+        body.innerHTML = `
+            <p style="margin-bottom:8px">
+                <strong>${pending.moveCount} moves</strong> as ${active.userColor} vs Stockfish (${active.level})
+            </p>
+            <p class="text-muted" style="font-size:12px;margin-bottom:12px">
+                Suggested verdict: <strong>${verdict}</strong>
+            </p>
+            <label>Notes (optional)</label>
+            <textarea id="practice-save-notes" placeholder="Your reflections on this game..."></textarea>
+        `;
+        m.style.display = 'flex';
+    }
+
+    function hideSaveModal() {
+        const m = document.getElementById('practice-save-modal');
+        if (m) m.style.display = 'none';
+    }
+
+    function renderHistory(stats, games, tree) {
+        const statsEl = document.getElementById('practice-stats');
+        const listEl = document.getElementById('practice-recent-list');
+        const treeEl = document.getElementById('practice-tree');
+        if (statsEl) _renderStats(statsEl, stats);
+        if (listEl) _renderRecent(listEl, games);
+        if (treeEl) _renderTree(treeEl, tree);
+    }
+
+    function _renderStats(el, s) {
+        if (!s || !s.total_games) {
+            el.innerHTML = '<p class="text-muted" style="font-size:13px">No practice games yet</p>';
+            return;
+        }
+        const wr = (s.win_rate * 100).toFixed(0);
+        let html = `
+            <div style="font-size:13px;margin-bottom:6px">
+                <strong>${s.total_games}</strong> games &mdash;
+                <span class="correct">${s.wins}W</span> /
+                ${s.draws}D /
+                <span class="incorrect">${s.losses}L</span>
+                ${s.abandoned ? `(${s.abandoned} abandoned)` : ''}
+                &middot; win rate <strong>${wr}%</strong>
+            </div>
+            <div class="text-muted" style="font-size:12px;margin-bottom:8px">
+                Avg ${s.avg_move_count.toFixed(1)} moves, avg final eval
+                ${s.avg_final_eval != null ? s.avg_final_eval.toFixed(2) : '—'}
+            </div>`;
+        if (s.by_engine_level && s.by_engine_level.length) {
+            html += '<div style="font-size:12px">';
+            s.by_engine_level.forEach(b => {
+                const br = (b.win_rate * 100).toFixed(0);
+                html += `<div>vs Stockfish <strong>${b.engine_level}</strong>: ${b.wins}/${b.total} wins (${br}%)</div>`;
+            });
+            html += '</div>';
+        }
+        el.innerHTML = html;
+    }
+
+    function _renderRecent(el, games) {
+        if (!games || !games.length) { el.innerHTML = ''; return; }
+        const rows = games.slice(0, 10).map(g => {
+            const v = g.user_verdict || g.engine_verdict || '?';
+            const vcls = v === 'win' ? 'correct' : (v === 'loss' ? 'incorrect' : 'text-muted');
+            const date = g.created_at ? new Date(g.created_at).toLocaleDateString() : '';
+            return `<div class="pos-item" style="padding:6px 10px;font-size:12px">
+                <span style="flex:1">${date} &mdash; ${g.user_color} vs ${g.engine_level}, ${g.move_count} moves &middot; <span class="${vcls}">${v}</span></span>
+                <button class="btn btn-sm btn-ghost" onclick="Practice.editVerdict(${g.id})">verdict</button>
+                <button class="btn btn-sm btn-danger" onclick="Practice.deleteGame(${g.id})">×</button>
+            </div>`;
+        }).join('');
+        el.innerHTML = rows;
+    }
+
+    function _renderTree(el, tree) {
+        if (!tree || !tree.moves || !tree.moves.length) { el.innerHTML = ''; return; }
+        const rows = tree.moves.map(m => {
+            const wr = (m.win_rate * 100).toFixed(0);
+            return `<div class="tree-row" style="display:flex;gap:8px;padding:3px 6px;font-size:12px">
+                <span style="min-width:50px;font-weight:600">${m.san}</span>
+                <span class="text-muted">${m.games} games</span>
+                <span style="margin-left:auto">${wr}% win</span>
+            </div>`;
+        }).join('');
+        el.innerHTML = `<div class="tree-panel-header">Your moves from here</div>${rows}`;
+    }
+
+    function renderPositionsList(summaries) {
+        const el = document.getElementById('practice-positions-list');
+        if (!el) return;
+        if (!summaries || !summaries.length) {
+            el.innerHTML = `<div class="empty-state"><p>No practice games yet</p><p>Open a saved position and click "Practice this position".</p></div>`;
+            return;
+        }
+        el.innerHTML = summaries.map(s => {
+            const wr = (s.win_rate * 100).toFixed(0);
+            const last = s.last_played ? new Date(s.last_played).toLocaleDateString() : '—';
+            return `<div class="pos-item" onclick="Router.navigate({view:'positionDetail',id:${s.position_id}})">
+                ${renderMiniBoard(s.fen)}
+                <div class="title">${s.title || 'Untitled'}</div>
+                <div class="text-muted" style="font-size:12px">${s.total_games} games &middot; ${wr}% win &middot; ${last}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function populateLevelSelect(engineLevels) {
+        const sel = document.getElementById('practice-level');
+        if (!sel || !engineLevels) return;
+        if (sel.options.length) return;
+        Object.keys(engineLevels).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = `${k} (d${engineLevels[k].depth}, skill ${engineLevels[k].skill})`;
+            sel.appendChild(opt);
+        });
+        sel.value = 'medium';
+    }
+
+    return {
+        showSaveModal, hideSaveModal, renderHistory,
+        renderPositionsList, populateLevelSelect,
+    };
+})();
+
+window.PracticeUI = PracticeUI;
