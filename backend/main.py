@@ -43,6 +43,7 @@ app.include_router(opening_tree_router, prefix="/api")
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
 
 
 @app.get("/api/health")

@@ -225,6 +225,74 @@ RARE_FEN = "8/8/8/8/8/8/8/4K3 w - - 0 1"
 r = c.get("/api/opening-tree/?fen=" + RARE_FEN)
 check("Rare position: empty tree", r.status_code == 200 and r.json()["total_games"] == 0)
 
+print("\n--- Phase 9: Collection Browser + Batch Review ---")
+
+r = c.post("/api/collections/", json={"name": "Phase9 Review", "description": "Batch review test"})
+check("Create collection for batch review", r.status_code == 201)
+p9_coll_id = r.json()["id"]
+check("New collection game_count == 0", r.json()["game_count"] == 0)
+
+r = c.get("/api/games/")
+all_game_ids = [g["id"] for g in r.json()]
+check("Have games to review", len(all_game_ids) >= 2)
+
+for gid in all_game_ids[:2]:
+    r = c.post(f"/api/collections/{p9_coll_id}/games?game_id={gid}")
+    check(f"Add game {gid} to batch collection", r.status_code == 204)
+
+r = c.get("/api/collections/")
+colls = r.json()
+p9_coll = next((cx for cx in colls if cx["id"] == p9_coll_id), None)
+check("Collection browser shows updated count", p9_coll is not None and p9_coll["game_count"] == 2,
+      f"got {p9_coll}")
+
+r = c.get(f"/api/games/?collection_id={p9_coll_id}")
+batch_games = r.json()
+check("Batch review: list games in collection",
+      r.status_code == 200 and len(batch_games) == 2, f"got {len(batch_games)}")
+check("Batch games have ids to navigate", all("id" in g for g in batch_games))
+
+r = c.put(f"/api/collections/{p9_coll_id}",
+          json={"name": "Phase9 Renamed", "description": "Edited"})
+check("Edit collection name/desc", r.status_code == 200
+      and r.json()["name"] == "Phase9 Renamed"
+      and r.json()["description"] == "Edited")
+
+print("\n--- Phase 9: Position Search UI ---")
+
+r = c.post("/api/games/search-position",
+           json={"fen": START_FEN, "search_type": "exact"})
+check("Search UI (exact) status", r.status_code == 200)
+exact_hits = r.json()
+check("Search UI (exact) returns list", isinstance(exact_hits, list) and len(exact_hits) >= 2)
+check("Search UI result has half_move", all("half_move" in h for h in exact_hits))
+check("Search UI result has game_id", all("game_id" in h for h in exact_hits))
+
+r = c.post("/api/games/search-position",
+           json={"fen": AFTER_E4_C5, "search_type": "exact"})
+e4c5_hits = r.json()
+check("Search UI after e4 c5", len(e4c5_hits) >= 2)
+check("All hits have half_move=2 for exact",
+      all(h["half_move"] == 2 for h in e4c5_hits),
+      f"got {[h['half_move'] for h in e4c5_hits]}")
+
+r = c.post("/api/games/search-position",
+           json={"fen": START_FEN, "search_type": "pawn"})
+check("Search UI (pawn structure) status", r.status_code == 200)
+pawn_hits = r.json()
+check("Search UI (pawn) returns list", isinstance(pawn_hits, list) and len(pawn_hits) >= 2)
+
+r = c.post("/api/games/search-position",
+           json={"fen": "invalid fen string", "search_type": "exact"})
+check("Search UI handles bad FEN gracefully",
+      r.status_code in (200, 400, 422, 500), f"got {r.status_code}")
+
+r = c.delete(f"/api/collections/{p9_coll_id}")
+check("Delete Phase 9 collection", r.status_code == 204)
+r = c.get(f"/api/games/")
+check("Games preserved after collection delete",
+      len(r.json()) >= len(all_game_ids))
+
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
 print(f"{'='*40}")

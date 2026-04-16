@@ -147,6 +147,25 @@
 .nav-btns { display: flex; gap: 6px; margin-top: 6px; justify-content: center; }
 .play-msg { text-align: center; font-size: 12px; color: var(--accent); font-weight: 500; margin-top: 4px; }
 
+.batch-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+.batch-progress {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .moves-panel {
   max-height: 280px;
   overflow-y: auto;

@@ -238,7 +238,10 @@ def search_position(
     data: PositionSearchRequest, db: Session = Depends(get_db)
 ):
     if data.search_type == "exact":
-        z_hash = compute_zobrist(data.fen)
+        try:
+            z_hash = compute_zobrist(data.fen)
+        except (ValueError, Exception) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid FEN: {e}")
         matches = (
             db.query(PositionIndex)
             .filter(PositionIndex.zobrist_hash == z_hash)
@@ -247,7 +250,10 @@ def search_position(
     elif data.search_type == "pawn":
         from backend.services import compute_pawn_sig
 
-        target_sig = compute_pawn_sig(data.fen)
+        try:
+            target_sig = compute_pawn_sig(data.fen)
+        except (ValueError, Exception) as e:
+            raise HTTPException(status_code=400, detail=f"Invalid FEN: {e}")
         matches = (
             db.query(PositionIndex)
             .filter(PositionIndex.pawn_sig == target_sig)

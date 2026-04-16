@@ -20,6 +20,7 @@ async function openGame(id) {
     showView('game-viewer');
     BoardManager.create('game-board', game.fens[0], { flipped: false });
     highlightCurrentMove();
+    if (typeof updateBatchNav === 'function') updateBatchNav();
     if (AppState.engineOn) requestEval('game-board');
 }
 
@@ -135,6 +136,14 @@ async function doSavePosition() {
 }
 
 function backToGames() {
+    if (AppState.batchMode) {
+        AppState.batchMode = false;
+        AppState.batchCollectionId = null;
+        AppState.batchCollectionName = null;
+        AppState.batchGameIds = [];
+        AppState.batchIndex = 0;
+        if (typeof updateBatchNav === 'function') updateBatchNav();
+    }
     showView('games');
 }
 

@@ -1,0 +1,139 @@
+const SEARCH_START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+function initSearchBoard() {
+    if (!AppState.searchFen) AppState.searchFen = SEARCH_START_FEN;
+    const input = document.getElementById('search-fen');
+    if (input && !input.value) input.value = AppState.searchFen;
+    if (window.BoardManager) {
+        BoardManager.create('search-board', AppState.searchFen, { flipped: false });
+    }
+}
+
+function renderSearchScope() {
+    const el = document.getElementById('search-scope');
+    if (!el) return;
+    el.innerHTML = '<option value="">All games</option>' +
+        (AppState.allCollections || []).map(c =>
+            `<option value="${c.id}">${escapeSearchHtml(c.name)}</option>`
+        ).join('');
+}
+
+function escapeSearchHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function searchFlipBoard() {
+    BoardManager.flip('search-board');
+}
+
+function searchSetStart() {
+    AppState.searchFen = SEARCH_START_FEN;
+    document.getElementById('search-fen').value = SEARCH_START_FEN;
+    BoardManager.setPosition('search-board', SEARCH_START_FEN);
+}
+
+function searchLoadFen() {
+    const f = document.getElementById('search-fen').value.trim();
+    if (!f) { toast('Enter a FEN', true); return; }
+    AppState.searchFen = f;
+    BoardManager.setPosition('search-board', f);
+}
+
+function searchUseBoard() {
+    const fen = BoardManager.getPosition('search-board') || AppState.searchFen;
+    document.getElementById('search-fen').value = fen;
+    AppState.searchFen = fen;
+}
+
+function getSelectedSearchType() {
+    const radios = document.querySelectorAll('input[name="search-type"]');
+    for (const r of radios) if (r.checked) return r.value;
+    return 'exact';
+}
+
+async function doPositionSearch() {
+    const fen = document.getElementById('search-fen').value.trim() || AppState.searchFen;
+    if (!fen) { toast('Enter a FEN', true); return; }
+
+    const searchType = getSelectedSearchType();
+    const scopeVal = document.getElementById('search-scope').value;
+    const status = document.getElementById('search-status');
+    const results = document.getElementById('search-results');
+
+    status.textContent = 'Searching...';
+    results.innerHTML = '';
+
+    let res;
+    try {
+        res = await fetch(API + '/games/search-position', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ fen, search_type: searchType }),
+        });
+    } catch (e) {
+        status.textContent = 'Search failed';
+        return;
+    }
+
+    if (!res.ok) {
+        let msg = 'Search failed';
+        try { msg = (await res.json()).detail || msg; } catch (e) {}
+        status.textContent = msg;
+        return;
+    }
+
+    let data = await res.json();
+
+    if (scopeVal) {
+        const scopeId = parseInt(scopeVal, 10);
+        const gamesRes = await fetch(API + '/games/?collection_id=' + scopeId);
+        if (gamesRes.ok) {
+            const scopedIds = new Set((await gamesRes.json()).map(g => g.id));
+            data = data.filter(r => scopedIds.has(r.game_id));
+        }
+    }
+
+    status.textContent = data.length + ' match(es)';
+    renderSearchResults(data);
+}
+
+function renderSearchResults(data) {
+    const el = document.getElementById('search-results');
+    if (!data.length) {
+        el.innerHTML = '<div class="empty-state"><p>No matches</p><p>Try a different position or search type.</p></div>';
+        return;
+    }
+    el.innerHTML = data.map(r => {
+        const w = r.white || '?';
+        const b = r.black || '?';
+        const res = r.result || '*';
+        const eco = r.eco ? `<span class="text-muted" style="font-size:12px">${r.eco}</span>` : '';
+        const evt = r.event ? `<span class="text-muted" style="font-size:12px">${escapeSearchHtml(r.event)}</span>` : '';
+        const moveNum = Math.ceil(r.half_move / 2);
+        const moveLabel = r.half_move === 0 ? 'start' : ('after ' + moveNum + (r.half_move % 2 === 1 ? '.' : '...'));
+        return `<div class="pos-item" onclick="openSearchResult(${r.game_id}, ${r.half_move})">
+            <div style="flex:1">
+                <div style="font-size:14px;font-weight:500">${escapeSearchHtml(w)} vs ${escapeSearchHtml(b)} <span class="text-muted">${res}</span></div>
+                <div style="margin-top:4px">${eco} ${evt}</div>
+                <div class="text-muted" style="font-size:12px;margin-top:4px">match: ${moveLabel}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function openSearchResult(gameId, halfMove) {
+    await openGame(gameId);
+    if (typeof goToPly === 'function') {
+        goToPly(halfMove);
+    }
+}
+
+window.initSearchBoard = initSearchBoard;
+window.renderSearchScope = renderSearchScope;
+window.searchFlipBoard = searchFlipBoard;
+window.searchSetStart = searchSetStart;
+window.searchLoadFen = searchLoadFen;
+window.searchUseBoard = searchUseBoard;
+window.doPositionSearch = doPositionSearch;
+window.openSearchResult = openSearchResult;

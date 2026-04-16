@@ -32,7 +32,7 @@ function showView(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + name).classList.add('active');
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    const labels = {positions: 'Positions', add: 'Add New', quiz: 'Quiz', games: 'Games'};
+    const labels = {positions: 'Positions', add: 'Add New', quiz: 'Quiz', games: 'Games', collections: 'Collections', search: 'Search'};
     document.querySelectorAll('nav button').forEach(b => {
         if (b.textContent === labels[name]) b.classList.add('active');
     });
@@ -40,6 +40,8 @@ function showView(name) {
     if (name === 'quiz') loadTags().then(renderQuizTagFilters);
     if (name === 'add') BoardManager.setPosition('board', AppState.boardFen);
     if (name === 'games') { loadGames(); loadCollections(); loadTags().then(renderGameTagFilters); }
+    if (name === 'collections') { loadCollectionsView(); }
+    if (name === 'search') { loadCollections().then(renderSearchScope); initSearchBoard(); }
     if (name === 'game-viewer') {
         document.querySelectorAll('nav button').forEach(b => { if (b.textContent === 'Games') b.classList.add('active'); });
     }
