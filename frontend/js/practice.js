@@ -10,6 +10,7 @@ const Practice = (function () {
     let engineLevels = null;
     let active = null;       // { rootPositionId, startFen, userColor, level, startingEval }
     let pendingSave = null;  // { pgn, finalFen, moveCount, finalEval } when game ends
+    let forcedVerdict = null; // 'loss' (resign) or 'abandoned' (stop) — bypass modal
 
     async function loadLevels() {
         if (engineLevels) return engineLevels;
@@ -42,7 +43,15 @@ const Practice = (function () {
             const s = parseFloat(AppState.engineEval.score);
             if (!isNaN(s)) active.startingEval = s;
         }
+        _showResignButtons(true);
         toast(`Practice started: ${userColor} vs Stockfish (${level})`);
+    }
+
+    function _showResignButtons(show) {
+        ['gv-resign-btn', 'detail-resign-btn'].forEach(id => {
+            const b = document.getElementById(id);
+            if (b) b.style.display = show ? '' : 'none';
+        });
     }
 
     function _movesToPgn(chess, startFen) {
@@ -88,7 +97,30 @@ const Practice = (function () {
             moveCount,
             finalEval: isNaN(finalEval) ? null : finalEval,
         };
+        if (forcedVerdict) {
+            // Resign / abandon path: save immediately, no modal.
+            const verdict = forcedVerdict;
+            forcedVerdict = null;
+            confirmSave(verdict);
+            return;
+        }
         PracticeUI.showSaveModal(active, pendingSave);
+    }
+
+    function resign() {
+        if (!active) { toast('No practice game in progress', true); return; }
+        if (!confirm('Resign this game? It will be saved as a loss.')) return;
+        forcedVerdict = 'loss';
+        _showResignButtons(false);
+        stopPlayMode();  // wrapper calls captureEndOfGame -> confirmSave('loss')
+        toast('Resigned');
+    }
+
+    function stopAndAbandon() {
+        // Called when user clicks "Stop Playing" during an active practice.
+        // The wrapper on stopPlayMode will still call captureEndOfGame; we
+        // mark the verdict as 'abandoned' so modal is skipped.
+        forcedVerdict = 'abandoned';
     }
 
     function guessVerdict() {
@@ -138,7 +170,12 @@ const Practice = (function () {
         toast('Practice game discarded');
     }
 
-    function _reset() { active = null; pendingSave = null; }
+    function _reset() {
+        active = null;
+        pendingSave = null;
+        forcedVerdict = null;
+        _showResignButtons(false);
+    }
     function isActive() { return !!active; }
     function getActive() { return active; }
     function getPendingSave() { return pendingSave; }
@@ -199,6 +236,7 @@ const Practice = (function () {
         startFromDetail, captureEndOfGame, confirmSave, discard, isActive,
         loadPracticeHistory, loadPracticeTab, loadLevels, getLevels,
         editVerdict, deleteGame, guessVerdict, getActive, getPendingSave,
+        resign, stopAndAbandon,
     };
 })();
 

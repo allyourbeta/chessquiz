@@ -1055,7 +1055,197 @@ Manual testing:
 
 ---
 
-## Build Order Summary
+## Phase 13: Lichess Bots Integration
+
+**Goal**: Play practice games against the full Lichess bot ecosystem — 200+ bots spanning ~800 to 3300+ rating, with wide variety of playing styles (aggressive, defensive, human-like Maia variants, personality bots). Each bot becomes a practice opponent alongside local Stockfish.
+
+**Why this matters**: Local Stockfish is a single opponent at varied strength. Lichess bots give you a zoo of different opponents — different styles, different errors, different feel — without the engineering burden of hosting multiple engines locally. For a player wanting variety over raw strength, this is the highest-leverage integration.
+
+### 13A: Lichess API Setup
+
+- User creates a Lichess account (or connects existing one)
+- Generate a Personal API Token at https://lichess.org/account/oauth/token
+  - Required scopes: `bot:play` to play as bot (not needed if user plays as themselves), `challenge:write` to challenge bots
+- Store token in backend settings (user enters once in Settings view, stored server-side, never exposed to frontend)
+- Do NOT commit the token to git
+
+### 13B: Bot Discovery
+
+Create `backend/api/lichess_bots.py`:
+
+```
+GET /api/lichess-bots/          — List of available bots from Lichess API
+                                  Cached for 24 hours to avoid hitting rate limits
+                                  Filter by: min_rating, max_rating, time_control, active_only
+                                  Returns: [{username, rating, title, description, last_seen}]
+
+GET /api/lichess-bots/{username} — Bot details (full description, stats)
+```
+
+Use Lichess API `GET /api/bot/online` to get currently-online bots. Cache response to avoid rate-limit issues.
+
+### 13C: Challenge Flow
+
+When user clicks "Practice vs Lichess Bot" on a position:
+
+1. Frontend shows a bot picker: search/filter by rating range and style
+2. User selects a bot, time control, and color
+3. Backend sends challenge via Lichess API: `POST /api/challenge/{username}`
+4. If bot accepts, backend opens a streaming connection to Lichess: `GET /api/bot/game/stream/{gameId}`
+5. Moves flow bidirectionally: user's moves posted to Lichess, bot's moves streamed back
+6. Game ends when Lichess reports game over (or user resigns)
+7. Save as PracticeGame with engine_name=lichess-bot, engine_level=<bot-username>, user_verdict computed from Lichess result
+
+### 13D: Key Constraints
+
+- Requires internet connection (unlike local Stockfish)
+- Lichess imposes rate limits on challenges and API calls — implement backoff
+- Bots may be offline or may refuse specific time controls — fallback messaging
+- The challenge position is typically starting position; to start from a custom FEN, use Lichess's "unrated from position" challenge mode (bots must support Chess960/custom starts)
+- Some bots only accept specific time controls (Bullet, Blitz, Rapid only — no Classical)
+
+### 13E: UI
+
+- New "Bot Library" tab or section in Practice view
+- Bot picker with:
+  - Rating range slider (800-3300)
+  - Search by username
+  - Filter by: Maia variants, personality bots, top-rated, recently active
+  - Bot card shows: username, rating, description, "last online" timestamp
+- Select bot -> challenge -> play -> auto-save as PracticeGame
+- Practice History shows games against each bot separately
+- Stats can be sliced by bot: "My best results vs Maia 1700: 8/15"
+
+### Checkpoint 13
+```
+- [ ] User can enter Lichess API token in Settings
+- [ ] Bot list loads and filters correctly
+- [ ] Challenge flow starts a game
+- [ ] Moves sync bidirectionally in real time
+- [ ] Game end triggers PracticeGame save
+- [ ] Practice History distinguishes bot opponents from local Stockfish
+- [ ] Rate-limit handling doesn't break the app
+- [ ] Graceful fallback if bot refuses or goes offline
+- [ ] python test_lichess_bots.py passes (integration tests mock Lichess API)
+```
+
+---
+
+## Phase 14: Generic Engine Pluggability
+
+**Goal**: Abstract the engine layer so any UCI or neural engine (local WASM, remote server, ONNX model) can be registered and selected. Gives you a unified dropdown of all available opponents: local Stockfish levels, Maia variants, Lichess bots, and any future engines.
+
+**Why this phase, given Phase 13 exists**: Lichess bots handle variety-via-remote. This phase handles variety-via-local — engines that run in the browser without network dependency. Over time you'll want both: Lichess bots for online variety, locally-cached engines (Maia, etc.) for offline practice.
+
+### 14A: Engine Registry
+
+Create `backend/services/engine_registry.py`:
+
+```python
+ENGINES = {
+    "stockfish-wasm": {
+        "type": "wasm-uci",
+        "name": "Stockfish",
+        "loader": "/lib/stockfish/stockfish.js",
+        "levels": {
+            "easy":   {"depth": 5,  "skill": 5,  "elo_est": 1100},
+            "medium": {"depth": 10, "skill": 12, "elo_est": 1700},
+            "hard":   {"depth": 15, "skill": 18, "elo_est": 2200},
+            "max":    {"depth": 20, "skill": 20, "elo_est": 2800},
+        },
+        "offline_capable": True,
+    },
+    "maia-1500": {
+        "type": "wasm-onnx",
+        "name": "Maia 1500",
+        "loader": "onnxruntime-web",
+        "weights": "/lib/maia/maia_kdd_1500.onnx",
+        "weights_size_mb": 12,
+        "levels": {
+            "default": {"nodes": 1, "elo_est": 1400},
+            "with_search": {"nodes": 130, "elo_est": 1700},
+        },
+        "offline_capable": True,
+    },
+    # Future additions: maia-2, leela-small, personality bots, etc.
+}
+```
+
+### 14B: Unified Engine Interface
+
+Create `frontend/js/engines/base.js`:
+
+```javascript
+// All engine drivers implement this interface
+class ChessEngine {
+    async init(config) { ... }         // Load weights / connect
+    async getBestMove(fen, options) { ... }
+    async getEval(fen, options) { ... }
+    async stop() { ... }
+    async destroy() { ... }
+}
+```
+
+Specific implementations:
+- `engines/uci-wasm.js` — wraps Stockfish-style WASM UCI engines (uses Web Worker + message passing)
+- `engines/onnx-wasm.js` — wraps Maia-style ONNX models (uses onnxruntime-web)
+- `engines/lichess-remote.js` — wraps Lichess bot play (uses Phase 13 infra)
+
+### 14C: Asset Caching
+
+For large engine weights (Maia ONNX files):
+- Service Worker caches weights in Cache Storage on first download
+- Cache-Control: `public, max-age=31536000, immutable` (weights don't change)
+- IndexedDB stores download-status metadata (which engines are cached, when)
+- UI shows download progress on first use: "Downloading Maia 1700 (12MB)..."
+- After first download, instant load from cache on subsequent sessions
+
+### 14D: UI — Engine Picker Dropdown
+
+Replace the current Easy/Medium/Hard/Max difficulty dropdown with a two-level picker:
+
+```
+┌─ Engine ──────────────────┐
+│ Stockfish (local)         │
+│   Easy                    │
+│   Medium                  │
+│   Hard                    │
+│   Max                     │
+│ Maia (human-like, local)  │
+│   Maia 1100               │
+│   Maia 1500               │
+│   Maia 1700               │
+│   Maia 1900               │
+│ Lichess Bots (online)     │
+│   Browse bots...          │
+└───────────────────────────┘
+```
+
+Grouped by engine family, with offline/online indicator, and estimated rating for each option.
+
+### 14E: PracticeGame Model Changes
+
+Already tracked `engine_name` and `engine_level` — just ensure these map to registry entries:
+- `engine_name` = "stockfish-wasm", "maia-1500", "lichess-bot", etc.
+- `engine_level` = "easy", "default", bot username, etc.
+
+Add `engine_metadata` JSON column for extra info (Lichess game ID, Maia weights version, etc.) for reproducibility.
+
+### Checkpoint 14
+```
+- [ ] Engine registry lists all available engines
+- [ ] Dropdown shows all engines grouped by family
+- [ ] Selecting Maia downloads weights once, caches them
+- [ ] Subsequent selections of Maia load instantly from cache
+- [ ] All engines return moves via common interface
+- [ ] PracticeGame records engine_name and engine_level correctly
+- [ ] Stats can be sliced by engine ("vs Maia 1500: 4/7 wins")
+- [ ] python test.py && python test_practice.py && python test_engines.py
+```
+
+---
+
+
 
 | Phase | What | Depends On |
 |-------|------|------------|
@@ -1071,6 +1261,8 @@ Manual testing:
 | 10 | Practice sessions (drill from saved positions) | Phase 6 + 7 |
 | 11 | Repertoire builder + trainer | Phase 6 + 8 |
 | 12 | Auto-annotation + eval graph | Phase 7 |
+| 13 | Lichess Bots integration (200+ varied opponents online) | Phase 10 |
+| 14 | Generic engine pluggability (Maia + other local engines) | Phase 10 + 13 |
 
 **Phases 1+2 can run in parallel with 3+4** (frontend vs backend).
 

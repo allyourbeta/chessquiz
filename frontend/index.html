@@ -144,7 +144,8 @@
         </div>
         <div id="play-side-msg" class="play-msg" style="display:none"></div>
         <div id="play-controls" class="nav-btns" style="display:none">
-          <button class="btn btn-sm" onclick="stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-sm" onclick="if(window.Practice&&Practice.isActive())Practice.stopAndAbandon();stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-danger btn-sm" onclick="Practice.resign()" id="gv-resign-btn" style="display:none">Resign</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="gvFlip()">Flip</button>
         </div>
@@ -247,7 +248,8 @@
         </div>
         <div id="detail-play-side-msg" class="play-msg" style="display:none"></div>
         <div id="detail-play-controls" class="nav-btns" style="display:none">
-          <button class="btn btn-sm" onclick="stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-sm" onclick="if(window.Practice&&Practice.isActive())Practice.stopAndAbandon();stopPlayMode()">Stop Playing</button>
+          <button class="btn btn-danger btn-sm" onclick="Practice.resign()" id="detail-resign-btn" style="display:none">Resign</button>
           <button class="btn btn-sm" onclick="resetPlayMode()">Reset</button>
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
         </div>
@@ -294,6 +296,34 @@
     </div>
     <div id="practice-positions-list" class="pos-list"></div>
   </div>
+  <div id="view-practice-viewer" class="view">
+    <div class="board-area">
+      <div>
+        <div id="pv-board" class="board-wrap"></div>
+        <div id="pv-nav-btns" class="nav-btns">
+          <button class="btn btn-sm" onclick="PracticeViewer.first()">|&lt;</button>
+          <button class="btn btn-sm" onclick="PracticeViewer.prev()">&lt;</button>
+          <button class="btn btn-sm" onclick="PracticeViewer.next()">&gt;</button>
+          <button class="btn btn-sm" onclick="PracticeViewer.last()">&gt;|</button>
+          <button class="btn btn-sm" onclick="PracticeViewer.flip()" style="margin-left:8px">Flip</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2 id="pv-title">Practice Game</h2>
+        <div class="text-muted" style="font-size:12px;margin-bottom:8px" id="pv-meta"></div>
+        <div id="pv-verdict" style="margin-bottom:8px"></div>
+        <div id="pv-moves" class="moves-panel"></div>
+        <label style="margin-top:12px">Notes</label>
+        <textarea id="pv-notes" placeholder="Reflections on this game..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" onclick="PracticeViewer.save()">Save changes</button>
+          <button class="btn btn-sm" onclick="PracticeViewer.editVerdict()">Edit verdict</button>
+          <button class="btn btn-danger btn-sm" onclick="PracticeViewer.remove()">Delete</button>
+          <button class="btn btn-sm" onclick="history.back()">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <script src="/js/state.js"></script>
 <script src="/js/router.js"></script>
@@ -312,6 +342,7 @@
 <script src="/js/engine.js"></script>
 <script src="/js/practice-ui.js"></script>
 <script src="/js/practice.js"></script>
+<script src="/js/practice-viewer.js"></script>
 <script src="/js/stockfish.js"></script>
 <script src="/js/sound.js"></script>
 <script type="module" src="/js/board.js"></script>

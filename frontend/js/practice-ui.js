@@ -71,10 +71,10 @@ const PracticeUI = (function () {
             const v = g.user_verdict || g.engine_verdict || '?';
             const vcls = v === 'win' ? 'correct' : (v === 'loss' ? 'incorrect' : 'text-muted');
             const date = g.created_at ? new Date(g.created_at).toLocaleDateString() : '';
-            return `<div class="pos-item" style="padding:6px 10px;font-size:12px">
+            return `<div class="pos-item" style="padding:6px 10px;font-size:12px;cursor:pointer" onclick="PracticeViewer.open(${g.id})" title="Click to review this game">
                 <span style="flex:1">${date} &mdash; ${g.user_color} vs ${g.engine_level}, ${g.move_count} moves &middot; <span class="${vcls}">${v}</span></span>
-                <button class="btn btn-sm btn-ghost" onclick="Practice.editVerdict(${g.id})">verdict</button>
-                <button class="btn btn-sm btn-danger" onclick="Practice.deleteGame(${g.id})">×</button>
+                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();Practice.editVerdict(${g.id})">verdict</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();Practice.deleteGame(${g.id})">×</button>
             </div>`;
         }).join('');
         el.innerHTML = rows;

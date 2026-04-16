@@ -119,6 +119,10 @@ function renderRoute(route) {
             _activateView('practice', 'Practice');
             Practice.loadPracticeTab();
             break;
+        case 'practiceGameDetail':
+            _activateView('practice-viewer', 'Practice');
+            PracticeViewer._load(route.id);
+            break;
         default:
             _activateView('positions', 'Positions');
             loadPositions();
