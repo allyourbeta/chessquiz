@@ -14,9 +14,22 @@ chess_router = APIRouter(prefix="/chess", tags=["chess"])
 
 # --- Tags ---
 @tags_router.get("/", response_model=list[TagOut])
-def list_tags(db: Session = Depends(get_db)):
-    """List all tags."""
-    return db.query(Tag).order_by(Tag.name).all()
+def list_tags(
+    q: str | None = Query(default=None, description="substring match on tag name"),
+    limit: int = Query(default=50, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    """List tags. If `q` given, filter by case-insensitive substring match.
+
+    Defaults to a small limit; callers must pass `q` to get meaningful suggestions
+    on large tag sets.
+    """
+    query = db.query(Tag)
+    if q:
+        needle = q.strip().lower().lstrip("#")
+        if needle:
+            query = query.filter(Tag.name.ilike(f"%{needle}%"))
+    return query.order_by(Tag.name).limit(limit).all()
 
 
 @tags_router.delete("/{tag_id}", status_code=204)

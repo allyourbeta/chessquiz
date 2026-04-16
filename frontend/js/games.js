@@ -1,16 +1,45 @@
+function _buildGameQuery(extra) {
+    const params = [];
+    (AppState.gameTagFilters || []).forEach(t => params.push('tags=' + encodeURIComponent(t)));
+    if (AppState.gameCollectionFilter) params.push('collection_id=' + AppState.gameCollectionFilter);
+    if (AppState.gameSearch) params.push('search=' + encodeURIComponent(AppState.gameSearch));
+    if (extra) Object.entries(extra).forEach(([k, v]) => params.push(k + '=' + encodeURIComponent(v)));
+    return params.join('&');
+}
+
 async function loadGames() {
-    let u = API + '/games/?';
-    if (AppState.gameTagFilter) u += 'tag=' + encodeURIComponent(AppState.gameTagFilter) + '&';
-    if (AppState.gameCollectionFilter) u += 'collection_id=' + AppState.gameCollectionFilter + '&';
-    if (AppState.gameSearch) u += 'search=' + encodeURIComponent(AppState.gameSearch) + '&';
+    const offset = AppState.gamePage * AppState.gamePageSize;
+    const qs = _buildGameQuery({ limit: AppState.gamePageSize, offset });
     try {
-        const res = await fetch(u);
+        const res = await fetch(API + '/games/?' + qs);
         AppState.allGames = await res.json();
     } catch (e) {
         AppState.allGames = [];
     }
+    // Fetch total count in parallel for pagination
+    try {
+        const countQs = _buildGameQuery();
+        const cr = await fetch(API + '/games/count?' + countQs);
+        const cd = await cr.json();
+        AppState.gameTotalCount = cd.count || 0;
+    } catch (e) {
+        AppState.gameTotalCount = AppState.allGames.length;
+    }
     AppState.selectedGameIds = new Set();
     renderGamesList();
+}
+
+function mountGameTagFilter() {
+    TagFilter.mount({
+        containerId: 'game-tag-filters',
+        state: { tags: AppState.gameTagFilters },
+        onChange: tags => {
+            AppState.gameTagFilters = tags;
+            AppState.gamePage = 0;
+            loadGames();
+        },
+        placeholder: 'Filter by tag...',
+    });
 }
 
 async function loadCollections() {
@@ -19,32 +48,102 @@ async function loadCollections() {
     renderImportCollections();
 }
 
+function _esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function _gameDate(g) {
+    if (!g.date_played) return '';
+    // PGN date often "YYYY.MM.DD" — keep as-is for compact display
+    return g.date_played.replace(/\.(\?\?|0{1,2})/g, '').replace(/^\.|\.$/g, '');
+}
+
+function _gameOpening(g) {
+    const parts = [];
+    if (g.eco) parts.push(g.eco);
+    if (g.opening) parts.push(g.opening);
+    return parts.join(' ');
+}
+
 function renderGamesList() {
     const el = document.getElementById('games-list');
-    if (!AppState.allGames.length) {
+    if (!AppState.allGames.length && AppState.gameTotalCount === 0) {
         el.innerHTML = '<div class="empty-state"><p>No games yet</p><p>Import PGN games to get started.</p></div>';
         updateBulkBar();
+        renderPager();
         return;
     }
-    el.innerHTML = AppState.allGames.map(g => {
-        const w = g.white || '?';
-        const b = g.black || '?';
-        const res = g.result || '*';
-        const eco = g.eco ? `<span class="text-muted" style="font-size:12px">${g.eco}</span>` : '';
-        const opening = g.opening ? `<span class="text-muted" style="font-size:12px">${g.opening}</span>` : '';
-        const tags = g.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
+    const rows = AppState.allGames.map(g => {
+        const w = _esc(g.white || '?');
+        const b = _esc(g.black || '?');
+        const we = g.white_elo ? `<span class="elo">[${g.white_elo}]</span>` : '';
+        const be = g.black_elo ? `<span class="elo">[${g.black_elo}]</span>` : '';
+        const res = _esc(g.result || '*');
+        const opening = _esc(_gameOpening(g));
+        const date = _esc(_gameDate(g));
         const checked = AppState.selectedGameIds.has(g.id) ? 'checked' : '';
-        return `<div class="pos-item">
-            <input type="checkbox" class="game-select" data-id="${g.id}" onclick="event.stopPropagation();toggleGameSelect(${g.id}, this.checked)" ${checked} style="margin-right:8px;width:auto">
-            <div style="flex:1;cursor:pointer" onclick="openGame(${g.id})">
-                <div style="font-size:14px;font-weight:500">${w} vs ${b} <span class="text-muted">${res}</span></div>
-                <div style="margin-top:4px">${eco} ${opening}</div>
-                <div style="margin-top:4px">${tags}</div>
-            </div>
-            <div class="text-muted" style="font-size:12px">${g.move_count || 0} moves</div>
-        </div>`;
+        return `<tr onclick="openGame(${g.id})">
+            <td class="col-select" onclick="event.stopPropagation()">
+                <input type="checkbox" class="game-select" data-id="${g.id}" onclick="toggleGameSelect(${g.id}, this.checked)" ${checked}>
+            </td>
+            <td class="col-players">${w}${we} <span class="text-muted">vs</span> ${b}${be}</td>
+            <td class="col-result">${res}</td>
+            <td class="col-opening">${opening}</td>
+            <td class="col-date">${date}</td>
+            <td class="col-moves">${g.move_count || 0}</td>
+        </tr>`;
     }).join('');
+    el.innerHTML = `<table class="games-table">
+        <thead><tr>
+            <th class="col-select"></th>
+            <th class="col-players">White [Elo] vs Black [Elo]</th>
+            <th class="col-result">Result</th>
+            <th class="col-opening">Opening</th>
+            <th class="col-date">Date</th>
+            <th class="col-moves">Moves</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`;
     updateBulkBar();
+    renderPager();
+}
+
+function renderPager() {
+    let pager = document.getElementById('games-pager');
+    if (!pager) {
+        pager = document.createElement('div');
+        pager.id = 'games-pager';
+        pager.className = 'pager';
+        const list = document.getElementById('games-list');
+        list.parentNode.insertBefore(pager, list.nextSibling);
+    }
+    const total = AppState.gameTotalCount;
+    const size = AppState.gamePageSize;
+    const page = AppState.gamePage;
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    const start = total ? page * size + 1 : 0;
+    const end = Math.min(total, (page + 1) * size);
+    pager.innerHTML = `
+        <button class="btn btn-sm" onclick="gamesPrevPage()" ${page <= 0 ? 'disabled' : ''}>&larr; Prev</button>
+        <span>${start}–${end} of ${total}</span>
+        <button class="btn btn-sm" onclick="gamesNextPage()" ${page + 1 >= totalPages ? 'disabled' : ''}>Next &rarr;</button>
+    `;
+}
+
+function gamesPrevPage() {
+    if (AppState.gamePage > 0) {
+        AppState.gamePage--;
+        loadGames();
+    }
+}
+
+function gamesNextPage() {
+    const totalPages = Math.max(1, Math.ceil(AppState.gameTotalCount / AppState.gamePageSize));
+    if (AppState.gamePage + 1 < totalPages) {
+        AppState.gamePage++;
+        loadGames();
+    }
 }
 
 function toggleGameSelect(id, checked) {
@@ -89,26 +188,6 @@ async function deleteSelectedGames() {
     loadGames();
 }
 
-function renderGameTagFilters() {
-    const el = document.getElementById('game-tag-filters');
-    if (!el) return;
-    el.innerHTML =
-        `<span class="tag tag-filter ${!AppState.gameTagFilter ? 'selected' : ''}" onclick="filterGamesByTag(null)">All</span>` +
-        AppState.allTags.map(t => {
-            const escaped = t.name.replace(/'/g, "\\'");
-            return `<span class="tag tag-filter ${AppState.gameTagFilter === t.name ? 'selected' : ''}" onclick="filterGamesByTag('${escaped}')">#${t.name}</span>`;
-        }).join('');
-}
-
-function filterGamesByTag(t) {
-    AppState.gameTagFilter = t;
-    AppState.gameSearch = '';
-    const searchInput = document.getElementById('game-search-input');
-    if (searchInput) searchInput.value = '';
-    renderGameTagFilters();
-    loadGames();
-}
-
 function renderCollectionFilter() {
     const el = document.getElementById('game-collection-filter');
     el.innerHTML = '<option value="">All Collections</option>' +
@@ -117,6 +196,7 @@ function renderCollectionFilter() {
 
 function onCollectionFilterChange(sel) {
     AppState.gameCollectionFilter = sel.value || null;
+    AppState.gamePage = 0;
     loadGames();
 }
 
@@ -125,135 +205,20 @@ function onGameSearch() {
     clearTimeout(_gameSearchTimer);
     _gameSearchTimer = setTimeout(() => {
         AppState.gameSearch = document.getElementById('game-search-input').value.trim();
+        AppState.gamePage = 0;
         loadGames();
     }, 300);
-}
-
-let _importFile = null;
-
-function formatBytes(n) {
-    if (n < 1024) return n + ' B';
-    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
-    return (n / 1024 / 1024).toFixed(2) + ' MB';
-}
-
-function resetImportView() {
-    document.getElementById('import-pgn').value = '';
-    document.getElementById('import-tags').value = '';
-    document.getElementById('import-new-coll').value = '';
-    document.getElementById('import-result').innerHTML = '';
-    document.getElementById('import-file-name').textContent = '';
-    document.getElementById('import-force').checked = false;
-    document.getElementById('import-pgn-file').value = '';
-    _importFile = null;
-    renderImportCollections();
-}
-
-function renderImportCollections() {
-    const el = document.getElementById('import-collection-select');
-    if (!el) return;
-    el.innerHTML = '<option value="">None</option>' +
-        AppState.allCollections.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-function handlePgnFile(input) {
-    const file = input.files[0];
-    if (!file) { _importFile = null; return; }
-    _importFile = file;
-    document.getElementById('import-file-name').textContent =
-        `${file.name} (${formatBytes(file.size)}) — will upload on Import`;
-    document.getElementById('import-pgn').value = '';
-    document.getElementById('import-pgn').placeholder =
-        `File selected: ${file.name}. Click Import to upload, or clear file and paste PGN here.`;
-}
-
-async function doImport() {
-    const resultEl = document.getElementById('import-result');
-    const importBtn = document.querySelector('#view-import .btn-primary');
-    const pasted = document.getElementById('import-pgn').value.trim();
-
-    if (!_importFile && !pasted) {
-        toast('Paste or upload PGN first', true);
-        return;
-    }
-
-    const tags = document.getElementById('import-tags').value.split(',').map(t => t.trim()).filter(Boolean);
-    const collSelect = document.getElementById('import-collection-select');
-    const collIds = collSelect.value ? [parseInt(collSelect.value)] : [];
-    const force = document.getElementById('import-force').checked;
-
-    if (importBtn) { importBtn.disabled = true; importBtn.textContent = 'Importing...'; }
-    resultEl.innerHTML = '<p class="text-muted">Uploading and parsing, please wait…</p>';
-
-    try {
-        const newCollName = document.getElementById('import-new-coll').value.trim();
-        if (newCollName) {
-            const cr = await fetch(API + '/collections/', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: newCollName})
-            });
-            if (cr.ok) {
-                const nc = await cr.json();
-                collIds.push(nc.id);
-                await loadCollections();
-            } else if (cr.status !== 409) {
-                toast('Failed to create collection', true);
-            }
-        }
-
-        let pgn;
-        if (_importFile) {
-            pgn = await _importFile.text();
-        } else {
-            pgn = pasted;
-        }
-
-        const res = await fetch(API + '/games/import', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({pgn_text: pgn, tags, collection_ids: collIds, force})
-        });
-        const data = await res.json();
-        if (res.ok) {
-            const dup = data.duplicates || 0;
-            let html = `<p style="color:var(--green)">Imported ${data.imported} game(s)`;
-            if (dup > 0) html += ` <span class="text-muted">(${dup} duplicate${dup === 1 ? '' : 's'} skipped)</span>`;
-            html += '</p>';
-            if (data.failed > 0) html += `<p style="color:var(--red)">${data.failed} failed</p>`;
-            if (data.errors.length) html += `<details><summary style="cursor:pointer;color:var(--text-muted)">Errors</summary><pre style="font-size:12px;color:var(--red);margin-top:8px">${data.errors.join('\n')}</pre></details>`;
-            resultEl.innerHTML = html;
-            if (data.imported > 0) {
-                setTimeout(() => { showView('games'); loadGames(); }, 1500);
-            }
-        } else {
-            resultEl.innerHTML = `<p style="color:var(--red)">${data.detail || 'Import failed'}</p>`;
-        }
-    } catch (e) {
-        resultEl.innerHTML = `<p style="color:var(--red)">Import error: ${e.message || e}</p>`;
-    } finally {
-        if (importBtn) { importBtn.disabled = false; importBtn.textContent = 'Import'; }
-    }
-}
-
-function clearImportFile() {
-    _importFile = null;
-    document.getElementById('import-pgn-file').value = '';
-    document.getElementById('import-file-name').textContent = '';
-    document.getElementById('import-pgn').placeholder = 'Paste one or more PGN games...';
 }
 
 window.loadGames = loadGames;
 window.loadCollections = loadCollections;
 window.renderGamesList = renderGamesList;
-window.renderGameTagFilters = renderGameTagFilters;
-window.filterGamesByTag = filterGamesByTag;
+window.mountGameTagFilter = mountGameTagFilter;
+window.gamesPrevPage = gamesPrevPage;
+window.gamesNextPage = gamesNextPage;
 window.renderCollectionFilter = renderCollectionFilter;
 window.onCollectionFilterChange = onCollectionFilterChange;
 window.onGameSearch = onGameSearch;
-window.resetImportView = resetImportView;
-window.renderImportCollections = renderImportCollections;
-window.handlePgnFile = handlePgnFile;
-window.doImport = doImport;
-window.clearImportFile = clearImportFile;
 window.toggleGameSelect = toggleGameSelect;
 window.toggleSelectAllGames = toggleSelectAllGames;
 window.deleteSelectedGames = deleteSelectedGames;

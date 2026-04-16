@@ -16,10 +16,12 @@ from backend.api import (
     quiz_router,
     tags_router,
 )
-from backend.database import Base, engine
+from backend.database import Base, engine, run_lightweight_migrations
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
+# Apply additive column migrations (ELO, etc.) for existing databases
+run_lightweight_migrations()
 
 app = FastAPI(title="ChessQuiz", version="0.1.0")
 

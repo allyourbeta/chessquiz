@@ -1,6 +1,6 @@
 """Position API routes. All DB calls for positions happen here."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from backend.api.schemas import PositionBrief, PositionCreate, PositionOut, PositionUpdate
@@ -51,15 +51,23 @@ def create_position(data: PositionCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[PositionBrief])
 def list_positions(
     tag: str | None = None,
+    tags: list[str] | None = Query(default=None),
     search: str | None = None,
     db: Session = Depends(get_db),
 ):
-    """List positions, optionally filtered by tag or search text."""
+    """List positions, optionally filtered by tag(s) or search text."""
     query = db.query(Position).options(joinedload(Position.tags))
 
+    tag_names = []
     if tag:
-        tag_name = tag.strip().lower().lstrip("#")
-        query = query.filter(Position.tags.any(Tag.name == tag_name))
+        tag_names.append(tag)
+    if tags:
+        tag_names.extend(tags)
+    for t in tag_names:
+        name = t.strip().lower().lstrip("#")
+        if not name:
+            continue
+        query = query.filter(Position.tags.any(Tag.name == name))
 
     if search:
         pattern = f"%{search}%"

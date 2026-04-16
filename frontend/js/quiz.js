@@ -3,7 +3,10 @@ async function startQuiz() {
     AppState.quizTotal = 0;
     document.getElementById('quiz-answer-area').style.display = 'none';
     let u = API + '/positions/';
-    if (AppState.quizTagFilters.length > 0) u += '?tag=' + encodeURIComponent(AppState.quizTagFilters[0]);
+    const tags = AppState.quizTagFilters || [];
+    if (tags.length) {
+        u += '?' + tags.map(t => 'tags=' + encodeURIComponent(t)).join('&');
+    }
     const positions = await (await fetch(u)).json();
     if (!positions.length) { toast('No positions found', true); return; }
     AppState.quizQueue = [...positions].sort(() => Math.random() - .5);
@@ -56,15 +59,13 @@ function updateQuizStats() {
         : `<span class="correct">✓ ${AppState.quizCorrect}</span><span class="incorrect">✗ ${AppState.quizTotal - AppState.quizCorrect}</span><span>${AppState.quizQueue.length} remaining</span>`;
 }
 
-function renderQuizTagFilters() {
-    document.getElementById('quiz-tag-filters').innerHTML =
-        `<span class="text-muted" style="font-size:12px;margin-right:8px">Filter:</span><span class="tag tag-filter ${!AppState.quizTagFilters.length ? 'selected' : ''}" onclick="toggleQuizTag(null)">All</span>` +
-        AppState.allTags.map(t => `<span class="tag tag-filter ${AppState.quizTagFilters.includes(t.name) ? 'selected' : ''}" onclick="toggleQuizTag('${t.name}')">#${t.name}</span>`).join('');
-}
-
-function toggleQuizTag(t) {
-    AppState.quizTagFilters = t ? [t] : [];
-    renderQuizTagFilters();
+function mountQuizTagFilter() {
+    TagFilter.mount({
+        containerId: 'quiz-tag-filters',
+        state: { tags: AppState.quizTagFilters },
+        onChange: tags => { AppState.quizTagFilters = tags; },
+        placeholder: 'Filter by tag...',
+    });
 }
 
 window.startQuiz = startQuiz;
@@ -73,5 +74,4 @@ window.revealAnswer = revealAnswer;
 window.recordAttempt = recordAttempt;
 window.skipQuestion = skipQuestion;
 window.updateQuizStats = updateQuizStats;
-window.renderQuizTagFilters = renderQuizTagFilters;
-window.toggleQuizTag = toggleQuizTag;
+window.mountQuizTagFilter = mountQuizTagFilter;

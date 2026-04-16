@@ -32,6 +32,8 @@ class GameBrief(BaseModel):
     id: int
     white: str | None
     black: str | None
+    white_elo: int | None = None
+    black_elo: int | None = None
     event: str | None
     date_played: str | None
     result: str | None

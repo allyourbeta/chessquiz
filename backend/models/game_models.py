@@ -44,6 +44,8 @@ class Game(Base):
     eco = Column(String, nullable=True)
     opening = Column(String, nullable=True)
     move_count = Column(Integer, nullable=True)
+    white_elo = Column(Integer, nullable=True)
+    black_elo = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,

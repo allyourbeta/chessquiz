@@ -21,6 +21,16 @@ def get_or_create_tags(db: Session, tag_names: list[str]) -> list[Tag]:
     return tags
 
 
+def _parse_elo(value):
+    if not value:
+        return None
+    try:
+        n = int(str(value).strip())
+        return n if 0 < n < 4000 else None
+    except (ValueError, TypeError):
+        return None
+
+
 def create_game_from_parsed(
     db: Session,
     parsed: dict,
@@ -52,6 +62,8 @@ def create_game_from_parsed(
         eco=headers.get("ECO"),
         opening=headers.get("Opening"),
         move_count=parsed["move_count"],
+        white_elo=_parse_elo(headers.get("WhiteElo")),
+        black_elo=_parse_elo(headers.get("BlackElo")),
         tags=tags,
         collections=collections,
     )

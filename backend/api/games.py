@@ -1,6 +1,6 @@
 """Game API routes. All DB calls for games happen here."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from backend.api.game_helpers import (
@@ -88,16 +88,27 @@ def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
 @router.get("/", response_model=list[GameBrief])
 def list_games(
     tag: str | None = None,
+    tags: list[str] | None = Query(default=None),
     collection_id: int | None = None,
     search: str | None = None,
     eco: str | None = None,
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
     query = db.query(Game).options(joinedload(Game.tags))
 
+    # Combine single-tag and multi-tag filters (AND across all supplied tags)
+    tag_names = []
     if tag:
-        tag_name = tag.strip().lower().lstrip("#")
-        query = query.filter(Game.tags.any(Tag.name == tag_name))
+        tag_names.append(tag)
+    if tags:
+        tag_names.extend(tags)
+    for t in tag_names:
+        name = t.strip().lower().lstrip("#")
+        if not name:
+            continue
+        query = query.filter(Game.tags.any(Tag.name == name))
 
     if collection_id:
         query = query.filter(
@@ -116,7 +127,54 @@ def list_games(
     if eco:
         query = query.filter(Game.eco == eco.upper())
 
-    return query.order_by(Game.created_at.desc()).all()
+    return (
+        query.order_by(Game.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+
+@router.get("/count")
+def count_games(
+    tag: str | None = None,
+    tags: list[str] | None = Query(default=None),
+    collection_id: int | None = None,
+    search: str | None = None,
+    eco: str | None = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Game.id)
+
+    tag_names = []
+    if tag:
+        tag_names.append(tag)
+    if tags:
+        tag_names.extend(tags)
+    for t in tag_names:
+        name = t.strip().lower().lstrip("#")
+        if not name:
+            continue
+        query = query.filter(Game.tags.any(Tag.name == name))
+
+    if collection_id:
+        query = query.filter(
+            Game.collections.any(GameCollection.id == collection_id)
+        )
+
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(
+            Game.white.ilike(pattern)
+            | Game.black.ilike(pattern)
+            | Game.event.ilike(pattern)
+            | Game.opening.ilike(pattern)
+        )
+
+    if eco:
+        query = query.filter(Game.eco == eco.upper())
+
+    return {"count": query.count()}
 
 
 @router.get("/{game_id}", response_model=GameDetail)

@@ -36,10 +36,10 @@ function showView(name) {
     document.querySelectorAll('nav button').forEach(b => {
         if (b.textContent === labels[name]) b.classList.add('active');
     });
-    if (name === 'positions') { loadPositions(); loadTags(); }
-    if (name === 'quiz') loadTags().then(renderQuizTagFilters);
+    if (name === 'positions') { mountPositionTagFilter(); loadPositions(); }
+    if (name === 'quiz') mountQuizTagFilter();
     if (name === 'add') BoardManager.setPosition('board', AppState.boardFen);
-    if (name === 'games') { loadGames(); loadCollections(); loadTags().then(renderGameTagFilters); }
+    if (name === 'games') { mountGameTagFilter(); loadGames(); loadCollections(); }
     if (name === 'collections') { loadCollectionsView(); }
     if (name === 'search') { loadCollections().then(renderSearchScope); initSearchBoard(); }
     if (name === 'import') {

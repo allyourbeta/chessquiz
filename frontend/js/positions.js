@@ -1,14 +1,20 @@
 async function loadPositions() {
     let u = API + '/positions/';
-    if (AppState.currentTagFilter) u += '?tag=' + encodeURIComponent(AppState.currentTagFilter);
+    const tags = AppState.positionTagFilters || [];
+    if (tags.length) {
+        u += '?' + tags.map(t => 'tags=' + encodeURIComponent(t)).join('&');
+    }
     AppState.allPositions = await (await fetch(u)).json();
     renderPositionsList();
 }
 
-async function loadTags() {
-    AppState.allTags = await (await fetch(API + '/tags/')).json();
-    renderTagFilters();
-    return AppState.allTags;
+function mountPositionTagFilter() {
+    TagFilter.mount({
+        containerId: 'tag-filters',
+        state: { tags: AppState.positionTagFilters },
+        onChange: tags => { AppState.positionTagFilters = tags; loadPositions(); },
+        placeholder: 'Filter by tag...',
+    });
 }
 
 async function savePosition() {
@@ -87,18 +93,6 @@ function renderPositionsList() {
     el.innerHTML = AppState.allPositions.map(p =>
         `<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title || 'Untitled'}</div><div>${p.tags.map(t => `<span class="tag">#${t.name}</span>`).join('')}</div></div>`
     ).join('');
-}
-
-function renderTagFilters() {
-    document.getElementById('tag-filters').innerHTML =
-        `<span class="tag tag-filter ${!AppState.currentTagFilter ? 'selected' : ''}" onclick="filterByTag(null)">All</span>` +
-        AppState.allTags.map(t => `<span class="tag tag-filter ${AppState.currentTagFilter === t.name ? 'selected' : ''}" onclick="filterByTag('${t.name}')">#${t.name}</span>`).join('');
-}
-
-function filterByTag(t) {
-    AppState.currentTagFilter = t;
-    loadPositions();
-    renderTagFilters();
 }
 
 function loadFen() {
@@ -193,14 +187,12 @@ savePosition = async function() {
 };
 
 window.loadPositions = loadPositions;
-window.loadTags = loadTags;
+window.mountPositionTagFilter = mountPositionTagFilter;
 window.savePosition = savePosition;
 window.deletePosition = deletePosition;
 window.showDetail = showDetail;
 window.editPosition = editPosition;
 window.renderPositionsList = renderPositionsList;
-window.renderTagFilters = renderTagFilters;
-window.filterByTag = filterByTag;
 window.loadFen = loadFen;
 window.setStartPos = setStartPos;
 window.flipBoard = flipBoard;
