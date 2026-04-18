@@ -28,6 +28,75 @@ function toast(msg, err = false) {
     setTimeout(() => el.remove(), 3000);
 }
 
+// Top banner notification for important feedback
+function topBanner(msg, duration = 3000) {
+    const banner = document.getElementById('notification-banner');
+    if (!banner) return;
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    banner.style.background = 'var(--bg-secondary)';
+    banner.style.color = 'var(--text)';
+    banner.style.border = '1px solid var(--border)';
+    if (duration > 0) {
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, duration);
+    }
+}
+
+// Prominent notification for draw offers and other important events
+let notificationTimeout = null;
+function showProminentNotification(msg, type = 'info', minDuration = 3000) {
+    const banner = document.getElementById('notification-banner');
+    if (!banner) return;
+    
+    // Clear any existing timeout
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+        notificationTimeout = null;
+    }
+    
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    
+    // Style based on type
+    if (type === 'accept' || type === 'success') {
+        banner.style.background = '#10b981';  // green
+        banner.style.color = 'white';
+        banner.style.border = 'none';
+    } else if (type === 'decline' || type === 'warning') {
+        banner.style.background = '#f59e0b';  // amber
+        banner.style.color = 'white';
+        banner.style.border = 'none';
+    } else {
+        banner.style.background = 'var(--bg-secondary)';
+        banner.style.color = 'var(--text)';
+        banner.style.border = '1px solid var(--border)';
+    }
+    
+    // Add dismiss button for long notifications
+    if (minDuration >= 3000) {
+        banner.innerHTML = msg + ' <button onclick="hideProminentNotification()" style="margin-left:16px;padding:4px 8px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:inherit;cursor:pointer">Dismiss</button>';
+    }
+    
+    // Auto-hide after duration
+    if (minDuration > 0) {
+        notificationTimeout = setTimeout(() => {
+            banner.style.display = 'none';
+            notificationTimeout = null;
+        }, minDuration);
+    }
+}
+
+function hideProminentNotification() {
+    const banner = document.getElementById('notification-banner');
+    if (banner) banner.style.display = 'none';
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+        notificationTimeout = null;
+    }
+}
+
 // DOM swap + nav highlight. Does NOT load data — that happens in renderRoute.
 function _activateView(viewId, navLabel) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));

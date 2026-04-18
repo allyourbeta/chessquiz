@@ -50,7 +50,7 @@ async function deletePosition() {
     const id = document.getElementById('edit-id').value;
     if (!id || !confirm('Delete this position?')) return;
     if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
-        toast('Position deleted');
+        topBanner('Position deleted');
         clearForm();
         Router.navigate({ view: 'positions' });
     }
@@ -138,7 +138,7 @@ async function deleteFromDetail() {
     const id = AppState.currentDetailId;
     if (!id || !confirm('Delete this position?')) return;
     if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
-        toast('Position deleted');
+        topBanner('Position deleted');
         Router.navigate({ view: 'positions' });
     }
 }

@@ -143,7 +143,10 @@ const Practice = (function () {
     }
 
     function _handleDrawResponse(latest, sfToMove) {
-        if (!latest) { toast('Stockfish declined the draw'); return; }
+        if (!latest) { 
+            showProminentNotification('Stockfish declined your draw offer. Play continues.', 'decline', 3000);
+            return; 
+        }
         // latest.val is from side-to-move's perspective. Normalize to Stockfish's.
         let sfScore = latest.val * (sfToMove ? 1 : -1);
         if (latest.type === 'mate') sfScore = sfScore > 0 ? 99999 : -99999;
@@ -151,10 +154,10 @@ const Practice = (function () {
         if (sfScore <= 0) {
             forcedVerdict = 'draw';
             _showPracticeButtons(false);
-            toast('Stockfish accepted the draw');
+            showProminentNotification('Stockfish accepted your draw offer. Game ends ½-½.', 'accept', 3000);
             stopPlayMode();
         } else {
-            toast('Stockfish declined the draw');
+            showProminentNotification('Stockfish declined your draw offer. Play continues.', 'decline', 3000);
         }
     }
 
@@ -197,7 +200,7 @@ const Practice = (function () {
             body: JSON.stringify(body),
         });
         if (r.ok) {
-            toast('Practice game saved');
+            topBanner('Practice game saved');
             _reset();
             PracticeUI.hideSaveModal();
             if (AppState.currentDetailId) loadPracticeHistory(AppState.currentDetailId);

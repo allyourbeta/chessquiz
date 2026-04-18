@@ -111,6 +111,35 @@ async function _streamImport(resultEl, pgn, tags, collIds, force) {
     _importAbort = new AbortController();
     let finalResult = null;
     let lastError = null;
+    let preparationStarted = Date.now();
+    let preparationInterval = null;
+    let hasStarted = false;
+    
+    // Show preparation feedback with spinner and timer
+    const showPreparationFeedback = () => {
+        const elapsed = Math.floor((Date.now() - preparationStarted) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        const timeStr = minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `0:${seconds.toString().padStart(2, '0')}`;
+        
+        resultEl.innerHTML = `
+            <div style="text-align:center;padding:20px">
+                <div style="display:inline-block;animation:spin 1s linear infinite;width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%"></div>
+                <p style="margin-top:12px;font-size:14px">Parsing PGN file...</p>
+                <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">Elapsed: ${timeStr}</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>`;
+    };
+    
+    // Start showing preparation feedback immediately
+    showPreparationFeedback();
+    preparationInterval = setInterval(showPreparationFeedback, 1000);
+    
     const res = await fetch(API + '/games/import/stream', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -118,6 +147,7 @@ async function _streamImport(resultEl, pgn, tags, collIds, force) {
         signal: _importAbort.signal,
     });
     if (!res.ok || !res.body) {
+        if (preparationInterval) clearInterval(preparationInterval);
         throw new Error('Stream failed: ' + res.status);
     }
     _importJobId = res.headers.get('X-Job-Id');
@@ -136,12 +166,21 @@ async function _streamImport(resultEl, pgn, tags, collIds, force) {
             if (!line) continue;
             let ev;
             try { ev = JSON.parse(line.slice(5).trim()); } catch (_) { continue; }
-            if (ev.type === 'start') _importJobId = ev.job_id || _importJobId;
+            if (ev.type === 'start') {
+                _importJobId = ev.job_id || _importJobId;
+                hasStarted = true;
+                // Clear preparation feedback when actual processing starts
+                if (preparationInterval) {
+                    clearInterval(preparationInterval);
+                    preparationInterval = null;
+                }
+            }
             else if (ev.type === 'progress') _renderProgress(resultEl, ev);
             else if (ev.type === 'done') finalResult = ev;
             else if (ev.type === 'error') lastError = ev.detail || 'Import failed';
         }
     }
+    if (preparationInterval) clearInterval(preparationInterval);
     if (lastError) throw new Error(lastError);
     return finalResult;
 }
@@ -177,6 +216,7 @@ async function doImport() {
         }
         _renderImportResult(resultEl, data);
         if (data.imported > 0) {
+            topBanner(`Imported ${data.imported} game${data.imported === 1 ? '' : 's'}`);
             setTimeout(() => { Router.navigate({ view: 'games' }); }, 1500);
         }
     } catch (e) {
