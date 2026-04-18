@@ -90,15 +90,65 @@ def create_practice_game(data: PracticeGameCreate, db: Session = Depends(get_db)
     return pg
 
 
-@router.get("/", response_model=list[PracticeGameBrief])
+@router.get("/")
 def list_practice_games(
     root_position_id: int | None = Query(default=None),
+    verdict: str | None = Query(default=None),
+    engine_level: str | None = Query(default=None),
+    sort: str = Query(default="recent"),
+    limit: int = Query(default=None, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
+    # Validate parameters
+    if verdict and verdict not in ["win", "draw", "loss", "abandoned"]:
+        raise HTTPException(status_code=400, detail="Invalid verdict value")
+    if sort not in ["recent", "oldest", "longest", "shortest"]:
+        raise HTTPException(status_code=400, detail="Invalid sort value")
+    
     q = db.query(PracticeGame)
     if root_position_id is not None:
         q = q.filter(PracticeGame.root_position_id == root_position_id)
-    return q.order_by(PracticeGame.created_at.desc()).all()
+    
+    # Apply verdict filter
+    if verdict:
+        # Check both user_verdict and engine_verdict
+        from sqlalchemy import or_
+        q = q.filter(or_(
+            PracticeGame.user_verdict == verdict,
+            (PracticeGame.user_verdict.is_(None)) & (PracticeGame.engine_verdict == verdict)
+        ))
+    
+    # Apply engine level filter
+    if engine_level:
+        q = q.filter(PracticeGame.engine_level == engine_level)
+    
+    # Apply sorting
+    if sort == "recent":
+        q = q.order_by(PracticeGame.created_at.desc())
+    elif sort == "oldest":
+        q = q.order_by(PracticeGame.created_at.asc())
+    elif sort == "longest":
+        q = q.order_by(PracticeGame.move_count.desc())
+    elif sort == "shortest":
+        q = q.order_by(PracticeGame.move_count.asc())
+    
+    # Get total count before pagination
+    total_count = q.count()
+    
+    # Apply pagination
+    if limit is not None:
+        q = q.limit(limit).offset(offset)
+    elif offset > 0:
+        q = q.offset(offset)
+    
+    games = q.all()
+    
+    # Convert to response format with total_count
+    return {
+        "games": games,
+        "total_count": total_count
+    }
 
 
 @router.get("/positions", response_model=list[PracticePositionSummary])
@@ -137,16 +187,35 @@ def list_practice_positions(db: Session = Depends(get_db)):
 
 
 @router.get("/stats/{position_id}", response_model=PracticeStatsOut)
-def get_practice_stats(position_id: int, db: Session = Depends(get_db)):
+def get_practice_stats(
+    position_id: int,
+    verdict: str | None = Query(default=None),
+    engine_level: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
     position = db.query(Position).filter(Position.id == position_id).first()
     if not position:
         raise HTTPException(status_code=404, detail="Position not found")
+    
+    # Validate parameters
+    if verdict and verdict not in ["win", "draw", "loss", "abandoned"]:
+        raise HTTPException(status_code=400, detail="Invalid verdict value")
 
-    games = (
-        db.query(PracticeGame)
-        .filter(PracticeGame.root_position_id == position_id)
-        .all()
-    )
+    q = db.query(PracticeGame).filter(PracticeGame.root_position_id == position_id)
+    
+    # Apply verdict filter
+    if verdict:
+        from sqlalchemy import or_
+        q = q.filter(or_(
+            PracticeGame.user_verdict == verdict,
+            (PracticeGame.user_verdict.is_(None)) & (PracticeGame.engine_verdict == verdict)
+        ))
+    
+    # Apply engine level filter
+    if engine_level:
+        q = q.filter(PracticeGame.engine_level == engine_level)
+    
+    games = q.all()
     agg = _aggregate(games)
 
     avg_move_count = (

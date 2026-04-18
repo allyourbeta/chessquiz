@@ -47,12 +47,12 @@ const PracticeUI = (function () {
         if (m) m.style.display = 'none';
     }
 
-    function renderHistory(stats, games, tree) {
+    function renderHistory(stats, games, tree, append = false) {
         const statsEl = document.getElementById('practice-stats');
         const listEl = document.getElementById('practice-recent-list');
         const treeEl = document.getElementById('practice-tree');
         if (statsEl) _renderStats(statsEl, stats);
-        if (listEl) _renderRecent(listEl, games);
+        if (listEl) _renderRecent(listEl, games, append);
         if (treeEl) _renderTree(treeEl, tree);
     }
 
@@ -94,9 +94,21 @@ const PracticeUI = (function () {
         el.innerHTML = html;
     }
 
-    function _renderRecent(el, games) {
-        if (!games || !games.length) { el.innerHTML = ''; return; }
-        const rows = games.slice(0, 10).map(g => {
+    function _renderRecent(el, games, append = false) {
+        if (!append && (!games || !games.length)) { 
+            // Check if this is because of filters
+            const hasFilters = document.getElementById('practice-verdict-filter')?.value || 
+                              document.getElementById('practice-level-filter')?.value;
+            if (hasFilters) {
+                el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted)">No games match these filters. Try adjusting your filters or <a href="#" onclick="Practice.clearFilters();return false">clear filters</a>.</div>';
+            } else {
+                el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted)">No practice games yet. Start practicing to see your history here.</div>';
+            }
+            return; 
+        }
+        if (!games || !games.length) return;
+        
+        const rows = games.map(g => {
             const v = g.user_verdict || g.engine_verdict;
             const vcls = resultClass(v);
             const result = formatResult(v, g.user_color);
@@ -113,7 +125,12 @@ const PracticeUI = (function () {
                 </button>
             </div>`;
         }).join('');
-        el.innerHTML = rows;
+        
+        if (append) {
+            el.innerHTML += rows;
+        } else {
+            el.innerHTML = rows;
+        }
     }
 
     function _renderTree(el, tree) {

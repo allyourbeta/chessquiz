@@ -225,17 +225,93 @@ const Practice = (function () {
     function getActive() { return active; }
     function getPendingSave() { return pendingSave; }
 
-    async function loadPracticeHistory(positionId) {
+    let currentFilters = { verdict: '', engine_level: '', sort: 'recent' };
+    let currentOffset = 0;
+    let totalCount = 0;
+    const PAGE_SIZE = 10;
+
+    async function loadPracticeHistory(positionId, append = false) {
+        if (!positionId) return;
+        
         try {
-            const [stats, games, tree] = await Promise.all([
-                fetch(`${API}/practice/stats/${positionId}`).then(r => r.json()),
-                fetch(`${API}/practice/?root_position_id=${positionId}`).then(r => r.json()),
+            // Build query params
+            const params = new URLSearchParams({
+                root_position_id: positionId,
+                limit: PAGE_SIZE,
+                offset: append ? currentOffset : 0,
+                sort: currentFilters.sort || 'recent'
+            });
+            if (currentFilters.verdict) params.append('verdict', currentFilters.verdict);
+            if (currentFilters.engine_level) params.append('engine_level', currentFilters.engine_level);
+            
+            // Also build stats params
+            const statsParams = new URLSearchParams();
+            if (currentFilters.verdict) statsParams.append('verdict', currentFilters.verdict);
+            if (currentFilters.engine_level) statsParams.append('engine_level', currentFilters.engine_level);
+            
+            const [stats, gamesData, tree] = await Promise.all([
+                fetch(`${API}/practice/stats/${positionId}?${statsParams}`).then(r => r.json()),
+                fetch(`${API}/practice/?${params}`).then(r => r.json()),
                 fetch(`${API}/practice/tree/${positionId}`).then(r => r.json()),
             ]);
-            PracticeUI.renderHistory(stats, games, tree);
+            
+            // Extract games and total_count from response
+            const games = gamesData.games || gamesData;
+            totalCount = gamesData.total_count || games.length;
+            
+            if (!append) currentOffset = 0;
+            currentOffset += games.length;
+            
+            // Update filter info display
+            const filterInfo = document.getElementById('practice-filter-info');
+            const filterText = document.getElementById('practice-filter-text');
+            if (currentFilters.verdict || currentFilters.engine_level) {
+                filterInfo.style.display = 'block';
+                filterText.textContent = `Showing ${stats.total_games} of ${totalCount} games (filtered)`;
+            } else {
+                filterInfo.style.display = 'none';
+            }
+            
+            // Show pagination button if needed
+            const paginationEl = document.getElementById('practice-pagination');
+            if (paginationEl) {
+                paginationEl.style.display = currentOffset < totalCount ? 'block' : 'none';
+            }
+            
+            PracticeUI.renderHistory(stats, games, tree, append);
         } catch (_) {
             const el = document.getElementById('practice-stats');
             if (el) el.innerHTML = '<p class="text-muted">Could not load practice history</p>';
+        }
+    }
+    
+    function applyFilters() {
+        const verdictEl = document.getElementById('practice-verdict-filter');
+        const levelEl = document.getElementById('practice-level-filter');
+        const sortEl = document.getElementById('practice-sort');
+        
+        currentFilters = {
+            verdict: verdictEl ? verdictEl.value : '',
+            engine_level: levelEl ? levelEl.value : '',
+            sort: sortEl ? sortEl.value : 'recent'
+        };
+        
+        currentOffset = 0;
+        if (AppState.currentDetailId) {
+            loadPracticeHistory(AppState.currentDetailId, false);
+        }
+    }
+    
+    function clearFilters() {
+        document.getElementById('practice-verdict-filter').value = '';
+        document.getElementById('practice-level-filter').value = '';
+        document.getElementById('practice-sort').value = 'recent';
+        applyFilters();
+    }
+    
+    function showMore() {
+        if (AppState.currentDetailId) {
+            loadPracticeHistory(AppState.currentDetailId, true);
         }
     }
 
@@ -303,6 +379,7 @@ const Practice = (function () {
         loadPracticeHistory, loadPracticeTab, loadLevels, getLevels,
         editVerdict, deleteGame, guessVerdict, getActive, getPendingSave,
         resign, stopAndAbandon, offerDraw,
+        applyFilters, clearFilters, showMore,
     };
 })();
 

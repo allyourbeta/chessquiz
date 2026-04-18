@@ -309,11 +309,40 @@
         <!-- Practice History Card -->
         <div class="card">
           <div class="card-header">Practice History</div>
+          <div id="practice-filter-info" style="display:none;margin-bottom:8px;font-size:13px;color:var(--text-muted)">
+            <span id="practice-filter-text"></span>
+            <button class="btn btn-sm" onclick="Practice.clearFilters()" style="margin-left:8px">Clear filters</button>
+          </div>
           <div class="stats-panel">
             <h4 style="margin:0;margin-bottom:8px;font-size:14px;font-weight:600">Aggregate Stats</h4>
             <div id="practice-stats" style="font-size:13px"></div>
           </div>
-          <div id="practice-recent-list" class="pos-list" style="margin-top:12px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px;margin-bottom:8px;flex-wrap:wrap">
+            <select id="practice-verdict-filter" class="select-input" onchange="Practice.applyFilters()" style="min-width:100px">
+              <option value="">All verdicts</option>
+              <option value="win">Wins</option>
+              <option value="draw">Draws</option>
+              <option value="loss">Losses</option>
+              <option value="abandoned">Abandoned</option>
+            </select>
+            <select id="practice-level-filter" class="select-input" onchange="Practice.applyFilters()" style="min-width:100px">
+              <option value="">All levels</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+              <option value="max">Max</option>
+            </select>
+            <select id="practice-sort" class="select-input" onchange="Practice.applyFilters()" style="min-width:120px">
+              <option value="recent">Most recent</option>
+              <option value="oldest">Oldest</option>
+              <option value="longest">Longest game</option>
+              <option value="shortest">Shortest game</option>
+            </select>
+          </div>
+          <div id="practice-recent-list" class="pos-list"></div>
+          <div id="practice-pagination" style="margin-top:12px;text-align:center;display:none">
+            <button class="btn btn-sm" onclick="Practice.showMore()">Show more</button>
+          </div>
         </div>
 
         <!-- Your Moves From Here Card -->

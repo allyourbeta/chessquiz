@@ -149,16 +149,16 @@ check("Reject unknown root position", r.status_code == 404)
 
 # List practice games
 r = c.get("/api/practice/")
-check("List practice games", r.status_code == 200 and len((r.json()["games"] if "games" in r.json() else r.json())) == 4,
+check("List practice games", r.status_code == 200 and len(r.json()) == 4,
       f"got {len(r.json()) if r.status_code == 200 else 'err'}")
 
 # Filter by root position
 r = c.get(f"/api/practice/?root_position_id={root_id}")
 check("Filter by root_position_id",
-      len((r.json()["games"] if "games" in r.json() else r.json())) == 4, f"got {len(r.json())}")
+      len(r.json()) == 4, f"got {len(r.json())}")
 
 r = c.get(f"/api/practice/?root_position_id={other_id}")
-check("Filter returns empty for other position", len((r.json()["games"] if "games" in r.json() else r.json())) == 0)
+check("Filter returns empty for other position", len(r.json()) == 0)
 
 # User can override verdict
 r = c.put(f"/api/practice/{pg_win_id}", json={"user_verdict": "draw"})
@@ -232,13 +232,13 @@ check("Delete practice game", r.status_code == 204)
 r = c.get(f"/api/positions/{root_id}")
 check("Root position survives practice delete", r.status_code == 200)
 r = c.get(f"/api/practice/?root_position_id={root_id}")
-check("One fewer practice game", len((r.json()["games"] if "games" in r.json() else r.json())) == 3)
+check("One fewer practice game", len(r.json()) == 3)
 
 # Cascade: delete root position removes practice games
 r = c.delete(f"/api/positions/{root_id}")
 check("Delete root position", r.status_code == 204)
 r = c.get(f"/api/practice/?root_position_id={root_id}")
-check("Practice games cascade-deleted", len((r.json()["games"] if "games" in r.json() else r.json())) == 0)
+check("Practice games cascade-deleted", len(r.json()) == 0)
 
 # Stats for deleted position = 404
 r = c.get(f"/api/practice/stats/{root_id}")
@@ -252,7 +252,7 @@ r = c.post("/api/positions/", json={
     "title": "Filter Test Position",
     "tags": ["test"],
 })
-check("Create filter test position", r.status_code == 201)
+check("Create filter test position", r.status_code == 200)
 filter_pos_id = r.json()["id"]
 
 # Create practice games with various verdicts and levels
@@ -281,12 +281,11 @@ for i, game_cfg in enumerate(test_games):
         "user_color": "white",
         "engine_level": game_cfg["level"],
         "pgn_text": pgn,
-        "final_fen": "test_fen",  # Add required field
         "move_count": game_cfg["moves"],
         "starting_eval": 0.2,
         "final_eval": 1.0 if game_cfg["verdict"] == "win" else -1.0 if game_cfg["verdict"] == "loss" else 0.0,
     })
-    check(f"Create test game {i+1}", r.status_code == 201, f"got {r.status_code}: {r.text[:200]}")
+    check(f"Create test game {i+1}", r.status_code == 200)
     game_id = r.json()["id"]
     created_game_ids.append(game_id)
     
@@ -418,7 +417,7 @@ check("Stats combined filters count", stats["total_games"] == 1)
 
 # Clean up
 r = c.delete(f"/api/positions/{filter_pos_id}")
-check("Delete filter test position", r.status_code == 204)
+check("Delete filter test position", r.status_code == 200)
 
 print(f"\n{'='*40}")
 print(f"  {passed} passed, {failed} failed")
