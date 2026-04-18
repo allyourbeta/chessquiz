@@ -235,8 +235,9 @@
       <label style="margin-top:8px;font-size:13px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="import-force" style="width:auto"> Force re-import (skip duplicate check)</label>
       <div id="import-result" style="margin-top:12px"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="doImport()">Import</button>
-        <button class="btn" onclick="history.back()">Cancel</button>
+        <button class="btn btn-primary" id="import-go-btn" onclick="doImport()">Import</button>
+        <button class="btn btn-danger" id="import-cancel-btn" onclick="cancelImport()" style="display:none">Cancel Import</button>
+        <button class="btn" onclick="history.back()">Back</button>
       </div>
     </div>
   </div>

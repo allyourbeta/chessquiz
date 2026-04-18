@@ -1,12 +1,12 @@
 """Game API routes. All DB calls for games happen here."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from backend.api.game_helpers import (
     create_game_from_parsed,
     get_or_create_tags,
-    is_duplicate_game,
 )
 from backend.api.game_schemas import (
     BulkPGNImport,
@@ -18,12 +18,16 @@ from backend.api.game_schemas import (
     PositionSearchRequest,
     PositionSearchResult,
 )
+from backend.api.import_service import (
+    new_job_id,
+    run_import,
+    signal_cancel,
+    stream_import,
+)
 from backend.database import get_db
 from backend.models import Game, GameCollection, PositionIndex, Tag
 from backend.services import (
-    compute_position_index,
     compute_zobrist,
-    parse_multi_pgn,
     parse_single_pgn,
 )
 
@@ -45,44 +49,44 @@ def create_game(data: GameCreate, db: Session = Depends(get_db)):
 
 @router.post("/import", response_model=BulkPGNImportResult)
 def bulk_import(data: BulkPGNImport, db: Session = Depends(get_db)):
-    results = parse_multi_pgn(data.pgn_text)
-    if not results:
-        raise HTTPException(status_code=400, detail="No games found in PGN")
-
-    imported = 0
-    failed = 0
-    duplicates = 0
-    errors = []
-    game_ids = []
-
-    for i, parsed in enumerate(results):
-        if parsed.get("error"):
-            failed += 1
-            errors.append(f"Game {i + 1}: {parsed['error']}")
-            continue
-        try:
-            index_data = compute_position_index(parsed["pgn_text"])
-            if not data.force and is_duplicate_game(db, parsed, index_data):
-                duplicates += 1
-                continue
-            game = create_game_from_parsed(
-                db, parsed, data.tags, data.collection_ids, index_data=index_data
-            )
-            db.flush()
-            game_ids.append(game.id)
-            imported += 1
-        except Exception as e:
-            failed += 1
-            errors.append(f"Game {i + 1}: {str(e)}")
-
-    db.commit()
-    return BulkPGNImportResult(
-        imported=imported,
-        failed=failed,
-        duplicates=duplicates,
-        errors=errors,
-        game_ids=game_ids,
+    """Non-streaming bulk import. Atomic: commits once at end, rolls back on error."""
+    result = run_import(
+        db,
+        pgn_text=data.pgn_text,
+        user_tags=data.tags,
+        collection_ids=data.collection_ids,
+        force=data.force,
     )
+    if result["total"] == 0:
+        raise HTTPException(status_code=400, detail="No games found in PGN")
+    return BulkPGNImportResult(
+        imported=result["imported"],
+        failed=result["failed"],
+        duplicates=result["duplicates"],
+        errors=result["errors"],
+        game_ids=result["game_ids"],
+    )
+
+
+@router.post("/import/stream")
+def bulk_import_stream(data: BulkPGNImport):
+    """SSE import. Emits start/progress/done/error events. Cancel via /import/cancel/{job_id}."""
+    job_id = new_job_id()
+    return StreamingResponse(
+        stream_import(
+            pgn_text=data.pgn_text, user_tags=data.tags,
+            collection_ids=data.collection_ids, force=data.force, job_id=job_id,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "X-Job-Id": job_id},
+    )
+
+
+@router.post("/import/cancel/{job_id}", status_code=202)
+def bulk_import_cancel(job_id: str):
+    if not signal_cancel(job_id):
+        raise HTTPException(status_code=404, detail="Import job not found")
+    return {"cancelled": True, "job_id": job_id}
 
 
 _VALID_RESULTS = {"1-0", "0-1", "1/2-1/2"}
