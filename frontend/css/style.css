@@ -215,6 +215,7 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   border-radius: var(--radius-md);
   padding: var(--sp-5);
   box-shadow: var(--shadow-xs);
+  max-width: 840px;
 }
 .panel h2 {
   font-size: var(--fs-16);
@@ -222,6 +223,53 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   margin-bottom: var(--sp-3);
   color: var(--text);
   letter-spacing: -0.01em;
+}
+
+/* Card-based layout for Position detail */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.card:last-child {
+  margin-bottom: 0;
+}
+
+.card-header {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  margin-bottom: var(--sp-3);
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.card-section {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--grey-100);
+}
+
+.card-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Practice History card internal structure */
+.stats-panel {
+  background: var(--grey-050);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.stats-breakdown {
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--grey-200);
 }
 .section-title {
   font-size: var(--fs-16);

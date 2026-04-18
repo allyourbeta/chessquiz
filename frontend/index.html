@@ -244,13 +244,13 @@
   </div>
   <div id="view-detail" class="view">
     <div class="board-area">
-      <div>
+      <div class="card" style="margin:0;padding:var(--sp-4)">
         <div id="detail-board" class="board-wrap"></div>
-        <div class="btn-row" style="margin-top:8px">
+        <div class="btn-row" style="margin-top:12px">
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button>
         </div>
-        <div id="detail-play-side-msg" class="play-msg" style="display:none"></div>
-        <div id="detail-play-controls" class="nav-btns" style="display:none">
+        <div id="detail-play-side-msg" class="play-msg" style="display:none;margin-top:12px"></div>
+        <div id="detail-play-controls" class="nav-btns" style="display:none;margin-top:12px">
           <button class="btn btn-sm" onclick="if(window.Practice&&Practice.isActive())Practice.stopAndAbandon();stopPlayMode()">Stop Playing</button>
           <button class="btn btn-sm" onclick="Practice.offerDraw()" id="detail-draw-btn" style="display:none">Offer Draw</button>
           <button class="btn btn-danger btn-sm" onclick="Practice.resign()" id="detail-resign-btn" style="display:none">Resign</button>
@@ -258,22 +258,43 @@
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
         </div>
       </div>
-      <div class="panel">
-        <h2 id="detail-title">Position</h2>
-        <div id="detail-tags" style="margin-bottom:12px"></div>
-        <label>FEN</label><div id="detail-fen" class="fen-display"></div>
-        <label>Your Notes</label><pre id="detail-notes" class="detail-pre"></pre>
-        <label>Stockfish Analysis</label><pre id="detail-stockfish" class="detail-pre"></pre>
-        <label>Quiz Stats</label><div id="detail-stats" class="text-muted" style="font-size:13px"></div>
-        <div class="btn-row">
-          <button class="btn" onclick="editPosition()">Edit</button>
-          <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Eval: OFF</button>
-          <button class="btn btn-sm" onclick="playFromHereDetail()">Play from here</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
-          <button class="btn" onclick="history.back()">Back</button>
+      <div class="panel" style="display:flex;flex-direction:column;gap:0">
+        <!-- Header Card -->
+        <div class="card">
+          <h2 id="detail-title">Position</h2>
+          <div id="detail-tags"></div>
         </div>
-        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-          <h3 style="margin-top:0;font-size:16px;font-weight:600">Practice This Position</h3>
+
+        <!-- Position Info Card -->
+        <div class="card">
+          <label>FEN</label>
+          <div id="detail-fen" class="fen-display"></div>
+          <label style="margin-top:16px">Your Notes</label>
+          <pre id="detail-notes" class="detail-pre"></pre>
+          <label style="margin-top:16px">Stockfish Analysis</label>
+          <pre id="detail-stockfish" class="detail-pre"></pre>
+        </div>
+
+        <!-- Quiz Stats Card -->
+        <div class="card">
+          <div class="card-header">Quiz Stats</div>
+          <div id="detail-stats" class="text-muted" style="font-size:13px"></div>
+        </div>
+
+        <!-- Actions Card -->
+        <div class="card">
+          <div class="btn-row" style="margin:0">
+            <button class="btn" onclick="editPosition()">Edit</button>
+            <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Eval: OFF</button>
+            <button class="btn btn-sm" onclick="playFromHereDetail()">Play from here</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
+            <button class="btn" onclick="history.back()">Back</button>
+          </div>
+        </div>
+
+        <!-- Practice This Position Card -->
+        <div class="card">
+          <div class="card-header">Practice This Position</div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <select id="practice-level" class="select-input"></select>
             <select id="practice-color" class="select-input">
@@ -283,16 +304,22 @@
             </select>
             <button class="btn btn-primary btn-sm" onclick="Practice.startFromDetail()">Start practice</button>
           </div>
-          <div style="margin-top:12px">
-            <h3 style="margin-top:12px;font-size:16px;font-weight:600">Practice History</h3>
-            <div style="margin-top:8px">
-              <h4 style="margin-top:0;margin-bottom:8px;font-size:14px;font-weight:600">Aggregate Stats</h4>
-              <div id="practice-stats" class="text-muted" style="font-size:13px"></div>
-            </div>
-            <div id="practice-recent-list" class="pos-list" style="margin-top:8px"></div>
-            <h3 style="margin-top:12px;font-size:16px;font-weight:600">Your Moves From Here</h3>
-            <div id="practice-tree" class="tree-panel" style="margin-top:10px"></div>
+        </div>
+
+        <!-- Practice History Card -->
+        <div class="card">
+          <div class="card-header">Practice History</div>
+          <div class="stats-panel">
+            <h4 style="margin:0;margin-bottom:8px;font-size:14px;font-weight:600">Aggregate Stats</h4>
+            <div id="practice-stats" style="font-size:13px"></div>
           </div>
+          <div id="practice-recent-list" class="pos-list" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Your Moves From Here Card -->
+        <div class="card">
+          <div class="card-header">Your Moves From Here</div>
+          <div id="practice-tree" class="tree-panel"></div>
         </div>
       </div>
     </div>

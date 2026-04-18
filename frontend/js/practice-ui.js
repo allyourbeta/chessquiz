@@ -80,15 +80,16 @@ const PracticeUI = (function () {
                 ${s.avg_final_eval != null ? s.avg_final_eval.toFixed(2) : '—'}
             </div>`;
         if (s.by_engine_level && s.by_engine_level.length > 1) {
-            html += `<details style="font-size:12px;margin-bottom:6px">
-                <summary class="text-muted" style="cursor:pointer">Breakdown by level</summary>
-                <div style="padding:4px 0 0 12px">`;
+            html += `<div class="stats-breakdown">
+                <details style="font-size:12px">
+                    <summary class="text-muted" style="cursor:pointer">Breakdown by level</summary>
+                    <div style="padding:4px 0 0 12px;margin-top:4px">`;
             s.by_engine_level.forEach(b => {
                 const br = (b.win_rate * 100).toFixed(0);
                 const bd = b.wins + b.draws + b.losses;
-                html += `<div>Stockfish <strong>${b.engine_level}</strong>: ${b.wins}/${bd} wins (${br}%)</div>`;
+                html += `<div style="margin-bottom:2px">Stockfish <strong>${b.engine_level}</strong>: ${b.wins}/${bd} wins (${br}%)</div>`;
             });
-            html += '</div></details>';
+            html += '</div></details></div>';
         }
         el.innerHTML = html;
     }
@@ -100,7 +101,7 @@ const PracticeUI = (function () {
             const vcls = resultClass(v);
             const result = formatResult(v, g.user_color);
             const date = g.created_at ? new Date(g.created_at).toLocaleDateString() : '';
-            return `<div class="pos-item" style="padding:6px 10px;font-size:12px;cursor:pointer" onclick="PracticeViewer.open(${g.id})" title="Click to review this game">
+            return `<div class="pos-item" style="padding:8px 12px;margin-bottom:8px;font-size:12px;cursor:pointer;border:1px solid var(--grey-100);border-radius:4px" onclick="PracticeViewer.open(${g.id})" title="Click to review this game">
                 <span style="flex:1">${date} &mdash; ${g.user_color} vs Stockfish, ${g.move_count} moves &middot; <span class="${vcls}" style="cursor:pointer;text-decoration:underline;text-decoration-color:transparent;transition:text-decoration-color 0.2s" onmouseover="this.style.textDecorationColor='currentColor'" onmouseout="this.style.textDecorationColor='transparent'" onclick="event.stopPropagation();Practice.editVerdict(${g.id})" title="Click to edit verdict"><strong>${result}</strong></span></span>
                 <button class="btn btn-sm btn-ghost" style="color:var(--text-muted);transition:color 0.2s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'" onclick="event.stopPropagation();Practice.deleteGame(${g.id})" aria-label="Delete practice game">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
