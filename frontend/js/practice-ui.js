@@ -101,9 +101,15 @@ const PracticeUI = (function () {
             const result = formatResult(v, g.user_color);
             const date = g.created_at ? new Date(g.created_at).toLocaleDateString() : '';
             return `<div class="pos-item" style="padding:6px 10px;font-size:12px;cursor:pointer" onclick="PracticeViewer.open(${g.id})" title="Click to review this game">
-                <span style="flex:1">${date} &mdash; ${g.user_color} vs Stockfish, ${g.move_count} moves &middot; <span class="${vcls}"><strong>${result}</strong></span></span>
-                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();Practice.editVerdict(${g.id})">verdict</button>
-                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();Practice.deleteGame(${g.id})">×</button>
+                <span style="flex:1">${date} &mdash; ${g.user_color} vs Stockfish, ${g.move_count} moves &middot; <span class="${vcls}" style="cursor:pointer;text-decoration:underline;text-decoration-color:transparent;transition:text-decoration-color 0.2s" onmouseover="this.style.textDecorationColor='currentColor'" onmouseout="this.style.textDecorationColor='transparent'" onclick="event.stopPropagation();Practice.editVerdict(${g.id})" title="Click to edit verdict"><strong>${result}</strong></span></span>
+                <button class="btn btn-sm btn-ghost" style="color:var(--text-muted);transition:color 0.2s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'" onclick="event.stopPropagation();Practice.deleteGame(${g.id})" aria-label="Delete practice game">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </button>
             </div>`;
         }).join('');
         el.innerHTML = rows;
@@ -119,7 +125,7 @@ const PracticeUI = (function () {
                 <span style="margin-left:auto">${wr}% win</span>
             </div>`;
         }).join('');
-        el.innerHTML = `<div class="tree-panel-header">Your moves from here</div>${rows}`;
+        el.innerHTML = rows;
     }
 
     function renderPositionsList(summaries) {
@@ -147,7 +153,8 @@ const PracticeUI = (function () {
         Object.keys(engineLevels).forEach(k => {
             const opt = document.createElement('option');
             opt.value = k;
-            opt.textContent = `${k} (d${engineLevels[k].depth}, skill ${engineLevels[k].skill})`;
+            const levelName = k.charAt(0).toUpperCase() + k.slice(1);
+            opt.textContent = `Stockfish ${levelName} (d${engineLevels[k].depth}, skill ${engineLevels[k].skill})`;
             sel.appendChild(opt);
         });
         sel.value = 'medium';

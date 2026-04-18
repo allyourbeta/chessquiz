@@ -237,16 +237,37 @@ const Practice = (function () {
     }
 
     async function editVerdict(id) {
-        const v = prompt('Verdict (win / draw / loss / abandoned):', '');
+        // Get the game details first to know user color
+        const game = await (await fetch(`${API}/practice/${id}`)).json();
+        const userColor = game.user_color;
+        
+        const options = [
+            '1-0 (White wins)',
+            '0-1 (Black wins)', 
+            '½-½ (Draw)',
+            '— (Abandoned)'
+        ];
+        const v = prompt('Select verdict:\n' + options.join('\n'), '');
         if (v == null) return;
-        const trimmed = v.trim().toLowerCase();
-        if (!['win', 'draw', 'loss', 'abandoned', ''].includes(trimmed)) {
-            toast('Invalid verdict', true); return;
+        
+        let verdict = '';
+        if (v.includes('1-0')) {
+            verdict = userColor === 'white' ? 'win' : 'loss';
+        } else if (v.includes('0-1')) {
+            verdict = userColor === 'black' ? 'win' : 'loss';
+        } else if (v.includes('½-½')) {
+            verdict = 'draw';
+        } else if (v.includes('—')) {
+            verdict = 'abandoned';
+        } else {
+            toast('Invalid verdict format. Please use 1-0, 0-1, ½-½, or —', true);
+            return;
         }
+        
         const r = await fetch(`${API}/practice/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_verdict: trimmed }),
+            body: JSON.stringify({ user_verdict: verdict }),
         });
         if (r.ok) {
             toast('Verdict updated');

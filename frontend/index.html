@@ -272,20 +272,24 @@
           <button class="btn" onclick="history.back()">Back</button>
         </div>
         <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
-          <label style="margin-top:0">Practice this position</label>
+          <h3 style="margin-top:0;font-size:16px;font-weight:600">Practice This Position</h3>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <select id="practice-level" class="select-input"></select>
             <select id="practice-color" class="select-input">
-              <option value="">Turn color</option>
-              <option value="white">Play White</option>
-              <option value="black">Play Black</option>
+              <option value="">Your color</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
             </select>
             <button class="btn btn-primary btn-sm" onclick="Practice.startFromDetail()">Start practice</button>
           </div>
           <div style="margin-top:12px">
-            <label style="margin-top:0">Practice history</label>
-            <div id="practice-stats" class="text-muted" style="font-size:13px"></div>
+            <h3 style="margin-top:12px;font-size:16px;font-weight:600">Practice History</h3>
+            <div style="margin-top:8px">
+              <h4 style="margin-top:0;margin-bottom:8px;font-size:14px;font-weight:600">Aggregate Stats</h4>
+              <div id="practice-stats" class="text-muted" style="font-size:13px"></div>
+            </div>
             <div id="practice-recent-list" class="pos-list" style="margin-top:8px"></div>
+            <h3 style="margin-top:12px;font-size:16px;font-weight:600">Your Moves From Here</h3>
             <div id="practice-tree" class="tree-panel" style="margin-top:10px"></div>
           </div>
         </div>
@@ -377,10 +381,10 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').t
     <div id="practice-save-body"></div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="Practice.confirmSave()">Save</button>
-      <button class="btn btn-success btn-sm" onclick="Practice.confirmSave('win')">Save as Win</button>
-      <button class="btn btn-sm" onclick="Practice.confirmSave('draw')">Save as Draw</button>
-      <button class="btn btn-danger btn-sm" onclick="Practice.confirmSave('loss')">Save as Loss</button>
-      <button class="btn btn-ghost btn-sm" onclick="Practice.confirmSave('abandoned')">Abandoned</button>
+      <button class="btn btn-success btn-sm" onclick="Practice.confirmSave('win')">Save as 1-0/0-1</button>
+      <button class="btn btn-sm" onclick="Practice.confirmSave('draw')">Save as ½-½</button>
+      <button class="btn btn-danger btn-sm" onclick="Practice.confirmSave('loss')">Save as 0-1/1-0</button>
+      <button class="btn btn-ghost btn-sm" onclick="Practice.confirmSave('abandoned')">—</button>
       <button class="btn btn-danger" onclick="Practice.discard()">Discard</button>
     </div>
   </div>
