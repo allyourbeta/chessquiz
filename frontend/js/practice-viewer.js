@@ -17,6 +17,8 @@ const PracticeViewer = (function () {
     let _ply = 0;
     let _flipped = false;
     let _rootFen = null;
+    let _notesTimeout = null;  // for debounced auto-save
+    let _lastSavedNotes = null;
 
     function open(id) {
         if (Router.isRendering()) return _load(id);
@@ -113,10 +115,69 @@ const PracticeViewer = (function () {
             ` <span class="text-muted" style="font-size:11px">(${verdictLabel})</span>` +
             (g.user_verdict && g.engine_verdict && g.user_verdict !== g.engine_verdict
                 ? ` <span class="text-muted" style="font-size:11px">engine suggested: ${g.engine_verdict}</span>` : '');
-        document.getElementById('pv-notes').value = g.notes || '';
+        const notesEl = document.getElementById('pv-notes');
+        notesEl.value = g.notes || '';
+        _lastSavedNotes = g.notes || '';
+        
+        // Set up auto-save on notes
+        notesEl.oninput = _onNotesInput;
 
         _renderMoves();
         BoardManager.create('pv-board', _fens[_ply] || _rootFen, { flipped: _flipped });
+    }
+    
+    function _onNotesInput() {
+        // Clear existing timeout
+        if (_notesTimeout) clearTimeout(_notesTimeout);
+        
+        // Set new timeout for 1 second
+        _notesTimeout = setTimeout(_autoSaveNotes, 1000);
+    }
+    
+    async function _autoSaveNotes() {
+        if (!_game) return;
+        const notes = document.getElementById('pv-notes').value;
+        
+        // Don't save if unchanged
+        if (notes === _lastSavedNotes) return;
+        
+        try {
+            const r = await fetch(`${API}/practice/${_game.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes }),
+            });
+            
+            if (r.ok) {
+                _lastSavedNotes = notes;
+                _game = await r.json();
+                _showSaveIndicator();
+            }
+        } catch (_) {
+            // Silent failure for auto-save
+        }
+    }
+    
+    function _showSaveIndicator() {
+        const notesEl = document.getElementById('pv-notes');
+        const parent = notesEl.parentElement;
+        
+        // Check if indicator already exists
+        let indicator = document.getElementById('notes-save-indicator');
+        if (!indicator) {
+            indicator = document.createElement('span');
+            indicator.id = 'notes-save-indicator';
+            indicator.style.cssText = 'position:absolute;right:8px;top:8px;font-size:11px;color:var(--success);opacity:0;transition:opacity 0.3s';
+            indicator.textContent = 'Saved';
+            parent.style.position = 'relative';
+            parent.appendChild(indicator);
+        }
+        
+        // Show and fade out
+        indicator.style.opacity = '1';
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+        }, 2000);
     }
 
     function _engineLabel(level) {
@@ -190,18 +251,6 @@ const PracticeViewer = (function () {
     function last() { goTo(_fens.length - 1); }
     function flip() { _flipped = !_flipped; BoardManager.create('pv-board', _fens[_ply], { flipped: _flipped }); }
 
-    async function save() {
-        if (!_game) return;
-        const notes = document.getElementById('pv-notes').value;
-        const r = await fetch(`${API}/practice/${_game.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes }),
-        });
-        if (r.ok) { toast('Notes saved'); _game = await r.json(); _render(); }
-        else toast('Save failed', true);
-    }
-
     async function editVerdict() {
         if (!_game) return;
         await Practice.editVerdict(_game.id);
@@ -227,7 +276,7 @@ const PracticeViewer = (function () {
         else if (e.key === 'End') { e.preventDefault(); last(); }
     });
 
-    return { open, _load, goTo, first, prev, next, last, flip, save, editVerdict, remove };
+    return { open, _load, goTo, first, prev, next, last, flip, editVerdict, remove };
 })();
 
 window.PracticeViewer = PracticeViewer;

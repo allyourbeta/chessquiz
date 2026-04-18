@@ -377,10 +377,9 @@
         <div class="text-muted" style="font-size:12px;margin-bottom:8px" id="pv-meta"></div>
         <div id="pv-verdict" style="margin-bottom:8px"></div>
         <div id="pv-moves" class="moves-panel"></div>
-        <label style="margin-top:12px">Notes</label>
-        <textarea id="pv-notes" placeholder="Reflections on this game..."></textarea>
+        <label style="margin-top:12px">Notes <span class="text-muted" style="font-size:11px;font-weight:normal">(auto-saved)</span></label>
+        <textarea id="pv-notes" placeholder="Reflections on this game... (saves automatically)"></textarea>
         <div class="btn-row">
-          <button class="btn btn-primary btn-sm" onclick="PracticeViewer.save()">Save changes</button>
           <button class="btn btn-sm" onclick="PracticeViewer.editVerdict()">Edit verdict</button>
           <button class="btn btn-danger btn-sm" onclick="PracticeViewer.remove()">Delete</button>
           <button class="btn btn-sm" onclick="history.back()">Back</button>
