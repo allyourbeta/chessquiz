@@ -145,5 +145,6 @@ initStockfish();
 setupAutoLoad();
 setupKeyboardSave();
 setupUrlParams();
+setupPuzzleKeyboardShortcuts();
 // Start the router: parse current URL and render the matching view.
 Router.init();

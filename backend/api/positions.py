@@ -250,3 +250,55 @@ def bulk_reclassify(
         failure_count=failure_count,
         errors=errors
     )
+
+
+@router.get("/{position_id}/navigation")
+def get_puzzle_navigation(
+    position_id: int,
+    tags: list[str] | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    """Get navigation info for puzzle browsing (next/previous puzzle IDs and position counter)."""
+    # Get current position to verify it's a puzzle
+    current = db.query(Position).filter(Position.id == position_id).first()
+    if not current:
+        raise HTTPException(status_code=404, detail="Position not found")
+    
+    # Build query for puzzles only
+    query = db.query(Position).filter(Position.position_type == PositionType.puzzle)
+    
+    # Apply tag filters if provided
+    if tags:
+        for tag in tags:
+            name = tag.strip().lower().lstrip("#")
+            if name:
+                query = query.filter(Position.tags.any(Tag.name == name))
+    
+    # Get all puzzle IDs in order (newest first by default)
+    all_puzzles = query.order_by(Position.created_at.desc()).with_entities(Position.id).all()
+    puzzle_ids = [p[0] for p in all_puzzles]
+    
+    # Find current position in the list
+    try:
+        current_index = puzzle_ids.index(position_id)
+    except ValueError:
+        # Current position not in filtered set (might not be a puzzle or doesn't match filter)
+        return {
+            "next_id": None,
+            "previous_id": None,
+            "current_index": 0,
+            "total_count": len(puzzle_ids)
+        }
+    
+    # Determine next and previous
+    # "Next" moves forward in the list (toward higher index/older puzzles)
+    # "Previous" moves backward in the list (toward lower index/newer puzzles)
+    next_id = puzzle_ids[current_index + 1] if current_index < len(puzzle_ids) - 1 else None
+    previous_id = puzzle_ids[current_index - 1] if current_index > 0 else None
+    
+    return {
+        "next_id": next_id,
+        "previous_id": previous_id,
+        "current_index": current_index + 1,  # 1-indexed for display
+        "total_count": len(puzzle_ids)
+    }

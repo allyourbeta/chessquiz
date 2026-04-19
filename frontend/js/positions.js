@@ -86,6 +86,14 @@ async function loadPositionDetail(id) {
         document.getElementById('practice-history-section').style.display = 'none';
         document.getElementById('aggregate-stats-section').style.display = 'none';
         document.getElementById('play-from-btn').style.display = 'none';
+        
+        // Show puzzle navigation
+        document.getElementById('prev-puzzle-btn').style.display = '';
+        document.getElementById('next-puzzle-btn').style.display = '';
+        document.getElementById('puzzle-counter').style.display = '';
+        
+        // Load navigation info
+        loadPuzzleNavigation(id);
     } else {
         // TABIYA UI: Show everything except Quiz Stats
         document.getElementById('detail-stockfish-card').style.display = '';
@@ -95,6 +103,11 @@ async function loadPositionDetail(id) {
         document.getElementById('practice-history-section').style.display = '';
         document.getElementById('aggregate-stats-section').style.display = '';
         document.getElementById('play-from-btn').style.display = '';
+        
+        // Hide puzzle navigation for tabiyas
+        document.getElementById('prev-puzzle-btn').style.display = 'none';
+        document.getElementById('next-puzzle-btn').style.display = 'none';
+        document.getElementById('puzzle-counter').style.display = 'none';
         
         // Load practice data for tabiyas only
         if (window.Practice) {
@@ -228,6 +241,97 @@ savePosition = async function() {
     return _origSavePosition.apply(this, arguments);
 };
 
+// Puzzle navigation functions
+async function loadPuzzleNavigation(puzzleId) {
+    // Get current filter tags from URL or AppState
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const tags = params.getAll('tag');
+    
+    let url = API + `/positions/${puzzleId}/navigation`;
+    if (tags.length > 0) {
+        url += '?' + tags.map(t => 'tags=' + encodeURIComponent(t)).join('&');
+    }
+    
+    const nav = await (await fetch(url)).json();
+    
+    // Update counter
+    document.getElementById('puzzle-current-index').textContent = nav.current_index;
+    document.getElementById('puzzle-total-count').textContent = nav.total_count;
+    
+    // Enable/disable navigation buttons
+    const prevBtn = document.getElementById('prev-puzzle-btn');
+    const nextBtn = document.getElementById('next-puzzle-btn');
+    
+    if (nav.previous_id) {
+        prevBtn.disabled = false;
+        prevBtn.onclick = () => navigateToPuzzle(nav.previous_id);
+    } else {
+        prevBtn.disabled = true;
+    }
+    
+    if (nav.next_id) {
+        nextBtn.disabled = false;
+        nextBtn.onclick = () => navigateToPuzzle(nav.next_id);
+    } else {
+        nextBtn.disabled = true;
+    }
+    
+    // Store navigation info for keyboard shortcuts
+    AppState.puzzleNavigation = nav;
+}
+
+function navigateToPuzzle(puzzleId) {
+    // Preserve tag filters when navigating
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const tagParams = params.getAll('tag');
+    
+    const route = { 
+        view: 'positionDetail', 
+        id: puzzleId 
+    };
+    
+    if (tagParams.length > 0) {
+        // Add tag params to route for filter preservation
+        const queryString = tagParams.map(t => 'tag=' + encodeURIComponent(t)).join('&');
+        Router.navigate(route, queryString);
+    } else {
+        Router.navigate(route);
+    }
+}
+
+function navigatePuzzle(direction) {
+    if (!AppState.puzzleNavigation) return;
+    
+    if (direction === 'next' && AppState.puzzleNavigation.next_id) {
+        navigateToPuzzle(AppState.puzzleNavigation.next_id);
+    } else if (direction === 'previous' && AppState.puzzleNavigation.previous_id) {
+        navigateToPuzzle(AppState.puzzleNavigation.previous_id);
+    }
+}
+
+// Keyboard shortcuts for puzzle navigation
+function setupPuzzleKeyboardShortcuts() {
+    document.addEventListener('keydown', e => {
+        // Only work on puzzle detail view
+        if (!AppState.currentDetailType || AppState.currentDetailType !== 'puzzle') return;
+        if (!AppState.puzzleNavigation) return;
+        
+        // Don't interfere with input fields
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        if (e.key === 'ArrowRight' && AppState.puzzleNavigation.next_id) {
+            e.preventDefault();
+            navigateToPuzzle(AppState.puzzleNavigation.next_id);
+        } else if (e.key === 'ArrowLeft' && AppState.puzzleNavigation.previous_id) {
+            e.preventDefault();
+            navigateToPuzzle(AppState.puzzleNavigation.previous_id);
+        } else if (e.key === ' ') {
+            e.preventDefault();
+            toggleEngine('detail-board');
+        }
+    });
+}
+
 window.loadPositions = loadPositions;
 window.mountPositionTagFilter = mountPositionTagFilter;
 window.savePosition = savePosition;
@@ -245,3 +349,7 @@ window.clearForm = clearForm;
 window.setupAutoLoad = setupAutoLoad;
 window.setupKeyboardSave = setupKeyboardSave;
 window.setupUrlParams = setupUrlParams;
+window.loadPuzzleNavigation = loadPuzzleNavigation;
+window.navigateToPuzzle = navigateToPuzzle;
+window.navigatePuzzle = navigatePuzzle;
+window.setupPuzzleKeyboardShortcuts = setupPuzzleKeyboardShortcuts;

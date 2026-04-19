@@ -361,12 +361,19 @@
 
         <!-- Actions Card -->
         <div class="card">
+          <!-- Position counter for puzzles -->
+          <div id="puzzle-counter" style="text-align:center;margin-bottom:8px;font-size:13px;color:var(--text-muted);display:none">
+            Puzzle <span id="puzzle-current-index">1</span> of <span id="puzzle-total-count">1</span>
+          </div>
           <div class="btn-row" style="margin:0">
-            <button class="btn" onclick="editPosition()">Edit</button>
+            <!-- Puzzle navigation buttons (hidden by default) -->
+            <button class="btn" id="prev-puzzle-btn" onclick="navigatePuzzle('previous')" style="display:none">← Previous</button>
             <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Show Engine</button>
-            <button class="btn btn-sm" id="play-from-btn" onclick="playFromHereDetail()">Play from here</button>
+            <button class="btn" onclick="editPosition()">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
             <button class="btn" onclick="history.back()">Back</button>
+            <button class="btn btn-sm" id="play-from-btn" onclick="playFromHereDetail()">Play from here</button>
+            <button class="btn btn-primary" id="next-puzzle-btn" onclick="navigatePuzzle('next')" style="display:none">Next →</button>
           </div>
         </div>
 
