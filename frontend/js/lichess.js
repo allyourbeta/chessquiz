@@ -3,20 +3,48 @@
 let _lichessImportActive = false;
 let _lichessAbortController = null;
 
+// UI Stage Management
+function setLichessStage(stage) {
+    // Hide all stages
+    document.getElementById('lichess-stage-form').style.display = 'none';
+    document.getElementById('lichess-stage-downloading').style.display = 'none';
+    document.getElementById('lichess-stage-ready').style.display = 'none';
+    document.getElementById('lichess-stage-importing').style.display = 'none';
+    document.getElementById('lichess-stage-success').style.display = 'none';
+    
+    // Show the requested stage
+    const stageEl = document.getElementById(`lichess-stage-${stage}`);
+    if (stageEl) {
+        stageEl.style.display = '';
+    }
+}
+
 function resetLichessImportView() {
-    document.getElementById('lichess-username').value = '';
-    document.getElementById('lichess-token').value = '';
-    document.getElementById('lichess-result').innerHTML = '';
-    document.getElementById('lichess-import-btn').style.display = '';
-    document.getElementById('lichess-cancel-btn').style.display = 'none';
+    // Clear form but preserve values if just resetting view
+    const preserveValues = arguments[0] !== true;
+    if (!preserveValues) {
+        document.getElementById('lichess-username').value = '';
+        document.getElementById('lichess-token').value = '';
+    }
+    
+    // Clear any stored session data
+    window._lichessSessionToken = null;
+    window._lichessUsername = null;
+    window._lichessApiToken = null;
+    
+    // Reset to Stage A
+    setLichessStage('form');
     _lichessImportActive = false;
     _lichessAbortController = null;
 }
 
-function _renderLichessProgress(resultEl, message, current, total) {
+function _renderLichessProgress(message, current, total) {
+    const progressEl = document.getElementById('lichess-progress');
+    if (!progressEl) return;
+    
     if (current && total) {
         const pct = Math.min(100, (current / total) * 100);
-        resultEl.innerHTML = `
+        progressEl.innerHTML = `
             <div style="margin-bottom:8px;font-size:13px">
                 <strong>${current}</strong> of <strong>${total}</strong> studies downloaded
             </div>
@@ -27,7 +55,7 @@ function _renderLichessProgress(resultEl, message, current, total) {
                 ${message}
             </div>`;
     } else {
-        resultEl.innerHTML = `
+        progressEl.innerHTML = `
             <div style="text-align:center;padding:20px">
                 <div style="display:inline-block;animation:spin 1s linear infinite;width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%"></div>
                 <p style="margin-top:12px;font-size:14px">${message}</p>
@@ -41,13 +69,15 @@ function _renderLichessProgress(resultEl, message, current, total) {
     }
 }
 
-function _renderLichessResult(resultEl, summary, sessionToken) {
+function _renderLichessResult(summary, sessionToken) {
+    const summaryEl = document.getElementById('lichess-summary');
+    if (!summaryEl) return;
+    
     const failed = summary.failed_studies || [];
     let html = `
-        <div style="padding:12px;background:var(--bg-secondary);border-radius:8px;margin-top:12px">
-            <h4 style="margin-bottom:8px;color:var(--green)">Import Complete!</h4>
+        <div style="padding:12px;background:var(--bg-secondary);border-radius:8px">
             <p style="margin-bottom:4px"><strong>${summary.successful_studies || 0}</strong> of <strong>${summary.studies_count || 0}</strong> studies downloaded</p>
-            <p style="margin-bottom:8px"><strong>${summary.chapters_count || 0}</strong> total chapters (games)</p>`;
+            <p style="margin-bottom:8px"><strong>${summary.chapters_count || 0}</strong> total chapters</p>`;
     
     if (failed.length > 0) {
         html += `<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--text-muted)">Failed studies (${failed.length})</summary>
@@ -58,25 +88,20 @@ function _renderLichessResult(resultEl, summary, sessionToken) {
         html += `</ul></details>`;
     }
     
-    if (sessionToken && summary.chapters_count > 0) {
+    if (summary.chapters_count === 0) {
+        html += `<p style="margin-top:12px;color:var(--text-muted);font-size:13px">No chapters to import</p>`;
+        // Hide import buttons if no chapters
+        document.getElementById('lichess-import-puzzles-btn').style.display = 'none';
+        document.getElementById('lichess-import-games-btn').style.display = 'none';
+    } else {
         // Store session token and credentials for later use
         window._lichessSessionToken = sessionToken;
         window._lichessUsername = document.getElementById('lichess-username').value.trim();
         window._lichessApiToken = document.getElementById('lichess-token').value.trim();
-        html += `
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-                <p style="margin-bottom:8px;font-size:13px;color:var(--text-muted)">Ready to import ${summary.chapters_count} chapters into ChessQuiz</p>
-                <div class="btn-row" style="gap:8px">
-                    <button class="btn btn-primary" onclick="importLichessPuzzles()">Import as Puzzles</button>
-                    <button class="btn btn-secondary" onclick="importLichessPGN()">Import as Games</button>
-                </div>
-            </div>`;
-    } else if (summary.chapters_count === 0) {
-        html += `<p style="margin-top:12px;color:var(--text-muted);font-size:13px">No games to import</p>`;
     }
     
     html += `</div>`;
-    resultEl.innerHTML = html;
+    summaryEl.innerHTML = html;
 }
 
 async function importLichessPGN() {
@@ -93,16 +118,20 @@ async function importLichessPGN() {
 async function doLichessImport() {
     const username = document.getElementById('lichess-username').value.trim();
     const token = document.getElementById('lichess-token').value.trim();
-    const resultEl = document.getElementById('lichess-result');
+    const downloadBtn = document.getElementById('lichess-download-btn');
     
     if (!username || !token) {
         toast('Please enter both username and API token', true);
         return;
     }
     
-    // Show/hide buttons
-    document.getElementById('lichess-import-btn').style.display = 'none';
-    document.getElementById('lichess-cancel-btn').style.display = '';
+    // Show loading state on button
+    setButtonLoading(downloadBtn, true);
+    
+    // Move to Stage B: Downloading
+    setLichessStage('downloading');
+    document.getElementById('lichess-downloading-username').textContent = username;
+    
     _lichessImportActive = true;
     _lichessAbortController = new AbortController();
     
@@ -146,60 +175,49 @@ async function doLichessImport() {
                 }
                 
                 if (event.type === 'start') {
-                    _renderLichessProgress(resultEl, 'Connecting to Lichess...');
+                    _renderLichessProgress('Connecting to Lichess...');
                 } else if (event.type === 'status') {
-                    _renderLichessProgress(resultEl, event.message);
+                    _renderLichessProgress(event.message);
                 } else if (event.type === 'progress') {
-                    _renderLichessProgress(resultEl, event.message, event.current, event.total);
+                    _renderLichessProgress(event.message, event.current, event.total);
                 } else if (event.type === 'warning') {
-                    // Could append warnings to a list if desired
                     console.warn('Lichess import warning:', event.message);
                 } else if (event.type === 'summary') {
                     // Summary received, waiting for complete
                 } else if (event.type === 'complete') {
-                    _renderLichessResult(resultEl, event.summary, event.session_token);
+                    // Move to Stage C: Ready to import
+                    setLichessStage('ready');
+                    document.getElementById('lichess-ready-username').textContent = username;
+                    _renderLichessResult(event.summary, event.session_token);
                 } else if (event.type === 'error') {
+                    // Return to Stage A with error
+                    setLichessStage('form');
+                    setButtonLoading(downloadBtn, false);
+                    
+                    let errorMsg = '';
                     if (event.status_code === 401) {
-                        resultEl.innerHTML = `
-                            <div style="padding:12px;background:var(--bg-error);border-radius:8px;color:var(--red)">
-                                <h4>Authentication Failed</h4>
-                                <p style="margin-top:8px">${event.detail}</p>
-                                <p style="margin-top:8px">To get a token:</p>
-                                <ol style="margin-top:4px;margin-left:20px">
-                                    <li>Go to <a href="https://lichess.org/account/oauth/token" target="_blank">lichess.org/account/oauth/token</a></li>
-                                    <li>Create a new token with "Read studies" permission</li>
-                                    <li>Copy the token immediately (it's only shown once)</li>
-                                </ol>
-                            </div>`;
+                        errorMsg = 'Authentication failed: Invalid API token. Check your token has "Read studies" permission.';
                     } else if (event.status_code === 404) {
-                        resultEl.innerHTML = `
-                            <div style="padding:12px;background:var(--bg-error);border-radius:8px;color:var(--red)">
-                                <h4>User Not Found</h4>
-                                <p style="margin-top:8px">${event.detail}</p>
-                            </div>`;
+                        errorMsg = `User not found: ${event.detail}`;
                     } else {
-                        resultEl.innerHTML = `
-                            <div style="padding:12px;background:var(--bg-error);border-radius:8px;color:var(--red)">
-                                <h4>Import Failed</h4>
-                                <p style="margin-top:8px">${event.detail || 'Unknown error'}</p>
-                            </div>`;
+                        errorMsg = `Download failed: ${event.detail || 'Unknown error'}`;
                     }
+                    toast(errorMsg, true);
                 }
             }
         }
     } catch (e) {
         if (e.name === 'AbortError') {
-            resultEl.innerHTML = '<p style="color:var(--text-muted)">Import cancelled</p>';
+            // Return to Stage A on cancel, preserve form values
+            setLichessStage('form');
+            toast('Download cancelled', false);
         } else {
-            resultEl.innerHTML = `
-                <div style="padding:12px;background:var(--bg-error);border-radius:8px;color:var(--red)">
-                    <h4>Import Failed</h4>
-                    <p style="margin-top:8px">${e.message}</p>
-                </div>`;
+            // Return to Stage A on error
+            setLichessStage('form');
+            toast(`Download failed: ${e.message}`, true);
         }
+        setButtonLoading(downloadBtn, false);
     } finally {
-        document.getElementById('lichess-import-btn').style.display = '';
-        document.getElementById('lichess-cancel-btn').style.display = 'none';
         _lichessImportActive = false;
         _lichessAbortController = null;
     }
@@ -212,27 +230,33 @@ function cancelLichessImport() {
 }
 
 async function importLichessPuzzles() {
-    const resultEl = document.getElementById('lichess-result');
-    
     // Use the cached session token and credentials
     const sessionToken = window._lichessSessionToken;
     const username = window._lichessUsername;
     const apiToken = window._lichessApiToken;
+    const importBtn = document.getElementById('lichess-import-puzzles-btn');
     
     if (!sessionToken) {
         toast('No download session found. Please download studies first.', true);
         return;
     }
     
+    // Show loading state on button
+    setButtonLoading(importBtn, true);
+    
+    // Move to Stage D: Importing
+    setLichessStage('importing');
+    document.getElementById('lichess-importing-username').textContent = username;
+    
+    // Copy summary from ready stage
+    const summaryEl = document.getElementById('lichess-summary');
+    if (summaryEl) {
+        document.getElementById('lichess-importing-summary').innerHTML = summaryEl.innerHTML;
+    }
+    
+    const progressEl = document.getElementById('lichess-import-progress');
+    
     try {
-        // Update UI to show progress
-        resultEl.innerHTML = `
-            <div style="padding:12px;background:var(--bg-secondary);border-radius:8px;margin-top:12px">
-                <h4 style="margin-bottom:8px">Creating Puzzles...</h4>
-                <div id="puzzle-import-progress"></div>
-            </div>`;
-        
-        const progressEl = document.getElementById('puzzle-import-progress');
         
         // Call the puzzle import API with session token
         const importResponse = await fetch(API + '/import-puzzles', {
@@ -293,38 +317,33 @@ async function importLichessPuzzles() {
             }
         }
         
-        // Show final summary
+        // Show final summary - Stage E: Success
         if (finalSummary) {
+            setLichessStage('success');
+            
             let summaryHtml = `
-                <div style="padding:12px;background:var(--bg-secondary);border-radius:8px;margin-top:12px">
-                    <h4 style="margin-bottom:8px;color:var(--green)">Puzzle Import Complete!</h4>
-                    <p style="margin-bottom:4px">✓ Created <strong>${finalSummary.created_count}</strong> puzzles</p>`;
+                <p style="font-size:20px;margin-bottom:12px">
+                    <strong>Imported ${finalSummary.created_count} puzzles</strong>
+                </p>`;
             
-            if (finalSummary.skipped_no_moves_count > 0) {
-                summaryHtml += `<p style="margin-bottom:4px;color:var(--text-muted)">⚬ ${finalSummary.skipped_no_moves_count} chapters skipped (no moves)</p>`;
-            }
-            if (finalSummary.skipped_duplicates_count > 0) {
-                summaryHtml += `<p style="margin-bottom:4px;color:var(--text-muted)">⚬ ${finalSummary.skipped_duplicates_count} duplicates skipped</p>`;
-            }
-            
-            if (finalSummary.created_puzzles && finalSummary.created_puzzles.length > 0) {
-                summaryHtml += `
-                    <details style="margin-top:8px">
-                        <summary style="cursor:pointer;font-size:13px;color:var(--text-muted)">Sample puzzles created</summary>
-                        <ul style="margin-top:8px;font-size:12px">`;
-                finalSummary.created_puzzles.slice(0, 5).forEach(p => {
-                    summaryHtml += `<li>${p.title} → ${p.solution}</li>`;
-                });
-                summaryHtml += `</ul></details>`;
+            if (finalSummary.skipped_no_moves_count > 0 || finalSummary.skipped_duplicates_count > 0) {
+                summaryHtml += '<p style="color:var(--text-muted);font-size:14px">';
+                if (finalSummary.skipped_no_moves_count > 0) {
+                    summaryHtml += `Skipped ${finalSummary.skipped_no_moves_count} chapters with no moves`;
+                }
+                if (finalSummary.skipped_duplicates_count > 0) {
+                    if (finalSummary.skipped_no_moves_count > 0) summaryHtml += ', ';
+                    summaryHtml += `${finalSummary.skipped_duplicates_count} duplicates`;
+                }
+                summaryHtml += '</p>';
             }
             
-            summaryHtml += `
-                    <div style="margin-top:12px">
-                        <button class="btn btn-primary" onclick="Router.navigate({view:'positions'})">View Puzzles</button>
-                    </div>
-                </div>`;
+            document.getElementById('lichess-success-message').innerHTML = summaryHtml;
             
-            resultEl.innerHTML = summaryHtml;
+            // Set up the view button
+            const viewBtn = document.getElementById('lichess-view-items-btn');
+            viewBtn.textContent = 'Go to Puzzles';
+            viewBtn.onclick = () => Router.navigate({view:'positions'});
             
             // Reload positions if we're on that page
             if (Router.current().view === 'positions') {
@@ -333,10 +352,9 @@ async function importLichessPuzzles() {
         }
         
     } catch (e) {
-        resultEl.innerHTML = `
-            <div style="padding:12px;background:var(--bg-error);border-radius:8px;color:var(--red)">
-                <h4>Puzzle Import Failed</h4>
-                <p style="margin-top:8px">${e.message}</p>
-            </div>`;
+        // Return to Stage C on error so user can retry
+        setLichessStage('ready');
+        setButtonLoading(importBtn, false);
+        toast(`Puzzle import failed: ${e.message}`, true);
     }
 }

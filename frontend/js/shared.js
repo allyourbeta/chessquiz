@@ -28,6 +28,23 @@ function toast(msg, err = false) {
     setTimeout(() => el.remove(), 3000);
 }
 
+// Button loading state helpers
+function setButtonLoading(btn, loading = true) {
+    if (!btn) return;
+    
+    if (loading) {
+        btn.disabled = true;
+        btn.dataset.originalText = btn.textContent;
+        btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;width:16px;height:16px;border:2px solid var(--border);border-top:2px solid currentColor;border-radius:50%;vertical-align:middle"></span> ' + btn.textContent;
+    } else {
+        btn.disabled = false;
+        if (btn.dataset.originalText) {
+            btn.textContent = btn.dataset.originalText;
+            delete btn.dataset.originalText;
+        }
+    }
+}
+
 // Top banner notification for important feedback
 function topBanner(msg, duration = 3000) {
     const banner = document.getElementById('notification-banner');

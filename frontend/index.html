@@ -246,31 +246,76 @@
   <div id="view-lichess-import" class="view">
     <div class="view-header">
       <h2>Import from Lichess</h2>
-      <button class="btn btn-sm" onclick="history.back()">Back to Games</button>
     </div>
     <div class="panel" style="max-width:720px">
-      <h3 style="margin-bottom:12px">Import All Your Lichess Studies</h3>
-      <p style="margin-bottom:16px;font-size:14px;color:var(--text-muted)">
-        Download all your public and private Lichess studies in one click. Each study chapter will become a game in ChessQuiz.
-      </p>
+      <!-- Stage A: Form (initial state) -->
+      <div id="lichess-stage-form">
+        <h3 style="margin-bottom:12px">Import All Your Lichess Studies</h3>
+        <p style="margin-bottom:16px;font-size:14px;color:var(--text-muted)">
+          Download all your public and private Lichess studies and import them as puzzles or games.
+        </p>
+        
+        <label>Lichess Username</label>
+        <input type="text" id="lichess-username" placeholder="Your Lichess username" autocomplete="username">
+        
+        <label style="margin-top:12px">Lichess API Token</label>
+        <input type="password" id="lichess-token" placeholder="Paste your Lichess API token" autocomplete="off">
+        <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+          To get a token:
+          <a href="https://lichess.org/account/oauth/token" target="_blank">lichess.org/account/oauth/token</a> →
+          Create token with "Read studies" permission → Copy immediately (shown only once)
+        </p>
+        
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-primary" id="lichess-download-btn" onclick="doLichessImport()">Download Studies</button>
+          <button class="btn" onclick="Router.navigate({view:'games'})">Back to Games</button>
+        </div>
+      </div>
       
-      <label>Lichess Username</label>
-      <input type="text" id="lichess-username" placeholder="Your Lichess username" autocomplete="username">
+      <!-- Stage B: Downloading -->
+      <div id="lichess-stage-downloading" style="display:none">
+        <h3 style="margin-bottom:12px">Downloading Studies</h3>
+        <p style="margin-bottom:16px;font-size:14px">
+          Username: <strong id="lichess-downloading-username"></strong>
+        </p>
+        <div id="lichess-progress"></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-danger" onclick="cancelLichessImport()">Cancel</button>
+        </div>
+      </div>
       
-      <label style="margin-top:12px">Lichess API Token</label>
-      <input type="password" id="lichess-token" placeholder="Paste your Lichess API token" autocomplete="off">
-      <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">
-        To get a token:
-        <a href="https://lichess.org/account/oauth/token" target="_blank">lichess.org/account/oauth/token</a> →
-        Create token with "Read studies" permission → Copy immediately (shown only once)
-      </p>
+      <!-- Stage C: Ready to import -->
+      <div id="lichess-stage-ready" style="display:none">
+        <h3 style="margin-bottom:12px">Download Complete</h3>
+        <p style="margin-bottom:16px;font-size:14px">
+          Username: <strong id="lichess-ready-username"></strong>
+        </p>
+        <div id="lichess-summary"></div>
+        <div class="btn-row" style="margin-top:16px;gap:8px">
+          <button class="btn btn-primary" id="lichess-import-puzzles-btn" onclick="importLichessPuzzles()">Import as Puzzles</button>
+          <button class="btn" id="lichess-import-games-btn" onclick="importLichessPGN()">Import as Games</button>
+          <button class="btn btn-ghost" onclick="resetLichessImportView()">Start over</button>
+        </div>
+      </div>
       
-      <div id="lichess-result" style="margin-top:16px"></div>
+      <!-- Stage D: Importing -->
+      <div id="lichess-stage-importing" style="display:none">
+        <h3 style="margin-bottom:12px">Importing...</h3>
+        <p style="margin-bottom:16px;font-size:14px">
+          Username: <strong id="lichess-importing-username"></strong>
+        </p>
+        <div id="lichess-importing-summary"></div>
+        <div id="lichess-import-progress"></div>
+      </div>
       
-      <div class="btn-row" style="margin-top:16px">
-        <button class="btn btn-primary" id="lichess-import-btn" onclick="doLichessImport()">Import Studies</button>
-        <button class="btn btn-danger" id="lichess-cancel-btn" onclick="cancelLichessImport()" style="display:none">Cancel</button>
-        <button class="btn" onclick="history.back()">Back</button>
+      <!-- Stage E: Success -->
+      <div id="lichess-stage-success" style="display:none">
+        <h3 style="margin-bottom:12px;color:var(--green)">Import Complete!</h3>
+        <div id="lichess-success-message"></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-primary" id="lichess-view-items-btn" onclick="">View Items</button>
+          <button class="btn" onclick="resetLichessImportView()">Import more from Lichess</button>
+        </div>
       </div>
     </div>
   </div>
