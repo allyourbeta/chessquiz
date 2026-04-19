@@ -328,17 +328,11 @@ async function importLichessPuzzles() {
             
             // Show detailed stats if any
             const stats = [];
-            if (finalSummary.reused_positions > 0) {
-                stats.push(`Reused ${finalSummary.reused_positions} existing positions`);
-            }
-            if (finalSummary.skipped_no_moves_count > 0) {
-                stats.push(`${finalSummary.skipped_no_moves_count} chapters skipped (no moves)`);
-            }
             if (finalSummary.skipped_duplicates_count > 0) {
-                stats.push(`${finalSummary.skipped_duplicates_count} duplicates skipped`);
+                stats.push(`${finalSummary.skipped_duplicates_count} skipped (duplicate FEN)`);
             }
-            if (finalSummary.duplicate_tag_skips > 0) {
-                stats.push(`${finalSummary.duplicate_tag_skips} duplicate tag attachments skipped`);
+            if (finalSummary.no_usable_position_count > 0) {
+                stats.push(`${finalSummary.no_usable_position_count} chapters had no usable starting position`);
             }
             if (finalSummary.failed_chapters_count > 0) {
                 stats.push(`<span style="color:var(--red)">${finalSummary.failed_chapters_count} chapters failed</span>`);

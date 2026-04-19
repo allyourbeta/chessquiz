@@ -44,25 +44,28 @@ def test_extract_puzzle_from_chapter():
     puzzle = extract_puzzle_from_chapter(CHAPTER1_PGN)
     assert puzzle is not None
     assert puzzle["starting_fen"] == "r1bqkb1r/pp2pppp/2n2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5"
-    assert puzzle["solution_san"] == "e4"
+    assert puzzle["solution_san"] is None  # Solutions not stored anymore
     assert puzzle["chapter_name"] == "Tactics Missed: Fork Pattern"
     assert "tactics" in puzzle["study_name"].lower()
     assert puzzle["zobrist_hash"] is not None
-    print("  ✓ Extract puzzle from chapter with FEN")
+    print("  ✓ Extract puzzle from chapter with FEN (moves ignored)")
     
     # Test chapter with standard starting position
     puzzle = extract_puzzle_from_chapter(CHAPTER4_STANDARD)
     assert puzzle is not None
     assert puzzle["starting_fen"] == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    assert puzzle["solution_san"] == "e4"
+    assert puzzle["solution_san"] is None  # Solutions not stored
     # ChapterName takes precedence, if not present falls back to Event
     assert puzzle["chapter_name"] == "Main Line" or puzzle["chapter_name"] == "Opening: Italian Game"
-    print("  ✓ Extract puzzle from chapter with standard start")
+    print("  ✓ Extract puzzle from chapter with standard start (moves ignored)")
     
-    # Test chapter with no moves
+    # Test chapter with no moves - should NOW create a puzzle
     puzzle = extract_puzzle_from_chapter(CHAPTER3_NO_MOVES)
-    assert puzzle is None
-    print("  ✓ Skip chapter with no moves")
+    assert puzzle is not None  # This is the key fix!
+    assert puzzle["starting_fen"] == "8/8/4k3/8/8/3K4/8/8 w - - 0 1"
+    assert puzzle["solution_san"] is None
+    assert puzzle["chapter_name"] == "Endgame Study: King Position"
+    print("  ✓ Create puzzle from chapter with no moves (FEN-only)")
 
 
 def test_import_three_puzzles():
@@ -221,7 +224,7 @@ def test_position_type_is_puzzle():
         puzzle = db.query(Position).filter_by(title="Pin the Queen").first()
         assert puzzle is not None
         assert puzzle.position_type == PositionType.puzzle
-        assert puzzle.solution_san == "Bg5"
+        assert puzzle.solution_san is None  # Solutions not stored
         
         print("  ✓ All imported positions have type 'puzzle'")
         
@@ -376,18 +379,145 @@ def test_import_handles_duplicate_position_tag():
         db.close()
 
 
+def test_import_chapter_with_no_moves_creates_puzzle():
+    """Test that a chapter with FEN-only (no moves) creates a puzzle successfully.
+    This is the main bug being fixed - chapters without moves should import."""
+    db = SessionLocal()
+    
+    try:
+        # Clean up
+        db.query(Position).filter(Position.title.like("%King Position%")).delete()
+        db.query(Tag).filter(Tag.name == "endgame-study").delete()
+        db.commit()
+        
+        # PGN with FEN but no moves
+        pgn_text = """[Event "Endgame Study: King Position"]
+[FEN "8/8/4k3/8/8/3K4/8/8 w - - 0 1"]
+
+*"""
+        
+        # Import - this should create a puzzle
+        summary = import_puzzles_from_pgn(db, pgn_text)
+        
+        assert summary["created_count"] == 1, f"Expected 1 puzzle created, got {summary['created_count']}"
+        assert summary["no_usable_position_count"] == 0
+        
+        # Verify puzzle was created
+        puzzle = db.query(Position).filter_by(title="Endgame Study: King Position").first()
+        assert puzzle is not None
+        assert puzzle.fen == "8/8/4k3/8/8/3K4/8/8 w - - 0 1"
+        assert puzzle.solution_san is None  # No solution stored
+        assert puzzle.position_type == PositionType.puzzle
+        
+        print("  ✓ Import chapter with no moves creates puzzle")
+        
+        # Clean up
+        db.query(Position).filter(Position.title.like("%King Position%")).delete()
+        db.query(Tag).filter(Tag.name == "endgame-study").delete()
+        db.commit()
+        
+    finally:
+        db.close()
+
+
+def test_import_chapter_with_moves_ignores_them():
+    """Test that a chapter with moves still creates a puzzle, but solution_san remains NULL."""
+    db = SessionLocal()
+    
+    try:
+        # Clean up
+        db.query(Position).filter(Position.title.like("%Test Tactic%")).delete()
+        db.commit()
+        
+        # PGN with moves that should be ignored
+        pgn_text = """[Event "Test Tactic"]
+[FEN "r1bqkb1r/pp2pppp/2n2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5"]
+
+1. e4 dxe4 2. Nxe4 Nxe4 3. Qf3 *"""
+        
+        # Import
+        summary = import_puzzles_from_pgn(db, pgn_text)
+        
+        assert summary["created_count"] == 1
+        
+        # Verify puzzle was created without solution
+        puzzle = db.query(Position).filter_by(title="Test Tactic").first()
+        assert puzzle is not None
+        assert puzzle.solution_san is None  # Moves were ignored
+        assert puzzle.position_type == PositionType.puzzle
+        
+        print("  ✓ Import chapter with moves ignores them (solution_san is NULL)")
+        
+        # Clean up
+        db.query(Position).filter_by(id=puzzle.id).delete()
+        db.commit()
+        
+    finally:
+        db.close()
+
+
+def test_existing_puzzles_unaffected():
+    """Test that re-running import doesn't modify existing puzzles, just dedups them."""
+    db = SessionLocal()
+    
+    try:
+        # Clean up
+        db.query(Position).filter(Position.title == "Existing Puzzle").delete()
+        db.commit()
+        
+        # Create an existing puzzle
+        existing = Position(
+            fen="r1bqkb1r/pp2pppp/2n2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5",
+            title="Existing Puzzle",
+            position_type=PositionType.puzzle,
+            solution_san="Nf3"  # Has a solution from before
+        )
+        db.add(existing)
+        db.commit()
+        original_id = existing.id
+        
+        # Try to import same position
+        pgn_text = """[Event "New Import"]
+[FEN "r1bqkb1r/pp2pppp/2n2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 0 5"]
+
+1. e4 *"""
+        
+        summary = import_puzzles_from_pgn(db, pgn_text)
+        
+        # Should be skipped as duplicate
+        assert summary["created_count"] == 0
+        assert summary["skipped_duplicates_count"] == 1
+        
+        # Verify existing puzzle unchanged
+        existing = db.query(Position).filter_by(id=original_id).first()
+        assert existing.title == "Existing Puzzle"  # Title unchanged
+        assert existing.solution_san == "Nf3"  # Solution unchanged
+        
+        print("  ✓ Existing puzzles unaffected by re-import")
+        
+        # Clean up
+        db.query(Position).filter_by(id=original_id).delete()
+        db.commit()
+        
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     print("Running puzzle import tests...")
     
     test_extract_puzzle_from_chapter()
-    # test_import_three_puzzles()  # Skip due to DB constraint issue
-    test_skip_chapter_no_moves()
+    # test_import_three_puzzles()  # Skip due to old logic
+    # test_skip_chapter_no_moves()  # No longer valid - we import chapters without moves
     test_duplicate_detection()
     test_position_type_is_puzzle()
     test_auto_tagging()
     test_existing_position_skip()
     test_import_handles_duplicate_position_tag()
+    test_import_chapter_with_no_moves_creates_puzzle()
+    test_import_chapter_with_moves_ignores_them()
+    test_existing_puzzles_unaffected()
     
     print("\n========================================")
-    print("  7 passed, 0 failed (1 skipped)")
+    print("  9 passed, 0 failed (2 skipped)")
     print("========================================")

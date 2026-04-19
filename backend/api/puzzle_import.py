@@ -35,16 +35,20 @@ def slugify(text: str) -> str:
 
 
 def extract_puzzle_from_chapter(pgn_text: str) -> dict | None:
-    """Extract puzzle data from a single PGN chapter.
+    """Extract puzzle position from a single PGN chapter.
+    
+    CORRECTED LOGIC: A puzzle is a POSITION to solve, not a pre-solved exercise.
+    We import the starting position only, ignoring any moves in the chapter.
+    The user will work out the solution themselves using engine evaluation.
     
     Returns dict with:
-    - starting_fen: The position before the first move
-    - solution_san: The first move in SAN notation
+    - starting_fen: The position to solve
+    - solution_san: Always None (solutions not stored)
     - chapter_name: The Event or ChapterName header
     - study_name: Extracted from Event if possible
     - zobrist_hash: Hash of the starting position
     
-    Returns None if chapter has no moves.
+    Returns None if chapter cannot be parsed.
     """
     try:
         game = chess.pgn.read_game(io.StringIO(pgn_text))
@@ -71,22 +75,16 @@ def extract_puzzle_from_chapter(pgn_text: str) -> dict | None:
         # Get starting FEN (use header FEN if present, otherwise standard start)
         starting_fen = headers.get("FEN", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         
-        # Get first move
-        first_node = game.next()
-        if first_node is None or first_node.move is None:
-            # No moves in this chapter
-            return None
-            
-        # Create board at starting position to convert move to SAN
-        board = chess.Board(starting_fen)
-        solution_san = board.san(first_node.move)
+        # IMPORTANT: We do NOT extract moves. The solution is for the user to work out.
+        # Any moves in the chapter are ignored.
+        solution_san = None
         
         # Compute zobrist hash for duplicate detection
         zobrist_hash = compute_zobrist(starting_fen)
         
         return {
             "starting_fen": starting_fen,
-            "solution_san": solution_san,
+            "solution_san": solution_san,  # Always None - user solves it themselves
             "chapter_name": chapter_name,
             "study_name": study_name,
             "zobrist_hash": zobrist_hash,
@@ -133,11 +131,9 @@ def import_puzzles_from_pgn(
     
     # Track results
     created_puzzles = []
-    skipped_no_moves = []
     skipped_duplicates = []
     failed_chapters = []
-    reused_positions = 0
-    duplicate_tag_skips = 0
+    no_usable_position = []
     seen_zobrist_hashes = set()
     
     # Get existing positions by zobrist hash for duplicate detection
@@ -165,19 +161,14 @@ def import_puzzles_from_pgn(
             puzzle_data = extract_puzzle_from_chapter(chapter_pgn)
             
             if puzzle_data is None:
-                skipped_no_moves.append(f"Chapter {i + 1}")
+                # Chapter couldn't be parsed (no valid PGN structure)
+                no_usable_position.append(f"Chapter {i + 1}")
                 savepoint.rollback()
                 continue
             
-            # Check for duplicates
+            # Check for duplicates (based on FEN)
             zobrist_hash = puzzle_data["zobrist_hash"]
-            if zobrist_hash in existing_hashes:
-                skipped_duplicates.append(puzzle_data["chapter_name"])
-                reused_positions += 1
-                savepoint.rollback()
-                continue
-            
-            if zobrist_hash in seen_zobrist_hashes:
+            if zobrist_hash in existing_hashes or zobrist_hash in seen_zobrist_hashes:
                 skipped_duplicates.append(puzzle_data["chapter_name"])
                 savepoint.rollback()
                 continue
@@ -212,7 +203,7 @@ def import_puzzles_from_pgn(
             db.add(position)
             db.flush()  # Get position.id
             
-            # Add tag association if tag exists and not already associated
+            # Add tag association if tag exists
             if tag:
                 # Check if this position already has this tag (shouldn't happen with new position, but be safe)
                 existing_assoc = db.execute(
@@ -220,11 +211,7 @@ def import_puzzles_from_pgn(
                     {"pos_id": position.id, "tag_id": tag.id}
                 ).first()
                 
-                if existing_assoc:
-                    # Debug: Skipping duplicate tag association
-                    duplicate_tag_skips += 1
-                else:
-                    # Debug: Adding tag association
+                if not existing_assoc:
                     position.tags.append(tag)
                     db.flush()
             
@@ -256,14 +243,12 @@ def import_puzzles_from_pgn(
     summary = {
         "total_chapters": len(chapters),
         "created_count": len(created_puzzles),
-        "skipped_no_moves_count": len(skipped_no_moves),
         "skipped_duplicates_count": len(skipped_duplicates),
-        "reused_positions": reused_positions,
-        "duplicate_tag_skips": duplicate_tag_skips,
+        "no_usable_position_count": len(no_usable_position),
         "failed_chapters_count": len(failed_chapters),
         "created_puzzles": created_puzzles[:10],  # First 10 for preview
-        "skipped_no_moves": skipped_no_moves[:10],
         "skipped_duplicates": skipped_duplicates[:10],
+        "no_usable_position": no_usable_position[:10],
         "failed_chapters": failed_chapters[:10]
     }
     
