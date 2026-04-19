@@ -35,3 +35,14 @@ npm-debug.log*
 *.sqlite
 *.db
 *.zip
+
+# SQLite database files
+chessquiz.db
+chessquiz.db-wal
+chessquiz.db-shm
+chessquiz.db-journal
+
+# Backup files
+*.db.backup*
+*.backup-*
+backups/

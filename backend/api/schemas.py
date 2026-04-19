@@ -1,8 +1,11 @@
 """Pydantic schemas for request/response validation."""
 
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from backend.models import PositionType
 
 
 # --- Tags ---
@@ -23,13 +26,27 @@ class PositionCreate(BaseModel):
     title: str | None = None
     notes: str | None = None
     stockfish_analysis: str | None = None
+    position_type: PositionType = PositionType.tabiya
+    solution_san: Optional[str] = None
+    theme: Optional[str] = None
     tags: list[str] = []  # Tag names — created if they don't exist
+    
+    @field_validator('solution_san')
+    @classmethod
+    def validate_solution(cls, v, info):
+        """Puzzles must have a solution."""
+        if info.data.get('position_type') == PositionType.puzzle and not v:
+            raise ValueError("Puzzles must have a solution_san")
+        return v
 
 
 class PositionUpdate(BaseModel):
     title: str | None = None
     notes: str | None = None
     stockfish_analysis: str | None = None
+    position_type: Optional[PositionType] = None
+    solution_san: Optional[str] = None
+    theme: Optional[str] = None
     tags: list[str] | None = None  # If provided, replaces all tags
 
 
@@ -39,6 +56,9 @@ class PositionOut(BaseModel):
     title: str | None
     notes: str | None
     stockfish_analysis: str | None
+    position_type: PositionType
+    solution_san: Optional[str]
+    theme: Optional[str]
     tags: list[TagOut]
     created_at: datetime
     updated_at: datetime
@@ -52,10 +72,28 @@ class PositionBrief(BaseModel):
     id: int
     fen: str
     title: str | None
+    position_type: PositionType
+    solution_san: Optional[str]
+    theme: Optional[str]
     tags: list[TagOut]
 
     class Config:
         from_attributes = True
+
+
+class BulkReclassifyRequest(BaseModel):
+    """Request to bulk reclassify positions."""
+    position_ids: list[int]
+    new_type: PositionType
+    solution_san: Optional[str] = None  # Applied to all if changing to puzzle
+    theme: Optional[str] = None  # Applied to all if changing to puzzle
+
+
+class BulkReclassifyResponse(BaseModel):
+    """Response from bulk reclassification."""
+    success_count: int
+    failure_count: int
+    errors: list[str] = []
 
 
 # --- Quiz ---

@@ -1316,3 +1316,216 @@ Add `engine_metadata` JSON column for extra info (Lichess game ID, Maia weights 
 
 1. e4 zzz99 2. garbage_move LOL
 ```
+
+## Phase 15: Position Types — Puzzle vs Tabiya
+
+**Goal**: Distinguish between puzzles (positions with specific solutions) and tabiyas (key positions for practice/study). This fundamental distinction affects how positions are displayed, practiced, and organized.
+
+**Why this matters**: Current system treats all positions identically. But puzzles need solution checking, themes, and success tracking, while tabiyas need practice sessions, opening trees, and exploration tools.
+
+### 15A: Database Migration
+
+Add to Position model in `backend/models/position.py`:
+
+```python
+from enum import Enum
+
+class PositionType(str, Enum):
+    PUZZLE = "puzzle"
+    TABIYA = "tabiya"
+
+# Add to Position class:
+position_type = Column(Enum(PositionType), nullable=False, default=PositionType.TABIYA)
+solution_san = Column(String, nullable=True)  # Required for puzzles
+theme = Column(String, nullable=True)  # Tactical theme for puzzles
+```
+
+Create migration `backend/migrations/add_position_types.py`:
+- Add three columns with safe defaults
+- All existing positions default to 'tabiya' (preserves current behavior)
+- Make migration reversible or backup first
+
+### 15B: Update API Schemas
+
+Update `backend/api/schemas.py`:
+
+```python
+class PositionCreate(BaseModel):
+    position_type: PositionType
+    solution_san: Optional[str] = None  # Required if type is puzzle
+    theme: Optional[str] = None
+    # ... existing fields
+
+class PositionUpdate(BaseModel):
+    position_type: Optional[PositionType] = None
+    solution_san: Optional[str] = None
+    theme: Optional[str] = None
+    # ... existing fields
+```
+
+Validation rules:
+- If position_type is PUZZLE, solution_san must be provided
+- If changing from PUZZLE to TABIYA, warn about solution data loss
+- Theme is optional for puzzles, ignored for tabiyas
+
+### 15C: API Endpoint Updates
+
+Update `backend/api/positions.py`:
+
+```python
+@router.get("/api/positions/")
+def get_positions(position_type: Optional[PositionType] = None, ...):
+    # Filter by type if provided
+    
+@router.get("/api/puzzles/")  # New endpoint
+def get_puzzles(...):
+    # Convenience endpoint that filters for puzzles only
+    
+@router.get("/api/tabiyas/")  # New endpoint  
+def get_tabiyas(...):
+    # Convenience endpoint that filters for tabiyas only
+
+@router.post("/api/positions/bulk-reclassify")
+def bulk_reclassify(position_ids: List[int], new_type: PositionType):
+    # Bulk update position types
+    # Validate solution_san requirements
+    # Return success/failure report
+```
+
+### 15D: Frontend Navigation Changes
+
+Update `index.html`:
+- Replace "Positions" nav tab with "Puzzles" and "Tabiyas"
+- Both link to same positions.js but with different type filters
+
+Update `frontend/js/positions.js`:
+```javascript
+// Check URL or nav context to determine which type to show
+const currentType = window.location.hash.includes('puzzles') ? 'puzzle' : 'tabiya';
+
+// Filter API calls
+const positions = await fetchAPI(`/api/positions/?position_type=${currentType}`);
+
+// Adjust UI labels
+document.getElementById('page-title').textContent = 
+    currentType === 'puzzle' ? 'Puzzles' : 'Tabiyas';
+```
+
+### 15E: Position Detail View Split
+
+Update position detail to show type-specific UI:
+
+```javascript
+function renderPositionDetail(position) {
+    if (position.position_type === 'puzzle') {
+        renderPuzzleDetail(position);
+    } else {
+        renderTabiyaDetail(position);
+    }
+}
+
+function renderPuzzleDetail(position) {
+    // Show solution (hidden by default)
+    // Show theme tag prominently
+    // Add "Check Answer" functionality
+    // Track attempt success rate
+}
+
+function renderTabiyaDetail(position) {
+    // Hide solution-related UI
+    // Make "Practice from here" prominent
+    // Show practice history stats
+    // Show opening tree if available
+}
+```
+
+### 15F: Add/Edit Position Flow Updates
+
+Update add/edit position forms:
+
+1. **Add Position**: First screen asks for type (radio buttons)
+2. **Type-specific forms**: Show solution field only for puzzles
+3. **Edit Position**: Allow type change with confirmation dialog
+4. **Save from Game**: Modal asks type before saving
+
+### 15G: Bulk Reclassification Tool
+
+Add to positions list view:
+
+```javascript
+// Multi-select checkboxes on position list
+// "Reclassify Selected" button
+// Modal: Choose new type, optional bulk solution/theme
+// Confirmation with count of affected positions
+// Progress indicator for bulk operation
+```
+
+### 15H: Tests
+
+Create `test_position_types.py`:
+
+```python
+def test_create_puzzle_with_solution():
+    # Create puzzle with solution_san -> success
+    
+def test_create_puzzle_without_solution():
+    # Create puzzle without solution_san -> 400 error
+    
+def test_create_tabiya():
+    # Create tabiya (solution_san ignored) -> success
+    
+def test_change_tabiya_to_puzzle():
+    # Change type, add solution -> success
+    
+def test_change_puzzle_to_tabiya():
+    # Change type -> solution cleared, theme preserved as tag
+    
+def test_bulk_reclassify():
+    # Reclassify 5 positions at once -> all updated
+    
+def test_filter_by_type():
+    # Create mixed positions, filter -> correct results
+    
+def test_migration_defaults():
+    # Existing positions default to tabiya
+    
+def test_practice_history_preserved():
+    # Type changes don't affect practice games
+    
+def test_quiz_attempts_preserved():
+    # Type changes don't affect quiz history
+    
+def test_solution_validation():
+    # Invalid SAN in solution -> 400 error
+    
+def test_type_statistics():
+    # Endpoint returns counts by type
+```
+
+### Checkpoint 15
+
+```bash
+# Backend tests
+python test.py                    # Original tests still pass
+python test_games.py              # Game tests still pass  
+python test_game_api.py           # Game API tests still pass
+python test_practice.py           # Practice tests still pass
+python test_position_types.py    # New type tests pass (12+ tests)
+
+# Manual testing
+- [ ] Migration runs successfully
+- [ ] Existing positions show as tabiyas
+- [ ] Navigation shows "Puzzles" and "Tabiyas" tabs
+- [ ] Can create puzzle with solution
+- [ ] Can create tabiya without solution
+- [ ] Puzzle detail shows solution UI
+- [ ] Tabiya detail shows practice UI
+- [ ] Can change position type
+- [ ] Bulk reclassification works
+- [ ] Practice history survives type changes
+- [ ] Save from game asks for type
+- [ ] All previous UI cleanup phases still work
+```
+
+---
+

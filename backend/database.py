@@ -21,14 +21,30 @@ Base = declarative_base()
 def run_lightweight_migrations():
     """Apply additive column migrations for SQLite. Safe to run at startup."""
     insp = inspect(engine)
-    if "games" not in insp.get_table_names():
-        return
-    cols = {c["name"] for c in insp.get_columns("games")}
-    with engine.begin() as conn:
-        if "white_elo" not in cols:
-            conn.execute(text("ALTER TABLE games ADD COLUMN white_elo INTEGER"))
-        if "black_elo" not in cols:
-            conn.execute(text("ALTER TABLE games ADD COLUMN black_elo INTEGER"))
+    
+    # Check if tables exist before trying to migrate
+    table_names = insp.get_table_names()
+    
+    # Migrate games table
+    if "games" in table_names:
+        cols = {c["name"] for c in insp.get_columns("games")}
+        with engine.begin() as conn:
+            if "white_elo" not in cols:
+                conn.execute(text("ALTER TABLE games ADD COLUMN white_elo INTEGER"))
+            if "black_elo" not in cols:
+                conn.execute(text("ALTER TABLE games ADD COLUMN black_elo INTEGER"))
+    
+    # Migrate positions table for Phase 15
+    if "positions" in table_names:
+        cols = {c["name"] for c in insp.get_columns("positions")}
+        with engine.begin() as conn:
+            if "position_type" not in cols:
+                # Default all existing positions to 'tabiya'
+                conn.execute(text("ALTER TABLE positions ADD COLUMN position_type VARCHAR DEFAULT 'tabiya' NOT NULL"))
+            if "solution_san" not in cols:
+                conn.execute(text("ALTER TABLE positions ADD COLUMN solution_san VARCHAR"))
+            if "theme" not in cols:
+                conn.execute(text("ALTER TABLE positions ADD COLUMN theme VARCHAR"))
 
 
 def get_db():

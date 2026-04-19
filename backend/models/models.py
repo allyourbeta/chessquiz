@@ -1,11 +1,13 @@
 """SQLAlchemy models. All tables defined here."""
 
 from datetime import datetime, timezone
+from enum import Enum as PyEnum
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
@@ -15,6 +17,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
+
+
+class PositionType(str, PyEnum):
+    """Position can be either a puzzle (with solution) or a tabiya (key position)."""
+    puzzle = "puzzle"
+    tabiya = "tabiya"
 
 # Many-to-many join table: positions <-> tags
 position_tags = Table(
@@ -33,6 +41,17 @@ class Position(Base):
     title = Column(String, nullable=True)
     notes = Column(Text, nullable=True)  # Free-text personal analysis
     stockfish_analysis = Column(Text, nullable=True)  # Stored engine eval
+    
+    # Position type fields (Phase 15)
+    position_type = Column(
+        Enum(PositionType), 
+        nullable=False, 
+        default=PositionType.tabiya,
+        server_default="tabiya"
+    )
+    solution_san = Column(String, nullable=True)  # Required for puzzles
+    theme = Column(String, nullable=True)  # Tactical theme for puzzles
+    
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
