@@ -35,3 +35,18 @@ React (browser)
 - Quiz history tracked from day one (for future spaced repetition).
 - Stockfish runs in browser (WASM), not on server.
 - python-chess used server-side for FEN validation, pawn structure, etc.
+
+## Database Backup Scripts
+ChessQuiz has automated backup scripts for data safety:
+
+- `scripts/backup_database.sh` — Automated nightly backup at 3am via launchd. Uses SQLite's native backup API. Keeps 30 days of backups.
+- `scripts/backup_now.sh` — Manual backup wrapper for use before risky operations. Creates backups with MANUAL prefix.
+- `scripts/restore_database.sh <backup-filename>` — Interactive restore with confirmation prompt. Creates safety backup before restore.
+
+Backups are stored in `backups/` directory (gitignored). The launchd plist is at `~/Library/LaunchAgents/com.ashish.chessquiz-backup.plist`.
+
+To load/unload the automated backup:
+- Load: `launchctl load ~/Library/LaunchAgents/com.ashish.chessquiz-backup.plist`
+- Unload: `launchctl unload ~/Library/LaunchAgents/com.ashish.chessquiz-backup.plist`
+
+IMPORTANT: Always run `scripts/backup_now.sh` before any destructive operations, migrations, or bulk imports.
