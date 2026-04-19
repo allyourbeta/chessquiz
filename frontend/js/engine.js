@@ -5,9 +5,9 @@ let _pendingBestMove = false;
 function toggleEngine(boardId) {
     AppState.engineOn = !AppState.engineOn;
     const btn = document.getElementById('engine-toggle-btn');
-    if (btn) btn.textContent = AppState.engineOn ? 'Eval: ON' : 'Eval: OFF';
+    if (btn) btn.textContent = AppState.engineOn ? 'Hide Engine' : 'Show Engine';
     const detailBtn = document.getElementById('detail-engine-toggle-btn');
-    if (detailBtn) detailBtn.textContent = AppState.engineOn ? 'Eval: ON' : 'Eval: OFF';
+    if (detailBtn) detailBtn.textContent = AppState.engineOn ? 'Hide Engine' : 'Show Engine';
 
     if (AppState.engineOn) {
         requestEval(boardId);

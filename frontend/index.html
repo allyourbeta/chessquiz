@@ -25,7 +25,6 @@
     <button onclick="Router.navigate({view:'games'})">Games</button>
     <button onclick="Router.navigate({view:'collections'})">Collections</button>
     <button onclick="Router.navigate({view:'search'})">Search</button>
-    <button onclick="Router.navigate({view:'quiz'})">Quiz</button>
     <button onclick="Router.navigate({view:'practice'})">Practice</button>
     <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
@@ -166,7 +165,7 @@
         <div id="gv-tags" style="margin-bottom:12px"></div>
         <div class="btn-row">
           <button class="btn btn-sm" onclick="showSavePositionModal()">Save Position</button>
-          <button class="btn btn-sm" id="engine-toggle-btn" onclick="toggleEngine('game-board')">Eval: OFF</button>
+          <button class="btn btn-sm" id="engine-toggle-btn" onclick="toggleEngine('game-board')">Show Engine</button>
           <button class="btn btn-sm" onclick="playFromHereGV()">Play from here</button>
           <button class="btn btn-sm" id="opening-tree-btn" onclick="toggleOpeningTree()">Opening Explorer</button>
           <button class="btn btn-danger btn-sm" onclick="deleteCurrentGame()">Delete</button>
@@ -348,12 +347,14 @@
           <div id="detail-fen" class="fen-display"></div>
           <label style="margin-top:16px">Your Notes</label>
           <pre id="detail-notes" class="detail-pre"></pre>
-          <label style="margin-top:16px">Stockfish Analysis</label>
-          <pre id="detail-stockfish" class="detail-pre"></pre>
+          <div id="detail-stockfish-card">
+            <label style="margin-top:16px">Stockfish Analysis</label>
+            <pre id="detail-stockfish" class="detail-pre"></pre>
+          </div>
         </div>
 
         <!-- Quiz Stats Card -->
-        <div class="card">
+        <div id="detail-stats-card" class="card">
           <div class="card-header">Quiz Stats</div>
           <div id="detail-stats" class="text-muted" style="font-size:13px"></div>
         </div>
@@ -362,15 +363,15 @@
         <div class="card">
           <div class="btn-row" style="margin:0">
             <button class="btn" onclick="editPosition()">Edit</button>
-            <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Eval: OFF</button>
-            <button class="btn btn-sm" onclick="playFromHereDetail()">Play from here</button>
+            <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Show Engine</button>
+            <button class="btn btn-sm" id="play-from-btn" onclick="playFromHereDetail()">Play from here</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
             <button class="btn" onclick="history.back()">Back</button>
           </div>
         </div>
 
         <!-- Practice This Position Card -->
-        <div class="card">
+        <div id="practice-section" class="card">
           <div class="card-header">Practice This Position</div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <select id="practice-level" class="select-input"></select>
@@ -384,13 +385,13 @@
         </div>
 
         <!-- Practice History Card -->
-        <div class="card">
+        <div id="practice-history-section" class="card">
           <div class="card-header">Practice History</div>
           <div id="practice-filter-info" style="display:none;margin-bottom:8px;font-size:13px;color:var(--text-muted)">
             <span id="practice-filter-text"></span>
             <button class="btn btn-sm" onclick="Practice.clearFilters()" style="margin-left:8px">Clear filters</button>
           </div>
-          <div class="stats-panel">
+          <div id="aggregate-stats-section" class="stats-panel">
             <h4 style="margin:0;margin-bottom:8px;font-size:14px;font-weight:600">Aggregate Stats</h4>
             <div id="practice-stats" style="font-size:13px"></div>
           </div>

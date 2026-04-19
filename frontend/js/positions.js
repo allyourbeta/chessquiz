@@ -66,21 +66,46 @@ async function loadPositionDetail(id) {
     const pos = await (await fetch(API + '/positions/' + id)).json();
     AppState.currentDetailId = id;
     AppState.currentDetailFen = pos.fen;
+    AppState.currentDetailType = pos.position_type || 'tabiya'; // Store type for other functions
     AppState.detailFlipped = false;
+    
+    // Always show these for both puzzles and tabiyas
     document.getElementById('detail-title').textContent = pos.title || 'Untitled';
     document.getElementById('detail-fen').textContent = pos.fen;
     document.getElementById('detail-notes').textContent = pos.notes || '(none)';
-    document.getElementById('detail-stockfish').textContent = pos.stockfish_analysis || '(none)';
     document.getElementById('detail-tags').innerHTML = pos.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
-    const s = await (await fetch(API + '/quiz/stats/' + id)).json();
-    document.getElementById('detail-stats').textContent = s.total_attempts > 0 ? `${s.total_attempts} attempts, ${(s.accuracy * 100).toFixed(0)}% accuracy` : 'No quiz attempts yet';
+    
+    // Handle UI based on position type
+    console.log(`Loading position ${id}, type: ${pos.position_type}`);
+    if (pos.position_type === 'puzzle') {
+        // PUZZLE UI: Hide irrelevant sections
+        console.log('Hiding puzzle-irrelevant sections...');
+        document.getElementById('detail-stockfish-card').style.display = 'none';
+        document.getElementById('detail-stats-card').style.display = 'none';
+        document.getElementById('practice-section').style.display = 'none';
+        document.getElementById('practice-history-section').style.display = 'none';
+        document.getElementById('aggregate-stats-section').style.display = 'none';
+        document.getElementById('play-from-btn').style.display = 'none';
+    } else {
+        // TABIYA UI: Show everything except Quiz Stats
+        document.getElementById('detail-stockfish-card').style.display = '';
+        document.getElementById('detail-stockfish').textContent = pos.stockfish_analysis || '(none)';
+        document.getElementById('detail-stats-card').style.display = 'none'; // Remove Quiz Stats for tabiyas too
+        document.getElementById('practice-section').style.display = '';
+        document.getElementById('practice-history-section').style.display = '';
+        document.getElementById('aggregate-stats-section').style.display = '';
+        document.getElementById('play-from-btn').style.display = '';
+        
+        // Load practice data for tabiyas only
+        if (window.Practice) {
+            Practice.loadPracticeHistory(id);
+            Practice.loadLevels().then(() => PracticeUI.populateLevelSelect(Practice.getLevels()));
+        }
+    }
+    
     if (AppState.playMode) stopPlayMode();
     BoardManager.create('detail-board', pos.fen, { flipped: false });
     if (AppState.engineOn) requestEval('detail-board');
-    if (window.Practice) {
-        Practice.loadPracticeHistory(id);
-        Practice.loadLevels().then(() => PracticeUI.populateLevelSelect(Practice.getLevels()));
-    }
 }
 
 function editPosition() {
