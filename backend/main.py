@@ -11,9 +11,11 @@ from backend.api import (
     chess_router,
     collections_router,
     games_router,
+    lichess_router,
     opening_tree_router,
     positions_router,
     practice_router,
+    puzzle_import_router,
     quiz_router,
     tags_router,
 )
@@ -43,6 +45,8 @@ app.include_router(games_router, prefix="/api")
 app.include_router(collections_router, prefix="/api")
 app.include_router(opening_tree_router, prefix="/api")
 app.include_router(practice_router, prefix="/api")
+app.include_router(lichess_router, prefix="/api")
+app.include_router(puzzle_import_router, prefix="/api")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 

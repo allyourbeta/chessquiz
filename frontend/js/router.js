@@ -58,6 +58,7 @@ const Router = (function () {
         if (a === 'games') {
             if (!b) return { view: 'games', params: q };
             if (b === 'import') return { view: 'gameImport', params: q };
+            if (b === 'lichess') return { view: 'lichessImport', params: q };
             const id = parseInt(b, 10);
             if (!isNaN(id)) return { view: 'gameDetail', id, params: q };
         }
@@ -90,6 +91,7 @@ const Router = (function () {
             case 'games':          return '/games' + _qs(p);
             case 'gameDetail':     return `/games/${route.id}` + _qs(p);
             case 'gameImport':     return '/games/import' + _qs(p);
+            case 'lichessImport':  return '/games/lichess' + _qs(p);
             case 'collections':    return '/collections' + _qs(p);
             case 'collectionDetail': return `/collections/${route.id}` + _qs(p);
             case 'search':         return '/search' + _qs(p);

@@ -163,6 +163,10 @@ function renderRoute(route) {
             _activateView('import', 'Games');
             loadCollections().then(resetImportView);
             break;
+        case 'lichessImport':
+            _activateView('lichess-import', 'Games');
+            resetLichessImportView();
+            break;
         case 'collections':
             _activateView('collections', 'Collections');
             loadCollectionsView();
