@@ -76,26 +76,6 @@
       </div>
     </div>
   </div>
-  <div id="view-quiz" class="view">
-    <div class="quiz-board-area">
-      <div class="tag-row" id="quiz-tag-filters" style="margin-bottom:8px"></div>
-      <div id="quiz-board" class="board-wrap"></div>
-      <div id="quiz-info" style="text-align:center">
-        <p id="quiz-title" class="section-title" style="margin-bottom:4px"></p>
-        <div id="quiz-tags-display" style="margin-bottom:12px"></div>
-      </div>
-      <div class="quiz-controls" id="quiz-controls">
-        <button class="btn btn-primary" onclick="startQuiz()">Start Quiz</button>
-      </div>
-      <div id="quiz-answer-area" style="display:none;width:100%;max-width:600px">
-        <div class="quiz-answer">
-          <h3>Your Notes</h3><pre id="quiz-notes"></pre>
-          <h3 style="margin-top:16px">Stockfish</h3><pre id="quiz-stockfish"></pre>
-        </div>
-      </div>
-      <div class="stats-bar" id="quiz-stats"></div>
-    </div>
-  </div>
   <div id="view-games" class="view">
     <div class="view-header">
       <h2>Games</h2>
@@ -109,7 +89,6 @@
         </select>
         <select id="game-collection-filter" class="select-input" onchange="onCollectionFilterChange(this)"></select>
         <button class="btn btn-primary btn-sm" onclick="Router.navigate({view:'gameImport'})">Import PGN</button>
-        <button class="btn btn-primary btn-sm" onclick="Router.navigate({view:'lichessImport'})">Import from Lichess</button>
       </div>
     </div>
     <div id="game-tag-filters" class="tag-row" style="margin-bottom:16px"></div>
@@ -239,82 +218,6 @@
         <button class="btn btn-primary" id="import-go-btn" onclick="doImport()">Import</button>
         <button class="btn btn-danger" id="import-cancel-btn" onclick="cancelImport()" style="display:none">Cancel Import</button>
         <button class="btn" onclick="history.back()">Back</button>
-      </div>
-    </div>
-  </div>
-  <div id="view-lichess-import" class="view">
-    <div class="view-header">
-      <h2>Import from Lichess</h2>
-    </div>
-    <div class="panel" style="max-width:720px">
-      <!-- Stage A: Form (initial state) -->
-      <div id="lichess-stage-form">
-        <h3 style="margin-bottom:12px">Import All Your Lichess Studies</h3>
-        <p style="margin-bottom:16px;font-size:14px;color:var(--text-muted)">
-          Download all your public and private Lichess studies and import them as puzzles or games.
-        </p>
-        
-        <label>Lichess Username</label>
-        <input type="text" id="lichess-username" placeholder="Your Lichess username" autocomplete="username">
-        
-        <label style="margin-top:12px">Lichess API Token</label>
-        <input type="password" id="lichess-token" placeholder="Paste your Lichess API token" autocomplete="off">
-        <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">
-          To get a token:
-          <a href="https://lichess.org/account/oauth/token" target="_blank">lichess.org/account/oauth/token</a> →
-          Create token with "Read studies" permission → Copy immediately (shown only once)
-        </p>
-        
-        <div class="btn-row" style="margin-top:16px">
-          <button class="btn btn-primary" id="lichess-download-btn" onclick="doLichessImport()">Download Studies</button>
-          <button class="btn" onclick="Router.navigate({view:'games'})">Back to Games</button>
-        </div>
-      </div>
-      
-      <!-- Stage B: Downloading -->
-      <div id="lichess-stage-downloading" style="display:none">
-        <h3 style="margin-bottom:12px">Downloading Studies</h3>
-        <p style="margin-bottom:16px;font-size:14px">
-          Username: <strong id="lichess-downloading-username"></strong>
-        </p>
-        <div id="lichess-progress"></div>
-        <div class="btn-row" style="margin-top:16px">
-          <button class="btn btn-danger" onclick="cancelLichessImport()">Cancel</button>
-        </div>
-      </div>
-      
-      <!-- Stage C: Ready to import -->
-      <div id="lichess-stage-ready" style="display:none">
-        <h3 style="margin-bottom:12px">Download Complete</h3>
-        <p style="margin-bottom:16px;font-size:14px">
-          Username: <strong id="lichess-ready-username"></strong>
-        </p>
-        <div id="lichess-summary"></div>
-        <div class="btn-row" style="margin-top:16px;gap:8px">
-          <button class="btn btn-primary" id="lichess-import-puzzles-btn" onclick="importLichessPuzzles()">Import as Puzzles</button>
-          <button class="btn" id="lichess-import-games-btn" onclick="importLichessPGN()">Import as Games</button>
-          <button class="btn btn-ghost" onclick="resetLichessImportView()">Start over</button>
-        </div>
-      </div>
-      
-      <!-- Stage D: Importing -->
-      <div id="lichess-stage-importing" style="display:none">
-        <h3 style="margin-bottom:12px">Importing...</h3>
-        <p style="margin-bottom:16px;font-size:14px">
-          Username: <strong id="lichess-importing-username"></strong>
-        </p>
-        <div id="lichess-importing-summary"></div>
-        <div id="lichess-import-progress"></div>
-      </div>
-      
-      <!-- Stage E: Success -->
-      <div id="lichess-stage-success" style="display:none">
-        <h3 style="margin-bottom:12px;color:var(--green)">Import Complete!</h3>
-        <div id="lichess-success-message"></div>
-        <div class="btn-row" style="margin-top:16px">
-          <button class="btn btn-primary" id="lichess-view-items-btn" onclick="">View Items</button>
-          <button class="btn" onclick="resetLichessImportView()">Import more from Lichess</button>
-        </div>
       </div>
     </div>
   </div>
@@ -478,10 +381,8 @@
 <script src="/js/shared.js"></script>
 <script src="/js/tagfilter.js"></script>
 <script src="/js/positions.js"></script>
-<script src="/js/quiz.js"></script>
 <script src="/js/games.js"></script>
 <script src="/js/import.js"></script>
-<script src="/js/lichess.js"></script>
 <script src="/js/game-viewer.js"></script>
 <script src="/js/opening-tree.js"></script>
 <script src="/js/collections.js"></script>

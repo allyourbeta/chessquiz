@@ -58,7 +58,6 @@ const Router = (function () {
         if (a === 'games') {
             if (!b) return { view: 'games', params: q };
             if (b === 'import') return { view: 'gameImport', params: q };
-            if (b === 'lichess') return { view: 'lichessImport', params: q };
             const id = parseInt(b, 10);
             if (!isNaN(id)) return { view: 'gameDetail', id, params: q };
         }
@@ -68,7 +67,6 @@ const Router = (function () {
             if (!isNaN(id)) return { view: 'collectionDetail', id, params: q };
         }
         if (a === 'search') return { view: 'search', params: q };
-        if (a === 'quiz') return { view: 'quiz', params: q };
         if (a === 'practice') {
             if (b === 'games') {
                 const id = parseInt(parts[2], 10);
@@ -91,11 +89,9 @@ const Router = (function () {
             case 'games':          return '/games' + _qs(p);
             case 'gameDetail':     return `/games/${route.id}` + _qs(p);
             case 'gameImport':     return '/games/import' + _qs(p);
-            case 'lichessImport':  return '/games/lichess' + _qs(p);
             case 'collections':    return '/collections' + _qs(p);
             case 'collectionDetail': return `/collections/${route.id}` + _qs(p);
             case 'search':         return '/search' + _qs(p);
-            case 'quiz':           return '/quiz' + _qs(p);
             case 'practice':       return '/practice' + _qs(p);
             case 'practiceGameDetail': return `/practice/games/${route.id}` + _qs(p);
             default:               return '/positions';

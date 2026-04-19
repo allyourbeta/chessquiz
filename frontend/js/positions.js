@@ -1,3 +1,26 @@
+/*
+PHASE 19 INVESTIGATION FINDINGS:
+
+1. PUZZLE/TABIYA UI SPLIT FAILURE:
+   The conditional rendering logic exists and looks correct (lines 80-117), BUT:
+   - The 'detail-stockfish-card' ID is on a DIV inside the Position Info Card, not a separate card
+   - This only hides the Stockfish label/pre, not the whole Stockfish section
+   - The FEN and Notes still show in the same card for puzzles
+   - The UI elements ARE being hidden/shown, but the structure makes it look incomplete
+
+2. ENGINE TOGGLE FAILURE:
+   The engine runs but produces no visible output because:
+   - Engine output goes to element with ID 'engine-eval-display'
+   - This element exists in games view (index.html line 138) but NOT in position detail view
+   - So the engine runs, calculates, but has nowhere to display results on detail pages
+
+3. SEARCH FUNCTIONALITY:
+   - Both exact position and pawn structure modes are implemented
+   - UI exists (index.html lines 185-215)
+   - Functions exist in search.js (doPositionSearch, etc.)
+   - Needs verification that they actually work
+*/
+
 async function loadPositions() {
     let u = API + '/positions/';
     const tags = AppState.positionTagFilters || [];

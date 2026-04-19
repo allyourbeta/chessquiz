@@ -139,7 +139,6 @@ window.MARKER_TYPE = MARKER_TYPE;
 window.ARROW_TYPE = ARROW_TYPE;
 
 BoardManager.create('board', AppState.boardFen);
-BoardManager.create('quiz-board', AppState.boardFen);
 BoardManager.create('detail-board', AppState.boardFen);
 initStockfish();
 setupAutoLoad();

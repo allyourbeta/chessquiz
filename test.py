@@ -65,27 +65,6 @@ check("Filter by tag", len(r.json()) == 1 and r.json()[0]["title"] == "K+P Endga
 r = c.get("/api/tags/")
 check("List tags", r.status_code == 200 and len(r.json()) >= 2)
 
-# Quiz
-r = c.get("/api/quiz/next")
-check("Quiz next (random)", r.status_code == 200 and "notes" not in r.json())
-
-r = c.get("/api/quiz/next?tags=endgame")
-check("Quiz next (filtered)", r.json()["title"] == "K+P Endgame")
-
-# Reveal
-r = c.get("/api/quiz/reveal/1")
-check("Reveal answer", r.status_code == 200 and r.json().get("notes") is not None)
-
-# Record attempts
-r = c.post("/api/quiz/attempt", json={"position_id": 1, "correct": True})
-check("Record correct attempt", r.status_code == 201)
-
-r = c.post("/api/quiz/attempt", json={"position_id": 1, "correct": False})
-check("Record incorrect attempt", r.status_code == 201)
-
-# Stats
-r = c.get("/api/quiz/stats/1")
-check("Quiz stats", r.json()["total_attempts"] == 2 and r.json()["accuracy"] == 0.5)
 
 # Update
 r = c.put("/api/positions/1", json={"notes": "Updated!", "tags": ["openings", "e4", "beginner"]})

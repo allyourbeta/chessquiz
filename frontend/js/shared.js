@@ -180,10 +180,6 @@ function renderRoute(route) {
             _activateView('import', 'Games');
             loadCollections().then(resetImportView);
             break;
-        case 'lichessImport':
-            _activateView('lichess-import', 'Games');
-            resetLichessImportView();
-            break;
         case 'collections':
             _activateView('collections', 'Collections');
             loadCollectionsView();
@@ -200,10 +196,6 @@ function renderRoute(route) {
             _activateView('search', 'Search');
             loadCollections().then(renderSearchScope);
             initSearchBoard();
-            break;
-        case 'quiz':
-            _activateView('quiz', 'Quiz');
-            mountQuizTagFilter();
             break;
         case 'practice':
             _activateView('practice', 'Practice');
@@ -227,7 +219,6 @@ const _LEGACY_VIEWS = {
     games: { view: 'games' },
     collections: { view: 'collections' },
     search: { view: 'search' },
-    quiz: { view: 'quiz' },
     practice: { view: 'practice' },
     import: { view: 'gameImport' },
 };

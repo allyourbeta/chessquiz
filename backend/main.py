@@ -11,12 +11,9 @@ from backend.api import (
     chess_router,
     collections_router,
     games_router,
-    lichess_router,
     opening_tree_router,
     positions_router,
     practice_router,
-    puzzle_import_router,
-    quiz_router,
     tags_router,
 )
 from backend.database import Base, engine, run_lightweight_migrations
@@ -38,15 +35,12 @@ app.add_middleware(
 )
 
 app.include_router(positions_router, prefix="/api")
-app.include_router(quiz_router, prefix="/api")
 app.include_router(tags_router, prefix="/api")
 app.include_router(chess_router, prefix="/api")
 app.include_router(games_router, prefix="/api")
 app.include_router(collections_router, prefix="/api")
 app.include_router(opening_tree_router, prefix="/api")
 app.include_router(practice_router, prefix="/api")
-app.include_router(lichess_router, prefix="/api")
-app.include_router(puzzle_import_router, prefix="/api")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -97,7 +91,6 @@ _SPA_ROUTES = {
     "games",
     "collections",
     "search",
-    "quiz",
     "add",
     "practice",
 }
