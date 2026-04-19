@@ -9,6 +9,7 @@ import chess.pgn
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -104,6 +105,16 @@ def import_puzzles_from_pgn(
 ) -> dict:
     """Import PGN chapters as puzzle positions.
     
+    ROOT CAUSE of "UNIQUE constraint failed: position_tags.position_id, position_tags.tag_id":
+    When multiple chapters from the same study are imported, they all try to use the same tag.
+    If the tag already exists in the database and is already attached to another position,
+    SQLAlchemy's relationship handling can cause duplicate inserts into the position_tags table.
+    
+    FIX: 
+    1. Use savepoints for each puzzle so one failure doesn't rollback all
+    2. Check if tag association already exists before adding
+    3. Properly handle existing tags without re-adding them
+    
     Returns summary dict with counts and lists of created/skipped puzzles.
     """
     # Parse all chapters
@@ -124,6 +135,9 @@ def import_puzzles_from_pgn(
     created_puzzles = []
     skipped_no_moves = []
     skipped_duplicates = []
+    failed_chapters = []
+    reused_positions = 0
+    duplicate_tag_skips = 0
     seen_zobrist_hashes = set()
     
     # Get existing positions by zobrist hash for duplicate detection
@@ -134,7 +148,7 @@ def import_puzzles_from_pgn(
         except:
             pass  # Ignore positions with invalid FENs
     
-    # Process each chapter
+    # Process each chapter with individual savepoints
     for i, chapter_pgn in enumerate(chapters):
         if emit:
             emit({
@@ -144,54 +158,95 @@ def import_puzzles_from_pgn(
                 "message": f"Processing chapter {i + 1} of {len(chapters)}"
             })
         
-        puzzle_data = extract_puzzle_from_chapter(chapter_pgn)
+        # Use a savepoint for each chapter
+        savepoint = db.begin_nested()
         
-        if puzzle_data is None:
-            skipped_no_moves.append(f"Chapter {i + 1}")
+        try:
+            puzzle_data = extract_puzzle_from_chapter(chapter_pgn)
+            
+            if puzzle_data is None:
+                skipped_no_moves.append(f"Chapter {i + 1}")
+                savepoint.rollback()
+                continue
+            
+            # Check for duplicates
+            zobrist_hash = puzzle_data["zobrist_hash"]
+            if zobrist_hash in existing_hashes:
+                skipped_duplicates.append(puzzle_data["chapter_name"])
+                reused_positions += 1
+                savepoint.rollback()
+                continue
+            
+            if zobrist_hash in seen_zobrist_hashes:
+                skipped_duplicates.append(puzzle_data["chapter_name"])
+                savepoint.rollback()
+                continue
+            
+            seen_zobrist_hashes.add(zobrist_hash)
+            
+            # Get or create tag for the study
+            study_slug = slugify(puzzle_data["study_name"])
+            tag = None
+            if study_slug:
+                # First check if tag exists
+                tag = db.query(Tag).filter_by(name=study_slug).first()
+                if not tag:
+                    # Create new tag
+                    tag = Tag(name=study_slug)
+                    db.add(tag)
+                    db.flush()
+                    # Debug: Created new tag
+                else:
+                    # Debug: Reusing existing tag
+                    pass
+            
+            # Create position
+            position = Position(
+                fen=puzzle_data["starting_fen"],
+                title=puzzle_data["chapter_name"],
+                notes=f"{puzzle_data['study_name']}: {puzzle_data['chapter_name']}",
+                position_type=PositionType.puzzle,
+                solution_san=puzzle_data["solution_san"]
+            )
+            
+            db.add(position)
+            db.flush()  # Get position.id
+            
+            # Add tag association if tag exists and not already associated
+            if tag:
+                # Check if this position already has this tag (shouldn't happen with new position, but be safe)
+                existing_assoc = db.execute(
+                    text("SELECT 1 FROM position_tags WHERE position_id = :pos_id AND tag_id = :tag_id"),
+                    {"pos_id": position.id, "tag_id": tag.id}
+                ).first()
+                
+                if existing_assoc:
+                    # Debug: Skipping duplicate tag association
+                    duplicate_tag_skips += 1
+                else:
+                    # Debug: Adding tag association
+                    position.tags.append(tag)
+                    db.flush()
+            
+            # Commit this chapter's savepoint
+            savepoint.commit()
+            
+            created_puzzles.append({
+                "id": position.id,
+                "title": position.title,
+                "solution": position.solution_san
+            })
+            
+        except Exception as e:
+            savepoint.rollback()
+            failed_chapters.append({
+                "chapter": f"Chapter {i + 1}",
+                "error": str(e)
+            })
+            # Debug: Failed to import chapter
             continue
-        
-        # Check for duplicates
-        zobrist_hash = puzzle_data["zobrist_hash"]
-        if zobrist_hash in existing_hashes or zobrist_hash in seen_zobrist_hashes:
-            skipped_duplicates.append(puzzle_data["chapter_name"])
-            continue
-        
-        seen_zobrist_hashes.add(zobrist_hash)
-        
-        # Create puzzle position
-        # Get or create tag for the study
-        study_slug = slugify(puzzle_data["study_name"])
-        tag = None
-        if study_slug:
-            tag = db.query(Tag).filter_by(name=study_slug).first()
-            if not tag:
-                tag = Tag(name=study_slug)
-                db.add(tag)
-                db.flush()
-        
-        # Create position
-        position = Position(
-            fen=puzzle_data["starting_fen"],
-            title=puzzle_data["chapter_name"],
-            notes=f"{puzzle_data['study_name']}: {puzzle_data['chapter_name']}",
-            position_type=PositionType.puzzle,
-            solution_san=puzzle_data["solution_san"]
-        )
-        
-        # Add tag
-        if tag:
-            position.tags.append(tag)
-        
-        db.add(position)
-        db.flush()
-        
-        created_puzzles.append({
-            "id": position.id,
-            "title": position.title,
-            "solution": position.solution_san
-        })
     
-    # Commit all changes if no errors
+    # Commit all successful changes
     try:
         db.commit()
     except Exception as e:
@@ -203,9 +258,13 @@ def import_puzzles_from_pgn(
         "created_count": len(created_puzzles),
         "skipped_no_moves_count": len(skipped_no_moves),
         "skipped_duplicates_count": len(skipped_duplicates),
+        "reused_positions": reused_positions,
+        "duplicate_tag_skips": duplicate_tag_skips,
+        "failed_chapters_count": len(failed_chapters),
         "created_puzzles": created_puzzles[:10],  # First 10 for preview
         "skipped_no_moves": skipped_no_moves[:10],
-        "skipped_duplicates": skipped_duplicates[:10]
+        "skipped_duplicates": skipped_duplicates[:10],
+        "failed_chapters": failed_chapters[:10]
     }
     
     if emit:

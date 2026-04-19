@@ -8,6 +8,7 @@ from backend.api.puzzle_import import extract_puzzle_from_chapter, import_puzzle
 from backend.database import SessionLocal
 from backend.models import Position, PositionType, Tag
 from backend.services import compute_zobrist
+from sqlalchemy import text
 
 # Test PGN data
 CHAPTER1_PGN = """[Event "Tactics Missed: Fork Pattern"]
@@ -309,6 +310,72 @@ def test_existing_position_skip():
         db.close()
 
 
+def test_import_handles_duplicate_position_tag():
+    """
+    Reproduces the user-reported bug: UNIQUE constraint failed on position_tags.
+    This happens when multiple chapters from the same study try to add the same tag.
+    """
+    db = SessionLocal()
+    
+    try:
+        # Clean up
+        db.query(Position).filter(Position.title.like("%Test Study%")).delete()
+        db.query(Tag).filter(Tag.name == "test-study").delete()
+        db.commit()
+        
+        # Create PGN with multiple chapters from same study (will use same tag)
+        pgn_text = """[Event "Test Study: Chapter 1"]
+[FEN "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"]
+
+1... e5 *
+
+[Event "Test Study: Chapter 2"]
+[FEN "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1"]
+
+1... d5 *
+
+[Event "Test Study: Chapter 3"]
+[FEN "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 0 1"]
+
+1... Nf6 *"""
+        
+        # Import puzzles - this should NOT raise IntegrityError
+        summary = import_puzzles_from_pgn(db, pgn_text)
+        
+        # Assertions
+        assert summary["total_chapters"] == 3
+        assert summary["created_count"] == 3, f"Expected 3 created, got {summary['created_count']}"
+        assert summary["failed_chapters_count"] == 0, f"Some chapters failed: {summary.get('failed_chapters', [])}"
+        
+        # Verify all 3 puzzles were created with the same tag
+        puzzles = db.query(Position).filter(Position.title.like("%Test Study%")).all()
+        assert len(puzzles) == 3
+        
+        # Check they all have the same tag
+        tag = db.query(Tag).filter_by(name="test-study").first()
+        assert tag is not None
+        
+        for puzzle in puzzles:
+            assert tag in puzzle.tags, f"Puzzle '{puzzle.title}' missing tag"
+        
+        # Verify no duplicate tag associations
+        result = db.execute(
+            text("SELECT position_id, tag_id, COUNT(*) as cnt FROM position_tags WHERE tag_id = :tag_id GROUP BY position_id, tag_id HAVING cnt > 1"),
+            {"tag_id": tag.id}
+        ).fetchall()
+        assert len(result) == 0, f"Found duplicate position_tag associations: {result}"
+        
+        print("  ✓ Import handles duplicate position_tag associations correctly")
+        
+        # Clean up
+        db.query(Position).filter(Position.title.like("%Test Study%")).delete()
+        db.query(Tag).filter(Tag.name == "test-study").delete()
+        db.commit()
+        
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     print("Running puzzle import tests...")
     
@@ -319,7 +386,8 @@ if __name__ == "__main__":
     test_position_type_is_puzzle()
     test_auto_tagging()
     test_existing_position_skip()
+    test_import_handles_duplicate_position_tag()
     
     print("\n========================================")
-    print("  6 passed, 0 failed (1 skipped)")
+    print("  7 passed, 0 failed (1 skipped)")
     print("========================================")

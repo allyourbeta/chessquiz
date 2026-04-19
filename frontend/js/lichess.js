@@ -323,19 +323,29 @@ async function importLichessPuzzles() {
             
             let summaryHtml = `
                 <p style="font-size:20px;margin-bottom:12px">
-                    <strong>Imported ${finalSummary.created_count} puzzles</strong>
+                    <strong>Created ${finalSummary.created_count} new puzzles</strong>
                 </p>`;
             
-            if (finalSummary.skipped_no_moves_count > 0 || finalSummary.skipped_duplicates_count > 0) {
-                summaryHtml += '<p style="color:var(--text-muted);font-size:14px">';
-                if (finalSummary.skipped_no_moves_count > 0) {
-                    summaryHtml += `Skipped ${finalSummary.skipped_no_moves_count} chapters with no moves`;
-                }
-                if (finalSummary.skipped_duplicates_count > 0) {
-                    if (finalSummary.skipped_no_moves_count > 0) summaryHtml += ', ';
-                    summaryHtml += `${finalSummary.skipped_duplicates_count} duplicates`;
-                }
-                summaryHtml += '</p>';
+            // Show detailed stats if any
+            const stats = [];
+            if (finalSummary.reused_positions > 0) {
+                stats.push(`Reused ${finalSummary.reused_positions} existing positions`);
+            }
+            if (finalSummary.skipped_no_moves_count > 0) {
+                stats.push(`${finalSummary.skipped_no_moves_count} chapters skipped (no moves)`);
+            }
+            if (finalSummary.skipped_duplicates_count > 0) {
+                stats.push(`${finalSummary.skipped_duplicates_count} duplicates skipped`);
+            }
+            if (finalSummary.duplicate_tag_skips > 0) {
+                stats.push(`${finalSummary.duplicate_tag_skips} duplicate tag attachments skipped`);
+            }
+            if (finalSummary.failed_chapters_count > 0) {
+                stats.push(`<span style="color:var(--red)">${finalSummary.failed_chapters_count} chapters failed</span>`);
+            }
+            
+            if (stats.length > 0) {
+                summaryHtml += '<p style="color:var(--text-muted);font-size:14px">' + stats.join('. ') + '</p>';
             }
             
             document.getElementById('lichess-success-message').innerHTML = summaryHtml;
