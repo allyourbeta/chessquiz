@@ -87,7 +87,9 @@ def serve_frontend():
 # SPA catch-all: any non-API, non-static path serves index.html so the
 # client-side router can read the URL and render the correct view.
 _SPA_ROUTES = {
-    "positions",
+    "positions",  # legacy
+    "tabiyas",
+    "tactics",
     "games",
     "collections",
     "search",

@@ -151,14 +151,22 @@ function _applyPositionFilters(params) {
 function renderRoute(route) {
     const params = (route && route.params) || {};
     switch (route.view) {
-        case 'positions':
+        case 'tabiyas':
             _applyPositionFilters(params);
-            _activateView('positions', 'Positions');
-            mountPositionTagFilter();
-            loadPositions();
+            _activateView('tabiyas', 'Tabiyas');
+            mountTabiyaTagFilter();
+            loadTabiyas();
+            break;
+        case 'tactics':
+            _applyPositionFilters(params);
+            _activateView('tactics', 'Tactics');
+            mountTacticsTagFilter();
+            loadTactics();
             break;
         case 'positionDetail':
-            _activateView('detail', 'Positions');
+            // Determine nav context based on referrer or position type
+            const navContext = route.fromView === 'tactics' ? 'Tactics' : 'Tabiyas';
+            _activateView('detail', navContext);
             loadPositionDetail(route.id);
             break;
         case 'addPosition':

@@ -20,23 +20,31 @@
 <header>
   <h1>ChessQuiz</h1>
   <nav>
-    <button class="active" onclick="Router.navigate({view:'positions'})">Positions</button>
-    <button onclick="Router.navigate({view:'addPosition'})">Add New</button>
+    <button class="active" onclick="Router.navigate({view:'tabiyas'})">Tabiyas</button>
+    <button onclick="Router.navigate({view:'tactics'})">Tactics</button>
     <button onclick="Router.navigate({view:'games'})">Games</button>
-    <button onclick="Router.navigate({view:'collections'})">Collections</button>
     <button onclick="Router.navigate({view:'search'})">Search</button>
-    <button onclick="Router.navigate({view:'practice'})">Practice</button>
+    <button onclick="Router.navigate({view:'gameImport'})">Import PGN</button>
     <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
 </header>
 <div id="notification-banner" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1000;padding:16px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:16px;font-weight:500;text-align:center;min-width:300px;max-width:500px"></div>
 <div class="container">
-  <div id="view-positions" class="view active">
+  <div id="view-tabiyas" class="view active">
     <div class="view-header">
-      <h2>Your Positions</h2>
-      <div id="tag-filters" class="tag-row"></div>
+      <h2>Tabiyas</h2>
+      <button class="btn btn-primary" onclick="Router.navigate({view:'addPosition', params:{type:'tabiya'}})">+ New Tabiya</button>
+      <div id="tabiyas-tag-filters" class="tag-row"></div>
     </div>
-    <div id="positions-list" class="pos-list"></div>
+    <div id="tabiyas-list" class="pos-list"></div>
+  </div>
+  <div id="view-tactics" class="view">
+    <div class="view-header">
+      <h2>Tactics</h2>
+      <button class="btn btn-primary" onclick="Router.navigate({view:'addPosition', params:{type:'puzzle'}})">+ New Tactic</button>
+      <div id="tactics-tag-filters" class="tag-row"></div>
+    </div>
+    <div id="tactics-list" class="pos-list"></div>
   </div>
   <div id="view-add" class="view">
     <div class="board-area">

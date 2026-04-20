@@ -45,12 +45,25 @@ const Router = (function () {
         const path = pathname || '/';
         const q = _parseQuery(search || '');
         const parts = path.split('/').filter(Boolean);
-        // '/' or no parts -> positions
-        if (!parts.length) return { view: 'positions', params: q };
+        // '/' or no parts -> tabiyas
+        if (!parts.length) return { view: 'tabiyas', params: q };
 
         const [a, b] = parts;
+        if (a === 'tabiyas') {
+            if (!b) return { view: 'tabiyas', params: q };
+            if (b === 'new') return { view: 'addPosition', params: q };
+            const id = parseInt(b, 10);
+            if (!isNaN(id)) return { view: 'positionDetail', id, params: q };
+        }
+        if (a === 'tactics') {
+            if (!b) return { view: 'tactics', params: q };
+            if (b === 'new') return { view: 'addPosition', params: q };
+            const id = parseInt(b, 10);
+            if (!isNaN(id)) return { view: 'positionDetail', id, params: q };
+        }
+        // Legacy positions URL support
         if (a === 'positions') {
-            if (!b) return { view: 'positions', params: q };
+            if (!b) return { view: 'tabiyas', params: q };
             if (b === 'new') return { view: 'addPosition', params: q };
             const id = parseInt(b, 10);
             if (!isNaN(id)) return { view: 'positionDetail', id, params: q };
@@ -76,16 +89,23 @@ const Router = (function () {
         }
         if (a === 'add') return { view: 'addPosition', params: q };
 
-        return { view: 'positions', params: q };
+        return { view: 'tabiyas', params: q };
     }
 
     // route object -> URL path + query
     function build(route) {
         const p = route.params || {};
         switch (route.view) {
-            case 'positions':      return '/positions' + _qs(p);
-            case 'positionDetail': return `/positions/${route.id}` + _qs(p);
-            case 'addPosition':    return '/positions/new' + _qs(p);
+            case 'tabiyas':        return '/tabiyas' + _qs(p);
+            case 'tactics':        return '/tactics' + _qs(p);
+            case 'positionDetail': 
+                // Determine URL based on position type if available
+                const prefix = route.positionType === 'puzzle' ? '/tactics' : '/tabiyas';
+                return `${prefix}/${route.id}` + _qs(p);
+            case 'addPosition':    
+                // Determine URL based on type param
+                const addPrefix = p && p.type === 'puzzle' ? '/tactics' : '/tabiyas';
+                return `${addPrefix}/new` + _qs(p);
             case 'games':          return '/games' + _qs(p);
             case 'gameDetail':     return `/games/${route.id}` + _qs(p);
             case 'gameImport':     return '/games/import' + _qs(p);
