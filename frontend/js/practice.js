@@ -15,30 +15,8 @@ const Practice = (function () {
     function getLevels() { return engineLevels; }
 
     async function startFromDetail() {
-        if (!AppState.currentDetailId || !AppState.currentDetailFen) return;
-        await loadLevels();
-        const levelSel = document.getElementById('practice-level');
-        const colorSel = document.getElementById('practice-color');
-        const level = levelSel ? levelSel.value : 'medium';
-        const turnColor = (AppState.currentDetailFen.split(' ')[1] === 'b') ? 'black' : 'white';
-        const userColor = colorSel && colorSel.value ? colorSel.value : turnColor;
-
-        active = {
-            rootPositionId: AppState.currentDetailId,
-            startFen: AppState.currentDetailFen,
-            userColor,
-            level,
-            startingEval: null,
-        };
-
-        AppState.boardFen = AppState.currentDetailFen;
-        startPlayMode('detail-board', AppState.currentDetailFen);
-        if (AppState.engineEval && typeof AppState.engineEval.score === 'string') {
-            const s = parseFloat(AppState.engineEval.score);
-            if (!isNaN(s)) active.startingEval = s;
-        }
-        _showPracticeButtons(true);
-        toast(`Practice started: ${userColor} vs Stockfish (${level})`);
+        toast('Practice mode is currently disabled (Stockfish removed)', true);
+        return;
     }
 
     function _showPracticeButtons(show) {
@@ -115,50 +93,7 @@ const Practice = (function () {
     // depth 12, flip to Stockfish's own perspective, accept iff sf is <= 0.
     // On accept, save as draw and stop. On decline, toast and continue.
     function offerDraw() {
-        if (!active) { toast('No practice game in progress', true); return; }
-        if (!AppState.sfWorker || !AppState.playChess) {
-            toast('Engine not available', true); return;
-        }
-        const fen = AppState.playChess.fen();
-        const sideToMove = fen.split(' ')[1];
-        const sfIsWhite = active.userColor === 'black';
-        const sfToMove = (sideToMove === 'w' && sfIsWhite) || (sideToMove === 'b' && !sfIsWhite);
-        toast('Offering draw...');
-        let latest = null;
-        const onMsg = (e) => {
-            const l = e.data;
-            if (typeof l !== 'string') return;
-            if (l.startsWith('info depth')) {
-                const m = l.match(/depth (\d+).*score (cp|mate) (-?\d+)/);
-                if (m) latest = { type: m[2], val: parseInt(m[3], 10) };
-            } else if (l.startsWith('bestmove')) {
-                AppState.sfWorker.onmessage = null;
-                _handleDrawResponse(latest, sfToMove);
-            }
-        };
-        AppState.sfWorker.onmessage = onMsg;
-        AppState.sfWorker.postMessage('ucinewgame');
-        AppState.sfWorker.postMessage('position fen ' + fen);
-        AppState.sfWorker.postMessage('go depth 12');
-    }
-
-    function _handleDrawResponse(latest, sfToMove) {
-        if (!latest) { 
-            showProminentNotification('Stockfish declined your draw offer. Play continues.', 'decline', 3000);
-            return; 
-        }
-        // latest.val is from side-to-move's perspective. Normalize to Stockfish's.
-        let sfScore = latest.val * (sfToMove ? 1 : -1);
-        if (latest.type === 'mate') sfScore = sfScore > 0 ? 99999 : -99999;
-        // Accept only if Stockfish is equal or worse. Threshold in centipawns.
-        if (sfScore <= 0) {
-            forcedVerdict = 'draw';
-            _showPracticeButtons(false);
-            showProminentNotification('Stockfish accepted your draw offer. Game ends ½-½.', 'accept', 3000);
-            stopPlayMode();
-        } else {
-            showProminentNotification('Stockfish declined your draw offer. Play continues.', 'decline', 3000);
-        }
+        toast('Practice mode is currently disabled', true);
     }
 
     function stopAndAbandon() {
@@ -383,15 +318,6 @@ const Practice = (function () {
     };
 })();
 
-// Wrap stopPlayMode so practice captures before teardown.
-(function () {
-    const origStop = window.stopPlayMode;
-    window.stopPlayMode = function () {
-        if (Practice.isActive() && AppState.playChess) {
-            Practice.captureEndOfGame();
-        }
-        return origStop.apply(this, arguments);
-    };
-})();
+// STOCKFISH DISABLED: stopPlayMode wrapper removed
 
 window.Practice = Practice;

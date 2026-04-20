@@ -59,7 +59,7 @@ const Router = (function () {
             if (!b) return { view: 'tactics', params: q };
             if (b === 'new') return { view: 'addPosition', params: q };
             const id = parseInt(b, 10);
-            if (!isNaN(id)) return { view: 'positionDetail', id, params: q };
+            if (!isNaN(id)) return { view: 'positionDetail', id, positionType: 'puzzle', params: q };
         }
         // Legacy positions URL support
         if (a === 'positions') {

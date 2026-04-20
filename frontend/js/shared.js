@@ -116,14 +116,6 @@ function hideProminentNotification() {
 
 // DOM swap + nav highlight. Does NOT load data — that happens in renderRoute.
 function _activateView(viewId, navLabel) {
-    // Stop engine when navigating away
-    if (AppState.engineOn) {
-        AppState.engineOn = false;
-        if (typeof clearEvalDisplay === 'function') {
-            clearEvalDisplay();
-        }
-    }
-    
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + viewId);
     if (el) el.classList.add('active');
@@ -172,8 +164,7 @@ function renderRoute(route) {
             loadTactics();
             break;
         case 'positionDetail':
-            // Determine nav context based on referrer or position type
-            const navContext = route.fromView === 'tactics' ? 'Tactics' : 'Tabiyas';
+            const navContext = route.positionType === 'puzzle' ? 'Tactics' : 'Tabiyas';
             _activateView('detail', navContext);
             loadPositionDetail(route.id);
             break;

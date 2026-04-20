@@ -173,7 +173,11 @@ async function loadPositionDetail(id) {
     // Always show these for both puzzles and tabiyas
     document.getElementById('detail-title').textContent = pos.title || 'Untitled';
     document.getElementById('detail-fen').textContent = pos.fen;
-    document.getElementById('detail-notes').textContent = pos.notes || '(none)';
+    const notesEl = document.getElementById('detail-notes');
+    notesEl.value = pos.notes || '';
+    notesEl._lastSaved = pos.notes || '';
+    notesEl.oninput = _onDetailNotesInput;
+    notesEl.onblur = _autoSaveDetailNotes;
     document.getElementById('detail-tags').innerHTML = pos.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
     
     // PHASE 19 INVESTIGATION: Previous attempts failed because:
@@ -191,7 +195,7 @@ async function loadPositionDetail(id) {
         document.getElementById('practice-history-section').style.display = 'none';
         document.getElementById('aggregate-stats-section').style.display = 'none';
         document.getElementById('your-moves-section').style.display = 'none';
-        document.getElementById('play-from-btn').style.display = 'none';
+        // STOCKFISH DISABLED: play-from-btn removed from HTML
         
         // Update back button text
         const backBtn = document.getElementById('detail-back-btn');
@@ -203,15 +207,13 @@ async function loadPositionDetail(id) {
         const counter = document.getElementById('puzzle-counter');
         if (counter) counter.style.display = 'none';
     } else {
-        // TABIYA UI: Show everything except Quiz Stats
-        document.getElementById('detail-stockfish-card').style.display = '';
-        document.getElementById('detail-stockfish').textContent = pos.stockfish_analysis || '(none)';
-        document.getElementById('detail-stats-card').style.display = 'none'; // Quiz Stats removed for all
-        document.getElementById('practice-section').style.display = '';
-        document.getElementById('practice-history-section').style.display = '';
-        document.getElementById('aggregate-stats-section').style.display = '';
-        document.getElementById('your-moves-section').style.display = '';
-        document.getElementById('play-from-btn').style.display = '';
+        // TABIYA UI: Show everything except Quiz Stats and Stockfish (disabled)
+        document.getElementById('detail-stockfish-card').style.display = 'none';
+        document.getElementById('detail-stats-card').style.display = 'none';
+        document.getElementById('practice-section').style.display = 'none';
+        document.getElementById('practice-history-section').style.display = 'none';
+        document.getElementById('aggregate-stats-section').style.display = 'none';
+        document.getElementById('your-moves-section').style.display = 'none';
         
         // Update back button text
         const backBtn = document.getElementById('detail-back-btn');
@@ -223,16 +225,10 @@ async function loadPositionDetail(id) {
         const counter = document.getElementById('puzzle-counter');
         if (counter) counter.style.display = 'none';
         
-        // Load practice data for tabiyas only
-        if (window.Practice) {
-            Practice.loadPracticeHistory(id);
-            Practice.loadLevels().then(() => PracticeUI.populateLevelSelect(Practice.getLevels()));
-        }
+        // STOCKFISH DISABLED: practice data loading removed
     }
     
-    if (AppState.playMode) stopPlayMode();
     BoardManager.create('detail-board', pos.fen, { flipped: false });
-    if (AppState.engineOn) requestEval('detail-board');
 }
 
 function editPosition() {
@@ -272,7 +268,7 @@ function renderTabiyasList() {
         return;
     }
     el.innerHTML = tabiyas.map(p =>
-        `<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title || 'Untitled'}</div><div>${p.tags.map(t => `<span class="tag">#${t.name}</span>`).join('')}</div></div>`
+        `<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title || 'Untitled'}</div><div>${p.tags.map(t => `<span class="tag">#${t.name}</span>`).join('')}</div><button class="btn btn-sm btn-ghost pos-item-delete" onclick="event.stopPropagation();deleteFromList(${p.id},'tabiya')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`
     ).join('');
 }
 
@@ -285,7 +281,7 @@ function renderTacticsList() {
         return;
     }
     el.innerHTML = tactics.map(p =>
-        `<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title || 'Untitled'}</div><div>${p.tags.map(t => `<span class="tag">#${t.name}</span>`).join('')}</div></div>`
+        `<div class="pos-item" onclick="showDetail(${p.id})">${renderMiniBoard(p.fen)}<div class="title">${p.title || 'Untitled'}</div><div>${p.tags.map(t => `<span class="tag">#${t.name}</span>`).join('')}</div><button class="btn btn-sm btn-ghost pos-item-delete" onclick="event.stopPropagation();deleteFromList(${p.id},'puzzle')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div>`
     ).join('');
 }
 
@@ -312,6 +308,44 @@ function flipDetailBoard() {
     BoardManager.flip('detail-board');
 }
 
+let _detailNotesTimeout = null;
+function _onDetailNotesInput() {
+    if (_detailNotesTimeout) clearTimeout(_detailNotesTimeout);
+    _detailNotesTimeout = setTimeout(_autoSaveDetailNotes, 1000);
+}
+async function _autoSaveDetailNotes() {
+    if (_detailNotesTimeout) { clearTimeout(_detailNotesTimeout); _detailNotesTimeout = null; }
+    const id = AppState.currentDetailId;
+    if (!id) return;
+    const el = document.getElementById('detail-notes');
+    if (!el) return;
+    const notes = el.value;
+    if (notes === el._lastSaved) return;
+    console.log('[NOTES] Saving notes for position', id);
+    const r = await fetch(API + '/positions/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notes || null }),
+    });
+    if (r.ok) {
+        el._lastSaved = notes;
+        console.log('[NOTES] Save succeeded');
+        topBanner('Notes saved', 1500);
+    } else {
+        console.error('[NOTES] Save failed', r.status);
+        toast('Failed to save notes', true);
+    }
+}
+
+async function deleteFromList(id, type) {
+    if (!confirm('Delete this position?')) return;
+    if ((await fetch(API + '/positions/' + id, { method: 'DELETE' })).ok) {
+        toast('Position deleted');
+        if (type === 'puzzle') loadTactics();
+        else loadTabiyas();
+    }
+}
+
 async function deleteFromDetail() {
     const id = AppState.currentDetailId;
     if (!id || !confirm('Delete this position?')) return;
@@ -330,7 +364,6 @@ function clearForm() {
     document.getElementById('pos-tags').value = '';
     document.getElementById('pos-notes').value = '';
     document.getElementById('pos-stockfish').value = '';
-    document.getElementById('sf-output').textContent = 'Engine output will appear here...';
     document.getElementById('form-title').textContent = 'New Position';
     document.getElementById('delete-btn').style.display = 'none';
     AppState.boardFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -468,9 +501,6 @@ function setupPuzzleKeyboardShortcuts() {
         } else if (e.key === 'ArrowLeft' && AppState.puzzleNavigation.previous_id) {
             e.preventDefault();
             navigateToPuzzle(AppState.puzzleNavigation.previous_id);
-        } else if (e.key === ' ') {
-            e.preventDefault();
-            toggleEngine('detail-board');
         }
     });
 }
@@ -487,6 +517,7 @@ window.loadFen = loadFen;
 window.setStartPos = setStartPos;
 window.flipBoard = flipBoard;
 window.flipDetailBoard = flipDetailBoard;
+window.deleteFromList = deleteFromList;
 window.deleteFromDetail = deleteFromDetail;
 window.clearForm = clearForm;
 window.setupAutoLoad = setupAutoLoad;
