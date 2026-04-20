@@ -148,12 +148,14 @@
   padding: 10px var(--sp-3);
   font-size: var(--fs-12);
   color: var(--grey-100);
-  min-height: 56px;
+  min-height: 80px;
+  max-height: 200px;
   margin-top: 6px;
   white-space: pre-wrap;
   font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
   line-height: 1.55;
   overflow-x: auto;
+  overflow-y: auto;
 }
 
 /* ------------------------------------------------------------------

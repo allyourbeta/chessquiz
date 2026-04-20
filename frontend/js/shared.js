@@ -179,6 +179,9 @@ function renderRoute(route) {
             break;
         case 'addPosition':
             _activateView('add', 'Add New');
+            AppState.addPositionType = (route.params && route.params.type) || 'tabiya';
+            document.getElementById('form-title').textContent =
+                AppState.addPositionType === 'puzzle' ? 'New Tactic' : 'New Tabiya';
             BoardManager.setPosition('board', AppState.boardFen);
             break;
         case 'games':

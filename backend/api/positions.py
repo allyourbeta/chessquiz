@@ -42,9 +42,17 @@ def create_position(data: PositionCreate, db: Session = Depends(get_db)):
     if not is_valid:
         raise HTTPException(status_code=400, detail=f"Invalid FEN: {error}")
 
-    # Validate puzzle requirements
-    if data.position_type == PositionType.puzzle and not data.solution_san:
-        raise HTTPException(status_code=400, detail="Puzzles must have a solution")
+    # Check for duplicate position with same FEN and type
+    existing = db.query(Position).filter(
+        Position.fen == data.fen,
+        Position.position_type == data.position_type
+    ).first()
+    if existing:
+        position_type_name = "tactic" if data.position_type == PositionType.puzzle else "tabiya"
+        raise HTTPException(
+            status_code=409, 
+            detail=f"This {position_type_name} position already exists."
+        )
     
     tags = _get_or_create_tags(db, data.tags)
     position = Position(
@@ -156,6 +164,11 @@ def update_position(
     if not position:
         raise HTTPException(status_code=404, detail="Position not found")
 
+    if data.fen is not None:
+        is_valid, error = validate_fen(data.fen)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=f"Invalid FEN: {error}")
+        position.fen = data.fen
     if data.title is not None:
         position.title = data.title
     if data.notes is not None:

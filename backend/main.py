@@ -46,6 +46,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
 app.mount("/css", StaticFiles(directory=FRONTEND_DIR / "css"), name="css")
+app.mount("/vendor", StaticFiles(directory=FRONTEND_DIR / "vendor"), name="vendor")
 
 
 @app.get("/api/health")

@@ -70,11 +70,19 @@
         <label>Your Notes</label>
         <textarea id="pos-notes" placeholder="Your analysis and observations..."></textarea>
         <label>Stockfish Analysis</label>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
           <button class="btn btn-sm" onclick="runStockfish()" id="sf-btn">Run Stockfish</button>
-          <span id="sf-status" class="text-muted" style="font-size:12px"></span>
+          <label style="margin:0 0 0 12px;font-size:12px">Lines:</label>
+          <select id="sf-multipv" style="width:50px;padding:2px 4px;font-size:12px">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <span id="sf-status" class="text-muted" style="font-size:12px;margin-left:8px"></span>
         </div>
-        <div class="engine-output" id="sf-output">Engine output will appear here...</div>
+        <div class="engine-output" id="sf-output" style="font-family:monospace;font-size:12px;line-height:1.4">Engine output will appear here...</div>
         <textarea id="pos-stockfish" placeholder="Or paste analysis manually..." style="margin-top:8px"></textarea>
         <div class="btn-row">
           <button class="btn btn-primary" onclick="savePosition()">Save Position</button>
@@ -286,6 +294,14 @@
             <!-- Puzzle navigation buttons (hidden by default) -->
             <button class="btn" id="prev-puzzle-btn" onclick="navigatePuzzle('previous')" style="display:none">← Previous</button>
             <button class="btn btn-sm" id="detail-engine-toggle-btn" onclick="toggleEngine('detail-board')">Show Engine</button>
+            <select id="detail-multipv" style="width:50px;padding:2px 6px;font-size:12px;margin:0 4px" onchange="if(AppState.engineOn) requestEval('detail-board')">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+            <span style="font-size:11px;color:var(--text-muted)">lines</span>
             <button class="btn" onclick="editPosition()">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
             <button class="btn" id="detail-back-btn" onclick="history.back()">Back</button>
@@ -293,7 +309,7 @@
             <button class="btn btn-primary" id="next-puzzle-btn" onclick="navigatePuzzle('next')" style="display:none">Next →</button>
           </div>
           <!-- Engine analysis display -->
-          <div id="engine-eval-display" class="eval-display"></div>
+          <div id="detail-engine-eval-display" class="eval-display"></div>
         </div>
 
         <!-- Practice This Position Card -->

@@ -109,7 +109,14 @@ async function savePosition() {
     const notes = document.getElementById('pos-notes').value.trim();
     const sf = document.getElementById('pos-stockfish').value.trim();
     if (!fen) { toast('FEN is required', true); return; }
-    const body = { fen, title: title || null, notes: notes || null, stockfish_analysis: sf || null, tags };
+    const body = { 
+        fen, 
+        title: title || null, 
+        notes: notes || null, 
+        stockfish_analysis: sf || null, 
+        position_type: AppState.addPositionType || 'tabiya',
+        tags 
+    };
     let res;
     if (editId) res = await fetch(API + '/positions/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     else res = await fetch(API + '/positions/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -117,12 +124,23 @@ async function savePosition() {
         toast(editId ? 'Position updated!' : 'Position saved!');
         clearForm();
         // Navigate to appropriate view based on position type
-        const posType = document.getElementById('position-type-select')?.value || 'tabiya';
-        const viewToGo = posType === 'puzzle' ? 'tactics' : 'tabiyas';
+        const viewToGo = AppState.addPositionType === 'puzzle' ? 'tactics' : 'tabiyas';
         Router.navigate({ view: viewToGo });
     } else {
         const err = await res.json();
-        toast(err.detail || 'Error saving', true);
+        // Show duplicate error or other error prominently
+        const errorMsg = err.detail || 'Error saving';
+        toast(errorMsg, true);
+        // Also show in the form for visibility
+        const formTitle = document.getElementById('form-title');
+        if (formTitle && err.detail && err.detail.includes('already exists')) {
+            formTitle.style.color = 'var(--danger, red)';
+            formTitle.textContent = err.detail;
+            setTimeout(() => {
+                formTitle.style.color = '';
+                formTitle.textContent = AppState.addPositionType === 'puzzle' ? 'New Tactic' : 'New Tabiya';
+            }, 3000);
+        }
     }
 }
 
@@ -229,7 +247,8 @@ function editPosition() {
         document.getElementById('form-title').textContent = 'Edit Position';
         document.getElementById('delete-btn').style.display = 'inline-flex';
         AppState.boardFen = pos.fen;
-        Router.navigate({ view: 'addPosition' });
+        AppState.addPositionType = pos.position_type || 'tabiya';
+        Router.navigate({ view: 'addPosition', params: { type: pos.position_type || 'tabiya' } });
         BoardManager.setPosition('board', AppState.boardFen);
     });
 }
@@ -245,7 +264,7 @@ function renderPositionsList() {
 }
 
 function renderTabiyasList() {
-    const el = document.getElementById('tabiyas-grid');
+    const el = document.getElementById('tabiyas-list');
     if (!el) return;
     const tabiyas = AppState.allPositions.filter(p => p.position_type === 'tabiya');
     if (!tabiyas.length) {
@@ -258,7 +277,7 @@ function renderTabiyasList() {
 }
 
 function renderTacticsList() {
-    const el = document.getElementById('tactics-grid');
+    const el = document.getElementById('tactics-list');
     if (!el) return;
     const tactics = AppState.allPositions.filter(p => p.position_type === 'puzzle');
     if (!tactics.length) {
@@ -315,6 +334,7 @@ function clearForm() {
     document.getElementById('form-title').textContent = 'New Position';
     document.getElementById('delete-btn').style.display = 'none';
     AppState.boardFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    AppState.addPositionType = 'tabiya';
     BoardManager.create('board', AppState.boardFen, { flipped: false });
     const saved = AppState.lastTags || localStorage.getItem('chessquiz-last-tags') || '';
     if (saved) document.getElementById('pos-tags').value = saved;

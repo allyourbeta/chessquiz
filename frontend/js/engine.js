@@ -1,8 +1,11 @@
 let _evalTimer = null;
 let _evalId = 0;
 let _pendingBestMove = false;
+let _multiPVLines = {};
+let _currentDepth = 0;
 
 function toggleEngine(boardId) {
+    console.log('[ENGINE] toggleEngine called, boardId=', boardId, 'current engineOn=', AppState.engineOn);
     AppState.engineOn = !AppState.engineOn;
     const btn = document.getElementById('engine-toggle-btn');
     if (btn) btn.textContent = AppState.engineOn ? 'Hide Engine' : 'Show Engine';
@@ -17,18 +20,44 @@ function toggleEngine(boardId) {
 }
 
 function requestEval(boardId) {
+    console.log('[ENGINE] requestEval called, boardId=', boardId, 'engineOn=', AppState.engineOn, 'sfWorker=', !!AppState.sfWorker);
     if (!AppState.engineOn || !AppState.sfWorker) return;
     clearTimeout(_evalTimer);
     _evalTimer = setTimeout(() => _doEval(boardId), 150);
 }
 
 function _doEval(boardId) {
-    if (!AppState.engineOn || !AppState.sfWorker || _pendingBestMove) return;
+    console.log('[ENGINE] _doEval called, boardId=', boardId, 'engineOn=', AppState.engineOn, 'sfWorker=', !!AppState.sfWorker, '_pendingBestMove=', _pendingBestMove);
+
+    if (!AppState.engineOn || !AppState.sfWorker) {
+        console.log('[ENGINE] _doEval early return: engineOn=', AppState.engineOn, 'sfWorker=', !!AppState.sfWorker);
+        return;
+    }
+
+    if (_pendingBestMove) {
+        console.log('[ENGINE] _pendingBestMove was stuck true — resetting it');
+        _pendingBestMove = false;
+        AppState.sfWorker.postMessage('stop');
+    }
+
     const fen = BoardManager.getPosition(boardId);
-    if (!fen) return;
+    console.log('[ENGINE] FEN from BoardManager.getPosition("' + boardId + '"):', fen);
+    if (!fen) {
+        console.log('[ENGINE] _doEval early return: no FEN');
+        return;
+    }
+
+    const multiPVSelect = document.getElementById('detail-multipv');
+    const multiPV = multiPVSelect ? multiPVSelect.value : '3';
+    console.log('[ENGINE] MultiPV selected:', multiPV);
 
     const myId = ++_evalId;
-    const evalEl = document.getElementById('engine-eval-display');
+    _multiPVLines = {};
+    _currentDepth = 0;
+    let infoLineCount = 0;
+    
+    const evalEl = document.getElementById('detail-engine-eval-display') || document.getElementById('engine-eval-display');
+    console.log('[ENGINE] Render target element:', evalEl ? evalEl.id : 'NONE FOUND');
     if (evalEl) evalEl.textContent = 'Thinking...';
 
     const handler = (e) => {
@@ -37,40 +66,108 @@ function _doEval(boardId) {
         if (typeof l !== 'string') return;
 
         if (l.startsWith('info depth')) {
-            const m = l.match(/depth (\d+).*score (cp|mate) (-?\d+).*pv (.+)/);
-            if (m && parseInt(m[1]) >= 8) {
-                const scoreText = m[2] === 'mate' ? `M${m[3]}` : (parseInt(m[3]) / 100).toFixed(2);
-                const uciMoves = m[4].trim().split(/\s+/).slice(0, 5);
-                fetch(API + '/chess/uci-to-san', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fen, uci_moves: uciMoves })
-                }).then(r => r.json()).then(d => {
-                    if (myId !== _evalId) return;
-                    AppState.engineEval = { score: scoreText, line: d.san, depth: m[1] };
-                    renderEvalDisplay();
-                    updateEvalBar(fen, m[2], parseInt(m[3]));
-                }).catch(() => {
-                    if (myId !== _evalId) return;
-                    AppState.engineEval = { score: scoreText, line: m[4], depth: m[1] };
-                    renderEvalDisplay();
-                    updateEvalBar(fen, m[2], parseInt(m[3]));
-                });
+            infoLineCount++;
+            if (infoLineCount <= 3) {
+                console.log('[ENGINE] info line #' + infoLineCount + ':', l.substring(0, 120));
             }
+
+            const depthMatch = l.match(/depth (\d+)/);
+            const pvMatch = l.match(/multipv (\d+)/);
+            const scoreMatch = l.match(/score (cp|mate) (-?\d+)/);
+            const movesMatch = l.match(/ pv (.+)/);
+
+            if (infoLineCount <= 3) {
+                console.log('[ENGINE] Parser results: depth=', depthMatch?.[1], 'multipv=', pvMatch?.[1], 'score=', scoreMatch?.[1], scoreMatch?.[2], 'pv=', movesMatch ? 'yes' : 'NO MATCH');
+            }
+            
+            if (depthMatch && scoreMatch && movesMatch) {
+                const depth = parseInt(depthMatch[1]);
+                const pvNum = pvMatch ? parseInt(pvMatch[1]) : 1;
+                const scoreType = scoreMatch[1];
+                const scoreVal = parseInt(scoreMatch[2]);
+                const scoreText = scoreType === 'mate' ? `M${scoreVal}` : (scoreVal / 100).toFixed(2);
+                const uciMoves = movesMatch[1].trim().split(/\s+/).slice(0, 8);
+                
+                if (depth > _currentDepth) {
+                    _currentDepth = depth;
+                    _multiPVLines = {};
+                }
+                
+                _multiPVLines[pvNum] = {
+                    depth: depth,
+                    score: scoreText,
+                    scoreType: scoreType,
+                    scoreVal: scoreVal,
+                    uci: uciMoves.join(' '),
+                    san: null
+                };
+                
+                renderMultiPVDisplay();
+                
+                if (pvNum === 1) {
+                    updateEvalBar(fen, scoreType, scoreVal);
+                }
+                
+                if (depth >= 6) {
+                    fetch(API + '/chess/uci-to-san', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fen, uci_moves: uciMoves })
+                    }).then(r => r.json()).then(d => {
+                        if (myId !== _evalId) return;
+                        if (_multiPVLines[pvNum] && d.san) {
+                            _multiPVLines[pvNum].san = d.san;
+                            renderMultiPVDisplay();
+                        }
+                    }).catch(() => {});
+                }
+            } else if (infoLineCount <= 3) {
+                console.log('[ENGINE] Line did NOT match parser — skipping');
+            }
+        } else if (l.startsWith('bestmove')) {
+            console.log('[ENGINE] bestmove received, total info lines processed:', infoLineCount);
+            AppState.sfWorker.removeEventListener('message', handler);
         }
     };
 
-    AppState.sfWorker.onmessage = handler;
+    AppState.sfWorker.addEventListener('message', handler);
+    AppState.sfWorker.postMessage('stop');
     AppState.sfWorker.postMessage('ucinewgame');
+    AppState.sfWorker.postMessage('setoption name MultiPV value ' + multiPV);
     AppState.sfWorker.postMessage('position fen ' + fen);
     AppState.sfWorker.postMessage('go depth 18');
+    console.log('[ENGINE] Commands sent to Stockfish: stop, ucinewgame, MultiPV=' + multiPV + ', position fen, go depth 18');
+}
+
+function renderMultiPVDisplay() {
+    const el = document.getElementById('detail-engine-eval-display') || document.getElementById('engine-eval-display');
+    if (!el || Object.keys(_multiPVLines).length === 0) {
+        console.log('[ENGINE] renderMultiPVDisplay: no element or no lines', el ? el.id : 'NO EL', Object.keys(_multiPVLines).length);
+        return;
+    }
+    
+    let html = '';
+    const sortedPVs = Object.keys(_multiPVLines).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    for (const pvNum of sortedPVs) {
+        const line = _multiPVLines[pvNum];
+        const isTop = pvNum === '1';
+        const style = isTop ? 'font-weight:600;' : 'opacity:0.85;';
+        const prefix = isTop ? '▶ ' : '  ';
+        
+        html += `<div style="${style}margin:2px 0">`;
+        html += `${prefix}<span style="color:var(--primary);font-size:13px">${line.score}</span> `;
+        html += `<span style="font-size:11px;color:var(--text-muted)">d${line.depth}</span> `;
+        html += `<span style="font-size:12px">${line.san || line.uci}</span>`;
+        html += `</div>`;
+    }
+    
+    console.log('[ENGINE] renderMultiPVDisplay: rendering', sortedPVs.length, 'lines into', el.id);
+    el.innerHTML = html;
 }
 
 function renderEvalDisplay() {
-    const el = document.getElementById('engine-eval-display');
-    if (!el || !AppState.engineEval) return;
-    const ev = AppState.engineEval;
-    el.innerHTML = `<span style="font-weight:600;font-size:14px">${ev.score}</span> <span class="text-muted" style="font-size:11px">d${ev.depth}</span> <span style="font-size:12px">${ev.line}</span>`;
+    renderMultiPVDisplay();
 }
 
 function updateEvalBar(fen, scoreType, scoreVal) {
@@ -92,12 +189,13 @@ function clearEvalDisplay() {
     if (_evalTimer) clearTimeout(_evalTimer);
     AppState.engineEval = null;
     _multiPVLines = {};
-    const el = document.getElementById('engine-eval-display');
+    _currentDepth = 0;
+    _pendingBestMove = false;
+    const el = document.getElementById('detail-engine-eval-display') || document.getElementById('engine-eval-display');
     if (el) el.textContent = '';
     const bar = document.getElementById('eval-bar-fill');
     if (bar) bar.style.height = '50%';
     
-    // Stop Stockfish if it's running
     if (AppState.sfWorker) {
         AppState.sfWorker.postMessage('stop');
     }
@@ -175,23 +273,28 @@ function makeEngineMove() {
     _pendingBestMove = true;
     const fen = chess.fen();
 
-    AppState.sfWorker.onmessage = (e) => {
+    const handler = (e) => {
         const l = e.data;
         if (typeof l !== 'string') return;
         if (l.startsWith('bestmove')) {
             _pendingBestMove = false;
             const parts = l.split(' ');
             const uci = parts[1];
-            if (!uci || uci === '(none)') return;
+            if (!uci || uci === '(none)') {
+                AppState.sfWorker.removeEventListener('message', handler);
+                return;
+            }
             const from = uci.substring(0, 2);
             const to = uci.substring(2, 4);
             const promotion = uci.length > 4 ? uci[4] : undefined;
             chess.move({ from, to, promotion });
             BoardManager.setPosition(AppState.playBoardId, chess.fen());
             if (chess.game_over()) _showGameOverMessage();
+            AppState.sfWorker.removeEventListener('message', handler);
         }
     };
 
+    AppState.sfWorker.addEventListener('message', handler);
     AppState.sfWorker.postMessage('ucinewgame');
     AppState.sfWorker.postMessage('position fen ' + fen);
     AppState.sfWorker.postMessage('go depth 12');

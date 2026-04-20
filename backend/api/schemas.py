@@ -30,17 +30,10 @@ class PositionCreate(BaseModel):
     solution_san: Optional[str] = None
     theme: Optional[str] = None
     tags: list[str] = []  # Tag names — created if they don't exist
-    
-    @field_validator('solution_san')
-    @classmethod
-    def validate_solution(cls, v, info):
-        """Puzzles must have a solution."""
-        if info.data.get('position_type') == PositionType.puzzle and not v:
-            raise ValueError("Puzzles must have a solution_san")
-        return v
 
 
 class PositionUpdate(BaseModel):
+    fen: str | None = None
     title: str | None = None
     notes: str | None = None
     stockfish_analysis: str | None = None
