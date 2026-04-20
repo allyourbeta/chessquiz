@@ -89,11 +89,18 @@ function updateEvalBar(fen, scoreType, scoreVal) {
 }
 
 function clearEvalDisplay() {
+    if (_evalTimer) clearTimeout(_evalTimer);
     AppState.engineEval = null;
+    _multiPVLines = {};
     const el = document.getElementById('engine-eval-display');
     if (el) el.textContent = '';
     const bar = document.getElementById('eval-bar-fill');
     if (bar) bar.style.height = '50%';
+    
+    // Stop Stockfish if it's running
+    if (AppState.sfWorker) {
+        AppState.sfWorker.postMessage('stop');
+    }
 }
 
 function startPlayMode(boardId, fen) {
