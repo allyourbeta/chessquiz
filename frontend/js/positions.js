@@ -158,39 +158,52 @@ async function loadPositionDetail(id) {
     document.getElementById('detail-notes').textContent = pos.notes || '(none)';
     document.getElementById('detail-tags').innerHTML = pos.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
     
+    // PHASE 19 INVESTIGATION: Previous attempts failed because:
+    // 1. detail-stockfish-card was INSIDE Position Info Card, not a separate card
+    // 2. "Your Moves From Here" card had no ID to hide it
+    // 3. Conditional logic existed but couldn't fully hide/show the right elements
+    // Fixed by: Restructuring HTML into separate cards with proper IDs
+    
     // Handle UI based on position type
-    console.log(`Loading position ${id}, type: ${pos.position_type}`);
     if (pos.position_type === 'puzzle') {
-        // PUZZLE UI: Hide irrelevant sections
-        console.log('Hiding puzzle-irrelevant sections...');
+        // TACTIC/PUZZLE UI: Show ONLY title, tags, FEN, notes, board, action buttons, engine output
         document.getElementById('detail-stockfish-card').style.display = 'none';
         document.getElementById('detail-stats-card').style.display = 'none';
         document.getElementById('practice-section').style.display = 'none';
         document.getElementById('practice-history-section').style.display = 'none';
         document.getElementById('aggregate-stats-section').style.display = 'none';
+        document.getElementById('your-moves-section').style.display = 'none';
         document.getElementById('play-from-btn').style.display = 'none';
         
-        // Show puzzle navigation
-        document.getElementById('prev-puzzle-btn').style.display = '';
-        document.getElementById('next-puzzle-btn').style.display = '';
-        document.getElementById('puzzle-counter').style.display = '';
+        // Update back button text
+        const backBtn = document.getElementById('detail-back-btn');
+        if (backBtn) backBtn.textContent = 'Back to Tactics';
         
-        // Load navigation info
-        loadPuzzleNavigation(id);
+        // Hide puzzle navigation (removed feature)
+        document.getElementById('prev-puzzle-btn').style.display = 'none';
+        document.getElementById('next-puzzle-btn').style.display = 'none';
+        const counter = document.getElementById('puzzle-counter');
+        if (counter) counter.style.display = 'none';
     } else {
         // TABIYA UI: Show everything except Quiz Stats
         document.getElementById('detail-stockfish-card').style.display = '';
         document.getElementById('detail-stockfish').textContent = pos.stockfish_analysis || '(none)';
-        document.getElementById('detail-stats-card').style.display = 'none'; // Remove Quiz Stats for tabiyas too
+        document.getElementById('detail-stats-card').style.display = 'none'; // Quiz Stats removed for all
         document.getElementById('practice-section').style.display = '';
         document.getElementById('practice-history-section').style.display = '';
         document.getElementById('aggregate-stats-section').style.display = '';
+        document.getElementById('your-moves-section').style.display = '';
         document.getElementById('play-from-btn').style.display = '';
+        
+        // Update back button text
+        const backBtn = document.getElementById('detail-back-btn');
+        if (backBtn) backBtn.textContent = 'Back to Tabiyas';
         
         // Hide puzzle navigation for tabiyas
         document.getElementById('prev-puzzle-btn').style.display = 'none';
         document.getElementById('next-puzzle-btn').style.display = 'none';
-        document.getElementById('puzzle-counter').style.display = 'none';
+        const counter = document.getElementById('puzzle-counter');
+        if (counter) counter.style.display = 'none';
         
         // Load practice data for tabiyas only
         if (window.Practice) {
