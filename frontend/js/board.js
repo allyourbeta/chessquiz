@@ -140,7 +140,6 @@ window.ARROW_TYPE = ARROW_TYPE;
 
 BoardManager.create('board', AppState.boardFen);
 BoardManager.create('detail-board', AppState.boardFen);
-// STOCKFISH DISABLED: initStockfish();
 setupAutoLoad();
 setupKeyboardSave();
 setupUrlParams();

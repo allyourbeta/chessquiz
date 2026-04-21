@@ -22,31 +22,6 @@ const PracticeUI = (function () {
         return 'text-muted';
     }
 
-    function showSaveModal(active, pending) {
-        const m = document.getElementById('practice-save-modal');
-        if (!m) return;
-        const body = document.getElementById('practice-save-body');
-        const verdict = Practice.guessVerdict();
-        const suggestedResult = formatResult(verdict, active.userColor);
-        body.innerHTML = `
-            <p style="margin-bottom:8px">
-                <strong>${pending.moveCount} moves</strong> as ${active.userColor} vs Stockfish (${active.level})
-            </p>
-            <p class="text-muted" style="font-size:12px;margin-bottom:12px">
-                Suggested result: <strong>${suggestedResult}</strong>
-                ${verdict !== '?' ? `<span style="margin-left:6px">(${verdict})</span>` : ''}
-            </p>
-            <label>Notes (optional)</label>
-            <textarea id="practice-save-notes" placeholder="Your reflections on this game..."></textarea>
-        `;
-        m.style.display = 'flex';
-    }
-
-    function hideSaveModal() {
-        const m = document.getElementById('practice-save-modal');
-        if (m) m.style.display = 'none';
-    }
-
     function renderHistory(stats, games, tree, append = false) {
         const statsEl = document.getElementById('practice-stats');
         const listEl = document.getElementById('practice-recent-list');
@@ -424,7 +399,7 @@ const PracticeUI = (function () {
     }
 
     return {
-        showSaveModal, hideSaveModal, renderHistory,
+        renderHistory,
         renderPositionsList, populateLevelSelect,
         formatResult, resultClass,
         showInlineVerdictEdit, hideInlineVerdictEdit,

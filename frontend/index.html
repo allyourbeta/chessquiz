@@ -69,7 +69,6 @@
         <input type="text" id="pos-tags" placeholder="e.g. endgame, rook, lucena">
         <label>Your Notes</label>
         <textarea id="pos-notes" placeholder="Your analysis and observations..."></textarea>
-        <!-- STOCKFISH DISABLED: Run Stockfish button, MultiPV dropdown, engine output box, analysis textarea removed -->
         <label>Analysis Notes</label>
         <textarea id="pos-stockfish" placeholder="Paste analysis notes here..." style="margin-top:8px"></textarea>
         <div class="btn-row">
@@ -115,10 +114,8 @@
           <button class="btn btn-sm" onclick="exitBatchMode()" style="margin-left:8px">Exit Review</button>
         </div>
         <div style="display:flex;gap:8px;align-items:stretch">
-          <!-- ENGINE DISABLED: <div class="eval-bar"><div class="eval-bar-fill" id="eval-bar-fill"></div></div> -->
           <div id="game-board" class="board-wrap"></div>
         </div>
-        <!-- ENGINE DISABLED: <div id="engine-eval-display" class="eval-display"></div> -->
         <div id="gv-nav-btns" class="nav-btns">
           <button class="btn btn-sm" onclick="gvFirst()">|&lt;</button>
           <button class="btn btn-sm" onclick="gvPrev()">&lt;</button>
@@ -126,7 +123,6 @@
           <button class="btn btn-sm" onclick="gvLast()">&gt;|</button>
           <button class="btn btn-sm" onclick="gvFlip()" style="margin-left:8px">Flip</button>
         </div>
-        <!-- STOCKFISH DISABLED: play-side-msg, play-controls (Stop/Draw/Resign/Reset) removed -->
       </div>
       <div class="panel">
         <div style="margin-bottom:16px">
@@ -141,8 +137,6 @@
         <div id="gv-tags" style="margin-bottom:12px"></div>
         <div class="btn-row">
           <button class="btn btn-sm" onclick="showSavePositionModal()">Save Position</button>
-          <!-- ENGINE DISABLED: game-viewer engine toggle removed -->
-          <!-- STOCKFISH DISABLED: Play from here button removed -->
           <button class="btn btn-sm" id="opening-tree-btn" onclick="toggleOpeningTree()">Opening Explorer</button>
           <button class="btn btn-danger btn-sm" onclick="deleteCurrentGame()">Delete</button>
           <button class="btn btn-sm" onclick="backToGames()">Back to Games</button>
@@ -225,7 +219,6 @@
         <div class="btn-row" style="margin-top:12px">
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button>
         </div>
-        <!-- STOCKFISH DISABLED: detail-play-side-msg, detail-play-controls removed -->
       </div>
       <div class="panel" style="display:flex;flex-direction:column;gap:0">
         <!-- Header Card -->
@@ -246,7 +239,6 @@
           <textarea id="detail-notes" placeholder="Your analysis and observations..."></textarea>
         </div>
 
-        <!-- STOCKFISH DISABLED: Stockfish Analysis Card removed -->
         <div id="detail-stockfish-card" class="card" style="display:none">
           <pre id="detail-stockfish" class="detail-pre"></pre>
         </div>
@@ -266,17 +258,13 @@
           <div class="btn-row" style="margin:0">
             <!-- Puzzle navigation buttons (hidden by default) -->
             <button class="btn" id="prev-puzzle-btn" onclick="navigatePuzzle('previous')" style="display:none">← Previous</button>
-            <!-- ENGINE DISABLED: toggle button, MultiPV dropdown, lines label removed -->
             <button class="btn" onclick="editPosition()">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
             <button class="btn" id="detail-back-btn" onclick="history.back()">Back</button>
-            <!-- STOCKFISH DISABLED: Play from here button removed -->
             <button class="btn btn-primary" id="next-puzzle-btn" onclick="navigatePuzzle('next')" style="display:none">Next →</button>
           </div>
-          <!-- ENGINE DISABLED: detail-engine-eval-display removed -->
         </div>
 
-        <!-- STOCKFISH DISABLED: Practice This Position Card removed -->
         <div id="practice-section" class="card" style="display:none"></div>
 
         <!-- Practice History Card -->
@@ -374,11 +362,9 @@
 <script src="/js/search.js"></script>
 <script src="/js/batch.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<!-- STOCKFISH DISABLED: <script src="/js/engine.js"></script> -->
 <script src="/js/practice-ui.js"></script>
 <script src="/js/practice.js"></script>
 <script src="/js/practice-viewer.js"></script>
-<!-- STOCKFISH DISABLED: <script src="/js/stockfish.js"></script> -->
 <script src="/js/sound.js"></script>
 <script type="module" src="/js/board.js"></script>
 <script>
@@ -403,7 +389,6 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').t
     <div class="btn-row"><button class="btn btn-primary" onclick="saveCollection()">Save</button><button class="btn" onclick="hideCollectionModal()">Cancel</button></div>
   </div>
 </div>
-<!-- STOCKFISH DISABLED: practice-save-modal removed -->
 <div id="practice-save-modal" class="modal-overlay" style="display:none"></div>
 </body>
 </html>

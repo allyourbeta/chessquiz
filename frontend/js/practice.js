@@ -1,10 +1,6 @@
 // Practice sessions (Phase 10) — core state + API calls. UI in practice-ui.js.
-// Failure modes: PGN must be captured before stopPlayMode tears down playChess.
 const Practice = (function () {
     let engineLevels = null;
-    let active = null;       // { rootPositionId, startFen, userColor, level, startingEval }
-    let pendingSave = null;  // { pgn, finalFen, moveCount, finalEval } when game ends
-    let forcedVerdict = null; // 'loss' (resign) or 'abandoned' (stop) — bypass modal
 
     async function loadLevels() {
         if (engineLevels) return engineLevels;
@@ -14,151 +10,7 @@ const Practice = (function () {
 
     function getLevels() { return engineLevels; }
 
-    async function startFromDetail() {
-        toast('Practice mode is currently disabled (Stockfish removed)', true);
-        return;
-    }
-
-    function _showPracticeButtons(show) {
-        ['gv-resign-btn', 'detail-resign-btn', 'gv-draw-btn', 'detail-draw-btn']
-            .forEach(id => {
-                const b = document.getElementById(id);
-                if (b) b.style.display = show ? '' : 'none';
-            });
-    }
-
-    function _movesToPgn(chess, startFen) {
-        try {
-            const hist = chess.history();
-            const hdr = `[FEN "${startFen}"]\n[SetUp "1"]\n\n`;
-            const startTurn = startFen.split(' ')[1] === 'b' ? 'b' : 'w';
-            let body = '';
-            let moveNum = parseInt(startFen.split(' ')[5], 10) || 1;
-            let i = 0;
-            if (startTurn === 'b' && hist.length) {
-                body += `${moveNum}... ${hist[0]} `;
-                i = 1;
-                moveNum++;
-            }
-            while (i < hist.length) {
-                const white = hist[i];
-                const black = hist[i + 1];
-                body += `${moveNum}. ${white}`;
-                if (black) body += ` ${black}`;
-                body += ' ';
-                moveNum++;
-                i += 2;
-            }
-            return hdr + body.trim() + '\n';
-        } catch (_) {
-            return `[FEN "${startFen}"]\n[SetUp "1"]\n\n`;
-        }
-    }
-
-    function captureEndOfGame() {
-        if (!active || !AppState.playChess) return;
-        const chess = AppState.playChess;
-        const pgn = _movesToPgn(chess, active.startFen);
-        const finalFen = chess.fen();
-        const moveCount = chess.history().length;
-        const finalEval = (AppState.engineEval && typeof AppState.engineEval.score === 'string')
-            ? parseFloat(AppState.engineEval.score)
-            : null;
-        pendingSave = {
-            pgn,
-            finalFen,
-            moveCount,
-            finalEval: isNaN(finalEval) ? null : finalEval,
-        };
-        if (forcedVerdict) {
-            // Resign / abandon path: save immediately, no modal.
-            const verdict = forcedVerdict;
-            forcedVerdict = null;
-            confirmSave(verdict);
-            return;
-        }
-        PracticeUI.showSaveModal(active, pendingSave);
-    }
-
-    function resign() {
-        if (!active) { toast('No practice game in progress', true); return; }
-        if (!confirm('Resign this game? It will be saved as a loss.')) return;
-        forcedVerdict = 'loss';
-        _showPracticeButtons(false);
-        stopPlayMode();  // wrapper calls captureEndOfGame -> confirmSave('loss')
-        toast('Resigned');
-    }
-
-    // Offer draw: probe Stockfish for an eval of the current position at
-    // depth 12, flip to Stockfish's own perspective, accept iff sf is <= 0.
-    // On accept, save as draw and stop. On decline, toast and continue.
-    function offerDraw() {
-        toast('Practice mode is currently disabled', true);
-    }
-
-    function stopAndAbandon() {
-        // Called when user clicks "Stop Playing" during an active practice.
-        // The wrapper on stopPlayMode will still call captureEndOfGame; we
-        // mark the verdict as 'abandoned' so modal is skipped.
-        forcedVerdict = 'abandoned';
-    }
-
-    function guessVerdict() {
-        if (!pendingSave || !active) return '?';
-        if (pendingSave.finalEval == null || active.startingEval == null) return '?';
-        let d = pendingSave.finalEval - active.startingEval;
-        if (active.userColor === 'black') d = -d;
-        if (d > 1.0) return 'win';
-        if (d < -1.0) return 'loss';
-        return 'draw';
-    }
-
-    async function confirmSave(userVerdict) {
-        if (!pendingSave || !active) { PracticeUI.hideSaveModal(); return; }
-        const notesEl = document.getElementById('practice-save-notes');
-        const body = {
-            root_position_id: active.rootPositionId,
-            pgn_text: pendingSave.pgn,
-            user_color: active.userColor,
-            final_fen: pendingSave.finalFen,
-            move_count: pendingSave.moveCount,
-            engine_name: 'Stockfish',
-            engine_level: active.level,
-            starting_eval: active.startingEval,
-            final_eval: pendingSave.finalEval,
-            user_verdict: userVerdict || null,
-            notes: notesEl ? notesEl.value.trim() || null : null,
-        };
-        const r = await fetch(API + '/practice/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-        if (r.ok) {
-            topBanner('Practice game saved');
-            _reset();
-            PracticeUI.hideSaveModal();
-            if (AppState.currentDetailId) loadPracticeHistory(AppState.currentDetailId);
-        } else {
-            toast('Save failed', true);
-        }
-    }
-
-    function discard() {
-        _reset();
-        PracticeUI.hideSaveModal();
-        toast('Practice game discarded');
-    }
-
-    function _reset() {
-        active = null;
-        pendingSave = null;
-        forcedVerdict = null;
-        _showPracticeButtons(false);
-    }
-    function isActive() { return !!active; }
-    function getActive() { return active; }
-    function getPendingSave() { return pendingSave; }
+    function isActive() { return false; }
 
     let currentFilters = { verdict: '', engine_level: '', sort: 'recent' };
     let currentOffset = 0;
@@ -310,14 +162,12 @@ const Practice = (function () {
     }
 
     return {
-        startFromDetail, captureEndOfGame, confirmSave, discard, isActive,
+        isActive,
         loadPracticeHistory, loadPracticeTab, loadLevels, getLevels,
-        editVerdict, deleteGame, guessVerdict, getActive, getPendingSave,
-        resign, stopAndAbandon, offerDraw,
+        editVerdict, deleteGame,
         applyFilters, clearFilters, showMore,
     };
 })();
 
-// STOCKFISH DISABLED: stopPlayMode wrapper removed
 
 window.Practice = Practice;
