@@ -31,6 +31,18 @@ async function loadGameDetail(id) {
             EngineUI.setPosition(newFen);
         },
     });
+    MoveNavigator.create('game-nav', {
+        fens: game.fens,
+        startIndex: 0,
+        boardId: 'game-board',
+        containerId: 'gv-move-nav',
+        keyScope: 'view-game-viewer',
+        onNavigate: function (fen, idx) {
+            AppState.currentPly = idx;
+            highlightCurrentMove();
+            EngineUI.setPosition(fen);
+        },
+    });
     highlightCurrentMove();
     if (typeof updateBatchNav === 'function') updateBatchNav();
 
@@ -68,14 +80,7 @@ function renderMoveList() {
 }
 
 function goToPly(ply) {
-    const g = AppState.currentGame;
-    if (!g) return;
-    ply = Math.max(0, Math.min(ply, g.fens.length - 1));
-    AppState.currentPly = ply;
-    BoardManager.setPosition('game-board', g.fens[ply]);
-    BoardManager.setAnalysisOrigin('game-board', g.fens[ply]);
-    highlightCurrentMove();
-    EngineUI.setPosition(g.fens[ply]);
+    MoveNavigator.goTo('game-nav', ply);
 }
 
 function highlightCurrentMove() {
@@ -91,24 +96,7 @@ function highlightCurrentMove() {
     }
 }
 
-function gvFirst() { goToPly(0); }
-function gvPrev() { goToPly(AppState.currentPly - 1); }
-function gvNext() { goToPly(AppState.currentPly + 1); }
-function gvLast() { goToPly(AppState.currentGame ? AppState.currentGame.fens.length - 1 : 0); }
-
 function gvFlip() { BoardManager.flip('game-board'); }
-
-function setupGameKeys() {
-    document.addEventListener('keydown', e => {
-        const gv = document.getElementById('view-game-viewer');
-        if (!gv || !gv.classList.contains('active')) return;
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        if (e.key === 'ArrowLeft') { e.preventDefault(); gvPrev(); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); gvNext(); }
-        else if (e.key === 'Home') { e.preventDefault(); gvFirst(); }
-        else if (e.key === 'End') { e.preventDefault(); gvLast(); }
-    });
-}
 
 function showSavePositionModal() {
     const g = AppState.currentGame;
@@ -188,15 +176,9 @@ function resetGameBoard() {
     BoardManager.resetAnalysis('game-board');
 }
 
-setupGameKeys();
-
 window.openGame = openGame;
 window.loadGameDetail = loadGameDetail;
 window.goToPly = goToPly;
-window.gvFirst = gvFirst;
-window.gvPrev = gvPrev;
-window.gvNext = gvNext;
-window.gvLast = gvLast;
 window.gvFlip = gvFlip;
 window.showSavePositionModal = showSavePositionModal;
 window.hideSavePositionModal = hideSavePositionModal;

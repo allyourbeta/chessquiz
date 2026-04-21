@@ -199,10 +199,10 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   padding: var(--sp-6) var(--sp-6);
 }
 .view { display: none; } .view.active { display: block; }
-.board-wrap { width: 400px; height: 400px; }
+.board-wrap { width: 450px; height: 450px; }
 .board-area {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--sp-6);
   align-items: start;
   min-width: 0;

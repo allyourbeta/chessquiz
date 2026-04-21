@@ -91,10 +91,7 @@ const StockfishService = (function () {
         }
 
         if (_state === 'analyzing') {
-            if (line.startsWith('bestmove')) {
-                _state = 'ready';
-                return;
-            }
+            if (line.startsWith('bestmove')) return;
             const parsed = parseInfoLine(line);
             if (parsed && _onUpdate) {
                 const sanMoves = uciToSan(_currentFen, parsed.uciMoves);
@@ -134,9 +131,7 @@ const StockfishService = (function () {
     }
 
     function analyze(fen, options) {
-        if (_state !== 'ready' && _state !== 'analyzing') {
-            throw new Error('Engine not ready, state: ' + _state);
-        }
+        if (_state !== 'ready' && _state !== 'analyzing') return;
         _send('stop');
         var mpv = (options && options.multiPV) || 3;
         _send('setoption name MultiPV value ' + mpv);

@@ -266,25 +266,36 @@
    ------------------------------------------------------------------ */
 .toast {
   position: fixed;
-  bottom: var(--sp-5);
-  right: var(--sp-5);
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--surface);
   border: 1px solid var(--success-100);
   border-left: 3px solid var(--success-500);
   color: var(--success-700);
-  padding: 10px var(--sp-4);
+  padding: 10px 20px;
   border-radius: var(--radius);
   font-family: inherit;
-  font-size: var(--fs-13);
-  font-weight: 500;
-  z-index: 1000;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 1100;
   box-shadow: var(--shadow-lg);
-  animation: slideUp .25s ease;
+  animation: toastIn .25s ease;
+  white-space: nowrap;
 }
 .toast.error {
   border-color: var(--danger-100);
   border-left-color: var(--danger-500);
   color: var(--danger-700);
+}
+.toast.warn {
+  border-color: var(--warning-100);
+  border-left-color: var(--warning-500);
+  color: var(--warning-700);
+}
+@keyframes toastIn {
+  from { transform: translateX(-50%) translateY(-12px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
 /* ------------------------------------------------------------------
@@ -405,4 +416,28 @@
 @keyframes slideUp {
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.collapsible-card .collapsible-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.collapsible-card .collapsible-header .collapse-arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+.collapsible-card.expanded .collapsible-header .collapse-arrow {
+  transform: rotate(90deg);
+}
+.collapsible-card .card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+.collapsible-card.expanded .card-body {
+  max-height: 500px;
 }

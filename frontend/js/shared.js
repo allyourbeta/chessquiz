@@ -20,12 +20,16 @@ function pieceKey(ch) {
     return c + ch.toUpperCase();
 }
 
-function toast(msg, err = false) {
-    const el = document.createElement('div');
-    el.className = 'toast' + (err ? ' error' : '');
+function toast(msg, type, duration) {
+    var cls = 'toast';
+    if (type === true || type === 'error') cls += ' error';
+    else if (type === 'warn') cls += ' warn';
+    var ms = duration || (type === 'error' || type === true ? 5000 : 3000);
+    var el = document.createElement('div');
+    el.className = cls;
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+    setTimeout(function () { el.remove(); }, ms);
 }
 
 // Button loading state helpers
@@ -250,11 +254,36 @@ function showView(name) {
     _activateView(name, labels[name]);
 }
 
+async function saveBoardPosition(boardId, positionType) {
+    var fen = BoardManager.getPosition(boardId);
+    if (!fen) { toast('No position on board', true); return; }
+    var title = 'Untitled';
+    if (AppState.currentGame) {
+        var g = AppState.currentGame, ply = AppState.currentPly;
+        var moveDesc = ply === 0 ? 'starting position' : 'after ' + Math.ceil(ply / 2) + '.' + (ply % 2 === 1 ? '' : '...') + g.moves_san[ply - 1];
+        title = (g.white || '?') + ' vs ' + (g.black || '?') + ' - ' + moveDesc;
+    } else if (AppState.currentDetailId) {
+        var el = document.getElementById('detail-title');
+        title = 'From ' + (el ? el.textContent : 'position');
+    }
+    var res = await fetch(API + '/positions/', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fen: fen, title: title, position_type: positionType })
+    });
+    if (res.ok) toast('\u2713 Saved as ' + (positionType === 'tabiya' ? 'tabiya' : 'tactic'));
+    else {
+        var err = await res.json();
+        if (res.status === 409) toast('Position already saved', 'warn');
+        else toast(err.detail || 'Error saving', 'error');
+    }
+}
+
 window.API = API;
 window.PIECE_SVG = PIECE_SVG;
 window.pieceKey = pieceKey;
 window.toast = toast;
 window.showView = showView;
+window.saveBoardPosition = saveBoardPosition;
 window.addEventListener('beforeunload', function () {
     StockfishService.destroy();
 });

@@ -116,14 +116,13 @@
         <div style="display:flex;gap:8px;align-items:stretch">
           <div id="game-board" class="board-wrap"></div>
         </div>
-        <div id="gv-nav-btns" class="nav-btns">
-          <button class="btn btn-sm" onclick="gvFirst()">|&lt;</button>
-          <button class="btn btn-sm" onclick="gvPrev()">&lt;</button>
-          <button class="btn btn-sm" onclick="gvNext()">&gt;</button>
-          <button class="btn btn-sm" onclick="gvLast()">&gt;|</button>
+        <div class="nav-btns">
+          <span id="gv-move-nav" style="display:inline-flex;gap:4px;align-items:center"></span>
           <button class="btn btn-sm" onclick="gvFlip()" style="margin-left:8px">Flip</button>
           <button class="btn btn-sm" onclick="undoGameBoard()">Undo</button>
           <button class="btn btn-sm" onclick="resetGameBoard()">Reset</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('game-board','tabiya')">+ Tabiya</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('game-board','puzzle')">+ Tactic</button>
         </div>
         <div id="game-engine-container" style="margin-top:8px"></div>
       </div>
@@ -139,7 +138,7 @@
         <div id="gv-moves" class="moves-panel"></div>
         <div id="gv-tags" style="margin-bottom:12px"></div>
         <div class="btn-row">
-          <button class="btn btn-sm" onclick="showSavePositionModal()">Save Position</button>
+          <button class="btn btn-sm" onclick="showSavePositionModal()">Save with Notes</button>
           <button class="btn btn-sm" id="opening-tree-btn" onclick="toggleOpeningTree()">Opening Explorer</button>
           <button class="btn btn-danger btn-sm" onclick="deleteCurrentGame()">Delete</button>
           <button class="btn btn-sm" onclick="backToGames()">Back to Games</button>
@@ -163,6 +162,8 @@
         <div class="btn-row" style="margin-top:8px">
           <button class="btn btn-sm" onclick="searchFlipBoard()">Flip</button>
           <button class="btn btn-sm" onclick="searchSetStart()">Starting Position</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('search-board','tabiya')">+ Tabiya</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('search-board','puzzle')">+ Tactic</button>
         </div>
       </div>
       <div class="panel">
@@ -219,29 +220,42 @@
     <div class="board-area">
       <div class="card" style="margin:0;padding:var(--sp-4)">
         <div id="detail-board" class="board-wrap"></div>
+        <div id="practice-move-list" class="moves-panel" style="display:none;margin-top:8px;max-height:120px"></div>
         <div class="btn-row" style="margin-top:12px">
-          <button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button>
-          <button class="btn btn-sm" onclick="undoDetailBoard()">Undo</button>
-          <button class="btn btn-sm" onclick="resetDetailBoard()">Reset</button>
+          <span id="detail-move-nav" style="display:inline-flex;gap:4px;align-items:center"></span>
+          <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('detail-board','tabiya')">+ Tabiya</button>
+          <button class="btn btn-success btn-sm" onclick="saveBoardPosition('detail-board','puzzle')">+ Tactic</button>
         </div>
       </div>
       <div class="panel" style="display:flex;flex-direction:column;gap:0">
         <!-- Header Card -->
         <div class="card">
-          <h2 id="detail-title">Position</h2>
+          <h2 id="detail-title" style="cursor:pointer" onclick="startTitleEdit()" title="Click to rename">Position</h2>
           <div id="detail-tags"></div>
         </div>
 
         <!-- FEN Card -->
-        <div class="card">
-          <label>FEN</label>
-          <div id="detail-fen" class="fen-display"></div>
+        <div class="card collapsible-card" id="fen-card">
+          <div class="collapsible-header" onclick="toggleCollapsible('fen-card')">
+            <span class="collapse-arrow">&#9654;</span>
+            <label style="margin:0;cursor:pointer">FEN</label>
+          </div>
+          <div class="card-body">
+            <div id="detail-fen" class="fen-display" style="margin-top:8px"></div>
+            <button class="btn btn-sm" style="margin-top:6px" onclick="event.stopPropagation();copyFen()">Copy FEN</button>
+          </div>
         </div>
 
         <!-- Notes Card -->
-        <div class="card">
-          <label>Your Notes <span class="text-muted" style="font-size:11px;font-weight:normal">(auto-saved)</span></label>
-          <textarea id="detail-notes" placeholder="Your analysis and observations..."></textarea>
+        <div class="card collapsible-card" id="notes-card">
+          <div class="collapsible-header" onclick="toggleCollapsible('notes-card')">
+            <span class="collapse-arrow">&#9654;</span>
+            <label style="margin:0;cursor:pointer" id="notes-card-label">Notes <span class="text-muted" style="font-size:11px;font-weight:normal">(click to add)</span></label>
+          </div>
+          <div class="card-body">
+            <textarea id="detail-notes" placeholder="Your analysis and observations..." style="margin-top:8px"></textarea>
+          </div>
         </div>
 
         <!-- Engine Analysis (shared component) -->
@@ -258,13 +272,11 @@
         </div>
 
         <!-- Actions Card -->
-        <div class="card">
-          <!-- Position counter for puzzles -->
+        <div class="card" id="detail-actions-card">
           <div id="puzzle-counter" style="text-align:center;margin-bottom:8px;font-size:13px;color:var(--text-muted);display:none">
             Puzzle <span id="puzzle-current-index">1</span> of <span id="puzzle-total-count">1</span>
           </div>
           <div class="btn-row" style="margin:0">
-            <!-- Puzzle navigation buttons (hidden by default) -->
             <button class="btn" id="prev-puzzle-btn" onclick="navigatePuzzle('previous')" style="display:none">← Previous</button>
             <button class="btn" onclick="editPosition()">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">Delete</button>
@@ -273,7 +285,18 @@
           </div>
         </div>
 
-        <div id="practice-section" class="card" style="display:none"></div>
+        <div id="practice-section" class="card" style="display:none">
+          <div class="card-header">Practice This Position</div>
+          <div id="practice-form-controls" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <select id="practice-level" class="select-input"></select>
+            <select id="practice-color" class="select-input">
+              <option value="">Your color</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="Practice.startFromDetail()">Start practice</button>
+          </div>
+        </div>
 
         <!-- Practice History Card -->
         <div id="practice-history-section" class="card">
@@ -308,7 +331,7 @@
               <option value="shortest">Shortest game</option>
             </select>
           </div>
-          <div id="practice-recent-list" class="pos-list"></div>
+          <div id="practice-recent-list" class="pos-list" style="max-height:300px;overflow-y:auto"></div>
           <div id="practice-pagination" style="margin-top:12px;text-align:center;display:none">
             <button class="btn btn-sm" onclick="Practice.showMore()">Show more</button>
           </div>
@@ -317,7 +340,7 @@
         <!-- Your Moves From Here Card -->
         <div id="your-moves-section" class="card">
           <div class="card-header">Your Moves From Here</div>
-          <div id="practice-tree" class="tree-panel"></div>
+          <div id="practice-tree" class="tree-panel" style="max-height:250px;overflow-y:auto"></div>
         </div>
       </div>
     </div>
@@ -360,6 +383,7 @@
 <script src="/js/state.js"></script>
 <script src="/js/router.js"></script>
 <script src="/js/shared.js"></script>
+<script src="/js/move-navigator.js"></script>
 <script src="/js/tagfilter.js"></script>
 <script src="/js/positions.js"></script>
 <script src="/js/games.js"></script>
@@ -373,6 +397,7 @@
 <script src="/js/stockfish-service.js"></script>
 <script src="/js/engine-ui.js"></script>
 <script src="/js/practice-ui.js"></script>
+<script src="/js/practice-history.js"></script>
 <script src="/js/practice.js"></script>
 <script src="/js/practice-viewer.js"></script>
 <script src="/js/sound.js"></script>
@@ -399,6 +424,19 @@ if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').t
     <div class="btn-row"><button class="btn btn-primary" onclick="saveCollection()">Save</button><button class="btn" onclick="hideCollectionModal()">Cancel</button></div>
   </div>
 </div>
-<div id="practice-save-modal" class="modal-overlay" style="display:none"></div>
+<div id="practice-save-modal" class="modal-overlay" style="display:none">
+  <div class="panel modal-content" style="width:480px">
+    <h2>Save Practice Game?</h2>
+    <div id="practice-save-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="Practice.confirmSave()">Save</button>
+      <button class="btn btn-success btn-sm" onclick="Practice.confirmSave('win')">Save as 1-0/0-1</button>
+      <button class="btn btn-sm" onclick="Practice.confirmSave('draw')">Save as ½-½</button>
+      <button class="btn btn-danger btn-sm" onclick="Practice.confirmSave('loss')">Save as 0-1/1-0</button>
+      <button class="btn btn-ghost btn-sm" onclick="Practice.confirmSave('abandoned')">—</button>
+      <button class="btn btn-danger" onclick="Practice.discard()">Discard</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
