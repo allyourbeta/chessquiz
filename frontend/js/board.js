@@ -73,6 +73,37 @@ const BoardManager = {
                 }
             });
         }
+
+        if (options.mode === 'analysis') {
+            board._analysisHistory = [fen];
+            board._analysisOrigin = fen;
+            board._onPositionChange = options.onPositionChange || null;
+            const self = this;
+            board.enableMoveInput((event) => {
+                if (event.type === INPUT_EVENT_TYPE.moveInputStarted) {
+                    return true;
+                }
+                if (event.type === INPUT_EVENT_TYPE.validateMoveInput) {
+                    const chess = new Chess(board._fen);
+                    const from = event.squareFrom;
+                    const to = event.squareTo;
+                    let promotion = undefined;
+                    const piece = chess.get(from);
+                    if (piece && piece.type === 'p') {
+                        const rank = to.charAt(1);
+                        if (rank === '8' || rank === '1') promotion = 'q';
+                    }
+                    const move = chess.move({ from, to, promotion });
+                    if (!move) return false;
+                    const newFen = chess.fen();
+                    board._fen = newFen;
+                    board._analysisHistory.push(newFen);
+                    board.setPosition(newFen, true);
+                    if (board._onPositionChange) board._onPositionChange(newFen);
+                    return true;
+                }
+            });
+        }
     },
 
     setPosition(elementId, fen) {
@@ -129,6 +160,35 @@ const BoardManager = {
     removeArrows(elementId) {
         const board = this.boards[elementId];
         if (board) board.removeArrows();
+    },
+
+    undoAnalysis(elementId) {
+        const board = this.boards[elementId];
+        if (!board || !board._analysisHistory || board._analysisHistory.length <= 1) return null;
+        board._analysisHistory.pop();
+        const fen = board._analysisHistory[board._analysisHistory.length - 1];
+        board._fen = fen;
+        board.setPosition(fen, true);
+        if (board._onPositionChange) board._onPositionChange(fen);
+        return fen;
+    },
+
+    resetAnalysis(elementId) {
+        const board = this.boards[elementId];
+        if (!board || !board._analysisOrigin) return null;
+        const fen = board._analysisOrigin;
+        board._analysisHistory = [fen];
+        board._fen = fen;
+        board.setPosition(fen, true);
+        if (board._onPositionChange) board._onPositionChange(fen);
+        return fen;
+    },
+
+    setAnalysisOrigin(elementId, fen) {
+        const board = this.boards[elementId];
+        if (!board) return;
+        board._analysisOrigin = fen;
+        board._analysisHistory = [fen];
     },
 };
 

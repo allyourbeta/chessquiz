@@ -122,6 +122,8 @@
           <button class="btn btn-sm" onclick="gvNext()">&gt;</button>
           <button class="btn btn-sm" onclick="gvLast()">&gt;|</button>
           <button class="btn btn-sm" onclick="gvFlip()" style="margin-left:8px">Flip</button>
+          <button class="btn btn-sm" onclick="undoGameBoard()">Undo</button>
+          <button class="btn btn-sm" onclick="resetGameBoard()">Reset</button>
         </div>
         <div id="game-engine-container" style="margin-top:8px"></div>
       </div>
@@ -219,6 +221,8 @@
         <div id="detail-board" class="board-wrap"></div>
         <div class="btn-row" style="margin-top:12px">
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip Board</button>
+          <button class="btn btn-sm" onclick="undoDetailBoard()">Undo</button>
+          <button class="btn btn-sm" onclick="resetDetailBoard()">Reset</button>
         </div>
       </div>
       <div class="panel" style="display:flex;flex-direction:column;gap:0">

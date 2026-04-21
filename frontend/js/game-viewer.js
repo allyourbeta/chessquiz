@@ -24,7 +24,13 @@ async function loadGameDetail(id) {
     document.getElementById('gv-tags').innerHTML = game.tags.map(t => `<span class="tag">#${t.name}</span>`).join('');
 
     renderMoveList();
-    BoardManager.create('game-board', game.fens[0], { flipped: false });
+    BoardManager.create('game-board', game.fens[0], {
+        flipped: false,
+        mode: 'analysis',
+        onPositionChange: function (newFen) {
+            EngineUI.setPosition(newFen);
+        },
+    });
     highlightCurrentMove();
     if (typeof updateBatchNav === 'function') updateBatchNav();
 
@@ -67,6 +73,7 @@ function goToPly(ply) {
     ply = Math.max(0, Math.min(ply, g.fens.length - 1));
     AppState.currentPly = ply;
     BoardManager.setPosition('game-board', g.fens[ply]);
+    BoardManager.setAnalysisOrigin('game-board', g.fens[ply]);
     highlightCurrentMove();
     EngineUI.setPosition(g.fens[ply]);
 }
@@ -173,6 +180,14 @@ async function deleteCurrentGame() {
     }
 }
 
+function undoGameBoard() {
+    BoardManager.undoAnalysis('game-board');
+}
+
+function resetGameBoard() {
+    BoardManager.resetAnalysis('game-board');
+}
+
 setupGameKeys();
 
 window.openGame = openGame;
@@ -188,3 +203,5 @@ window.hideSavePositionModal = hideSavePositionModal;
 window.doSavePosition = doSavePosition;
 window.backToGames = backToGames;
 window.deleteCurrentGame = deleteCurrentGame;
+window.undoGameBoard = undoGameBoard;
+window.resetGameBoard = resetGameBoard;

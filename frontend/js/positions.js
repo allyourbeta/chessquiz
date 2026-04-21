@@ -203,10 +203,24 @@ async function loadPositionDetail(id) {
         
     }
     
-    BoardManager.create('detail-board', pos.fen, { flipped: false });
+    BoardManager.create('detail-board', pos.fen, {
+        flipped: false,
+        mode: 'analysis',
+        onPositionChange: function (newFen) {
+            EngineUI.setPosition(newFen);
+        },
+    });
 
     EngineUI.mount('detail-engine-container');
     EngineUI.setPosition(pos.fen);
+}
+
+function undoDetailBoard() {
+    BoardManager.undoAnalysis('detail-board');
+}
+
+function resetDetailBoard() {
+    BoardManager.resetAnalysis('detail-board');
 }
 
 function editPosition() {
@@ -495,6 +509,8 @@ window.loadFen = loadFen;
 window.setStartPos = setStartPos;
 window.flipBoard = flipBoard;
 window.flipDetailBoard = flipDetailBoard;
+window.undoDetailBoard = undoDetailBoard;
+window.resetDetailBoard = resetDetailBoard;
 window.deleteFromList = deleteFromList;
 window.deleteFromDetail = deleteFromDetail;
 window.clearForm = clearForm;
