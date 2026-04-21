@@ -254,11 +254,29 @@ def search_position(
             target_sig = compute_pawn_sig(data.fen)
         except (ValueError, Exception) as e:
             raise HTTPException(status_code=400, detail=f"Invalid FEN: {e}")
-        matches = (
-            db.query(PositionIndex)
-            .filter(PositionIndex.pawn_sig == target_sig)
-            .all()
-        )
+
+        w_part, b_part = target_sig.split("|")
+        target_white = set(w_part.split(":")[1].split(",")) if ":" in w_part and w_part.split(":")[1] else set()
+        target_black = set(b_part.split(":")[1].split(",")) if ":" in b_part and b_part.split(":")[1] else set()
+        target_white.discard("")
+        target_black.discard("")
+
+        query = db.query(PositionIndex)
+        for sq in target_white:
+            query = query.filter(PositionIndex.pawn_sig.like(f"w:%{sq}%|%"))
+        for sq in target_black:
+            query = query.filter(PositionIndex.pawn_sig.like(f"%|b:%{sq}%"))
+        candidates = query.all()
+
+        matches = []
+        for m in candidates:
+            sig_w, sig_b = m.pawn_sig.split("|")
+            stored_white = set(sig_w.split(":")[1].split(",")) if ":" in sig_w and sig_w.split(":")[1] else set()
+            stored_black = set(sig_b.split(":")[1].split(",")) if ":" in sig_b and sig_b.split(":")[1] else set()
+            stored_white.discard("")
+            stored_black.discard("")
+            if target_white.issubset(stored_white) and target_black.issubset(stored_black):
+                matches.append(m)
     else:
         raise HTTPException(
             status_code=400, detail="search_type must be 'exact' or 'pawn'"
