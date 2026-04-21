@@ -123,6 +123,7 @@
           <button class="btn btn-sm" onclick="gvLast()">&gt;|</button>
           <button class="btn btn-sm" onclick="gvFlip()" style="margin-left:8px">Flip</button>
         </div>
+        <div id="game-engine-container" style="margin-top:8px"></div>
       </div>
       <div class="panel">
         <div style="margin-bottom:16px">
@@ -238,6 +239,9 @@
           <label>Your Notes <span class="text-muted" style="font-size:11px;font-weight:normal">(auto-saved)</span></label>
           <textarea id="detail-notes" placeholder="Your analysis and observations..."></textarea>
         </div>
+
+        <!-- Engine Analysis (shared component) -->
+        <div id="detail-engine-container" class="card"></div>
 
         <div id="detail-stockfish-card" class="card" style="display:none">
           <pre id="detail-stockfish" class="detail-pre"></pre>
@@ -362,6 +366,8 @@
 <script src="/js/search.js"></script>
 <script src="/js/batch.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="/js/stockfish-service.js"></script>
+<script src="/js/engine-ui.js"></script>
 <script src="/js/practice-ui.js"></script>
 <script src="/js/practice.js"></script>
 <script src="/js/practice-viewer.js"></script>

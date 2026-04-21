@@ -27,6 +27,9 @@ async function loadGameDetail(id) {
     BoardManager.create('game-board', game.fens[0], { flipped: false });
     highlightCurrentMove();
     if (typeof updateBatchNav === 'function') updateBatchNav();
+
+    EngineUI.mount('game-engine-container');
+    EngineUI.setPosition(game.fens[0]);
 }
 
 function renderMoveList() {
@@ -65,6 +68,7 @@ function goToPly(ply) {
     AppState.currentPly = ply;
     BoardManager.setPosition('game-board', g.fens[ply]);
     highlightCurrentMove();
+    EngineUI.setPosition(g.fens[ply]);
 }
 
 function highlightCurrentMove() {

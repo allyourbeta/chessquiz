@@ -204,6 +204,9 @@ async function loadPositionDetail(id) {
     }
     
     BoardManager.create('detail-board', pos.fen, { flipped: false });
+
+    EngineUI.mount('detail-engine-container');
+    EngineUI.setPosition(pos.fen);
 }
 
 function editPosition() {

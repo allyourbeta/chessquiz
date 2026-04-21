@@ -149,6 +149,7 @@ function _applyPositionFilters(params) {
 
 // Main route renderer. Called by Router on navigate() / popstate / init.
 function renderRoute(route) {
+    EngineUI.unmount();
     const params = (route && route.params) || {};
     switch (route.view) {
         case 'tabiyas':
@@ -254,4 +255,8 @@ window.PIECE_SVG = PIECE_SVG;
 window.pieceKey = pieceKey;
 window.toast = toast;
 window.showView = showView;
+window.addEventListener('beforeunload', function () {
+    StockfishService.destroy();
+});
+
 window.renderRoute = renderRoute;

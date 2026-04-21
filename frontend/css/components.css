@@ -148,23 +148,60 @@
 .stats-bar .incorrect { color: var(--danger-700); font-weight: 600; }
 
 /* ------------------------------------------------------------------
-   Engine output / monospace panels
+   Engine analysis panel
    ------------------------------------------------------------------ */
+.engine-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.engine-eval-bar {
+  height: 8px;
+  width: 100%;
+  background: var(--text-primary, #1a1a1a);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.engine-eval-bar-fill {
+  height: 100%;
+  background: #f0f0f0;
+  width: 50%;
+  transition: width 0.3s ease;
+}
 .engine-output {
-  background: var(--grey-900);
-  border: 1px solid var(--grey-800);
-  border-radius: var(--radius);
-  padding: 10px var(--sp-3);
-  font-size: var(--fs-12);
-  color: var(--grey-100);
-  min-height: 80px;
-  max-height: 200px;
-  margin-top: 6px;
-  white-space: pre-wrap;
-  font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
-  line-height: 1.55;
-  overflow-x: auto;
-  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.engine-line {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+.engine-line:last-child {
+  border-bottom: none;
+}
+.engine-line-score {
+  font-weight: 700;
+  min-width: 48px;
+  text-align: right;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.engine-line-score.positive { color: #16a34a; }
+.engine-line-score.negative { color: #dc2626; }
+.engine-line-score.mate { color: #9333ea; }
+.engine-line-score.neutral { color: var(--text-muted); }
+.engine-line-depth {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 28px;
+}
+.engine-line-moves {
+  flex: 1;
+  word-wrap: break-word;
 }
 
 /* ------------------------------------------------------------------
