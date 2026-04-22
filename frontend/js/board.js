@@ -1,4 +1,4 @@
-import {Chessboard, COLOR, FEN, INPUT_EVENT_TYPE}
+import {Chessboard, COLOR, FEN, INPUT_EVENT_TYPE, POINTER_EVENTS}
     from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/Chessboard.js";
 import {Markers, MARKER_TYPE}
     from "https://cdn.jsdelivr.net/npm/cm-chessboard@8/src/extensions/markers/Markers.js";
@@ -165,24 +165,15 @@ const BoardManager = {
     enableSquareSelect(elementId, callback) {
         const board = this.boards[elementId];
         if (!board) return;
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        if (board._squareSelectHandler) el.removeEventListener('pointerdown', board._squareSelectHandler);
-        board._squareSelectHandler = function (e) {
-            const sqEl = e.target.closest('[data-square]');
-            if (sqEl) callback(sqEl.getAttribute('data-square'));
-        };
-        el.addEventListener('pointerdown', board._squareSelectHandler);
+        board.enableSquareSelect(POINTER_EVENTS.pointerdown, (event) => {
+            callback(event.square);
+        });
     },
 
     disableSquareSelect(elementId) {
         const board = this.boards[elementId];
         if (!board) return;
-        if (board._squareSelectHandler) {
-            const el = document.getElementById(elementId);
-            if (el) el.removeEventListener('pointerdown', board._squareSelectHandler);
-            board._squareSelectHandler = null;
-        }
+        board.disableSquareSelect(POINTER_EVENTS.pointerdown);
     },
 
     disableMoveInput(elementId) {
