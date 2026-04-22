@@ -441,3 +441,49 @@
 .collapsible-card.expanded .card-body {
   max-height: 500px;
 }
+
+/* ------------------------------------------------------------------
+   Board editor palette
+   ------------------------------------------------------------------ */
+.editor-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.palette-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.palette-btn {
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, background-color .15s;
+}
+.palette-btn:hover {
+  border-color: var(--grey-300);
+  background: var(--grey-050);
+}
+.palette-btn.active {
+  border-color: var(--primary-500);
+  background: var(--primary-050);
+  box-shadow: 0 0 0 2px var(--primary-100);
+}
+.palette-btn img {
+  width: 28px;
+  height: 28px;
+}
+.palette-btn.eraser-btn {
+  color: var(--text-muted);
+}
+.palette-btn.eraser-btn.active {
+  color: var(--primary-700);
+}

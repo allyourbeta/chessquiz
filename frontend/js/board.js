@@ -162,6 +162,35 @@ const BoardManager = {
         if (board) board.removeArrows();
     },
 
+    enableSquareSelect(elementId, callback) {
+        const board = this.boards[elementId];
+        if (!board) return;
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        if (board._squareSelectHandler) el.removeEventListener('pointerdown', board._squareSelectHandler);
+        board._squareSelectHandler = function (e) {
+            const sqEl = e.target.closest('[data-square]');
+            if (sqEl) callback(sqEl.getAttribute('data-square'));
+        };
+        el.addEventListener('pointerdown', board._squareSelectHandler);
+    },
+
+    disableSquareSelect(elementId) {
+        const board = this.boards[elementId];
+        if (!board) return;
+        if (board._squareSelectHandler) {
+            const el = document.getElementById(elementId);
+            if (el) el.removeEventListener('pointerdown', board._squareSelectHandler);
+            board._squareSelectHandler = null;
+        }
+    },
+
+    disableMoveInput(elementId) {
+        const board = this.boards[elementId];
+        if (!board) return;
+        board.disableMoveInput();
+    },
+
     undoAnalysis(elementId) {
         const board = this.boards[elementId];
         if (!board || !board._analysisHistory || board._analysisHistory.length <= 1) return null;

@@ -169,6 +169,7 @@ function renderRoute(route) {
             loadTactics();
             break;
         case 'positionDetail':
+            _applyPositionFilters(params);
             const navContext = route.positionType === 'puzzle' ? 'Tactics' : 'Tabiyas';
             _activateView('detail', navContext);
             loadPositionDetail(route.id);
@@ -211,6 +212,14 @@ function renderRoute(route) {
             _activateView('search', 'Search');
             loadCollections().then(renderSearchScope);
             initSearchBoard();
+            break;
+        case 'bulkAdd':
+            _activateView('bulk-add', null);
+            BulkAdd.init(params);
+            break;
+        case 'editor':
+            _activateView('editor', null);
+            BoardEditor.init(params);
             break;
         case 'practice':
             _activateView('practice', 'Practice');

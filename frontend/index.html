@@ -34,16 +34,24 @@
     <div class="view-header">
       <h2>Tabiyas</h2>
       <button class="btn btn-primary" onclick="Router.navigate({view:'addPosition', params:{type:'tabiya'}})">+ New Tabiya</button>
+      <button class="btn btn-sm" onclick="Router.navigate({view:'bulkAdd', params:{type:'tabiya'}})">Bulk Add</button>
+      <button class="btn btn-sm" onclick="Router.navigate({view:'editor', params:{type:'tabiya'}})">Editor</button>
+      <button class="btn btn-sm" onclick="randomFromList('tabiya')">Random</button>
       <div id="tabiyas-tag-filters" class="tag-row"></div>
     </div>
+    <div id="tabiyas-count" class="text-muted" style="font-size:13px;margin-bottom:4px"></div>
     <div id="tabiyas-list" class="pos-list"></div>
   </div>
   <div id="view-tactics" class="view">
     <div class="view-header">
       <h2>Tactics</h2>
       <button class="btn btn-primary" onclick="Router.navigate({view:'addPosition', params:{type:'puzzle'}})">+ New Tactic</button>
+      <button class="btn btn-sm" onclick="Router.navigate({view:'bulkAdd', params:{type:'puzzle'}})">Bulk Add</button>
+      <button class="btn btn-sm" onclick="Router.navigate({view:'editor', params:{type:'puzzle'}})">Editor</button>
+      <button class="btn btn-sm" onclick="randomFromList('puzzle')">Random</button>
       <div id="tactics-tag-filters" class="tag-row"></div>
     </div>
+    <div id="tactics-count" class="text-muted" style="font-size:13px;margin-bottom:4px"></div>
     <div id="tactics-list" class="pos-list"></div>
   </div>
   <div id="view-add" class="view">
@@ -173,6 +181,7 @@
         <div class="btn-row">
           <button class="btn btn-sm" onclick="searchLoadFen()">Load FEN to board</button>
           <button class="btn btn-sm" onclick="searchUseBoard()">Use current board</button>
+          <button class="btn btn-sm" onclick="BoardEditor.openFromSearch()">Open Editor</button>
         </div>
         <label style="margin-top:12px">Search Type</label>
         <div class="btn-row">
@@ -226,6 +235,7 @@
           <button class="btn btn-sm" onclick="flipDetailBoard()">Flip</button>
           <button class="btn btn-success btn-sm" onclick="saveBoardPosition('detail-board','tabiya')">+ Tabiya</button>
           <button class="btn btn-success btn-sm" onclick="saveBoardPosition('detail-board','puzzle')">+ Tactic</button>
+          <button class="btn btn-sm" id="detail-random-btn" onclick="randomFromDetail()">Random</button>
         </div>
       </div>
       <div class="panel" style="display:flex;flex-direction:column;gap:0">
@@ -345,6 +355,83 @@
       </div>
     </div>
   </div>
+  <div id="view-bulk-add" class="view">
+    <div class="view-header">
+      <h2 id="bulk-add-title">Bulk Add Positions</h2>
+      <button class="btn btn-sm" onclick="history.back()">Back</button>
+    </div>
+    <div class="panel" style="max-width:720px">
+      <label>Position Type</label>
+      <div class="btn-row" style="margin-bottom:12px">
+        <label style="font-size:13px"><input type="radio" name="bulk-type" value="tabiya" checked> Tabiya</label>
+        <label style="font-size:13px"><input type="radio" name="bulk-type" value="puzzle"> Tactic</label>
+      </div>
+      <label>FEN List <span class="text-muted" style="font-size:11px;font-weight:normal">(one per line)</span></label>
+      <textarea id="bulk-fen-input" style="min-height:200px" placeholder="Paste FENs here, one per line...
+rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"></textarea>
+      <label style="margin-top:12px">Tags (comma separated, applied to all)</label>
+      <input type="text" id="bulk-tags-input" placeholder="e.g. sicilian, opening">
+      <div id="bulk-progress" style="display:none;margin-top:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span id="bulk-progress-text">Importing...</span>
+          <span id="bulk-progress-count">0/0</span>
+        </div>
+        <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
+          <div id="bulk-progress-bar" style="background:var(--primary);height:100%;width:0%;transition:width 0.2s"></div>
+        </div>
+      </div>
+      <div id="bulk-results" style="display:none;margin-top:12px"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-primary" id="bulk-import-btn" onclick="BulkAdd.run()">Import</button>
+        <button class="btn" onclick="history.back()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="view-editor" class="view">
+    <div class="view-header">
+      <h2 id="editor-title">Board Editor</h2>
+      <button class="btn btn-sm" onclick="history.back()">Back</button>
+    </div>
+    <div class="board-area">
+      <div>
+        <div id="editor-board" class="board-wrap"></div>
+        <div id="editor-palette" style="margin-top:12px"></div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn btn-sm" onclick="BoardEditor.clear()">Clear Board</button>
+          <button class="btn btn-sm" onclick="BoardEditor.startPos()">Starting Position</button>
+          <button class="btn btn-sm" onclick="BoardEditor.flip()">Flip</button>
+        </div>
+      </div>
+      <div class="panel">
+        <label>Turn to Move</label>
+        <div class="btn-row" style="margin-top:0">
+          <button class="btn btn-sm" id="editor-turn-w" onclick="BoardEditor.setTurn('w')">White to move</button>
+          <button class="btn btn-sm" id="editor-turn-b" onclick="BoardEditor.setTurn('b')">Black to move</button>
+        </div>
+        <label style="margin-top:12px">FEN</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="editor-fen" readonly style="flex:1;font-family:'SF Mono','Fira Code',Menlo,Consolas,monospace;font-size:12px">
+          <button class="btn btn-sm" onclick="BoardEditor.copyFen()">Copy</button>
+        </div>
+        <label style="margin-top:12px">Title</label>
+        <input type="text" id="editor-pos-title" placeholder="Position title (optional)">
+        <label style="margin-top:12px">Tags</label>
+        <input type="text" id="editor-pos-tags" placeholder="Tags, comma separated">
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn btn-success btn-sm" onclick="BoardEditor.save('tabiya')">Save as Tabiya</button>
+          <button class="btn btn-success btn-sm" onclick="BoardEditor.save('puzzle')">Save as Tactic</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-sm" onclick="BoardEditor.search('exact')">Search Exact Position</button>
+          <button class="btn btn-sm" onclick="BoardEditor.search('pawn')">Search Pawn Structure</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sm" onclick="history.back()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="view-practice" class="view">
     <div class="view-header">
       <h2>Practice</h2>
@@ -385,7 +472,9 @@
 <script src="/js/shared.js"></script>
 <script src="/js/move-navigator.js"></script>
 <script src="/js/tagfilter.js"></script>
-<script src="/js/positions.js"></script>
+<script src="/js/position-list.js"></script>
+<script src="/js/position-detail.js"></script>
+<script src="/js/position-form.js"></script>
 <script src="/js/games.js"></script>
 <script src="/js/import.js"></script>
 <script src="/js/game-viewer.js"></script>
@@ -398,10 +487,12 @@
 <script src="/js/engine-ui.js"></script>
 <script src="/js/practice-ui.js"></script>
 <script src="/js/practice-history.js"></script>
+<script src="/js/bulk-add.js"></script>
 <script src="/js/practice.js"></script>
 <script src="/js/practice-viewer.js"></script>
 <script src="/js/sound.js"></script>
 <script type="module" src="/js/board.js"></script>
+<script type="module" src="/js/board-editor.js"></script>
 <script>
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(e => console.log('SW failed:', e)); }
 </script>

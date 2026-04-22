@@ -95,6 +95,7 @@ _SPA_ROUTES = {
     "collections",
     "search",
     "add",
+    "editor",
     "practice",
 }
 

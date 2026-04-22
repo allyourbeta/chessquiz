@@ -87,6 +87,8 @@ const Router = (function () {
             }
             return { view: 'practice', params: q };
         }
+        if (a === 'bulk-add') return { view: 'bulkAdd', params: q };
+        if (a === 'editor') return { view: 'editor', params: q };
         if (a === 'add') return { view: 'addPosition', params: q };
 
         return { view: 'tabiyas', params: q };
@@ -112,6 +114,8 @@ const Router = (function () {
             case 'collections':    return '/collections' + _qs(p);
             case 'collectionDetail': return `/collections/${route.id}` + _qs(p);
             case 'search':         return '/search' + _qs(p);
+            case 'bulkAdd':        return '/bulk-add' + _qs(p);
+            case 'editor':         return '/editor' + _qs(p);
             case 'practice':       return '/practice' + _qs(p);
             case 'practiceGameDetail': return `/practice/games/${route.id}` + _qs(p);
             default:               return '/positions';

@@ -1,6 +1,7 @@
 """Position API routes. All DB calls for positions happen here."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 
@@ -126,11 +127,10 @@ def list_positions(
         tag_names.append(tag)
     if tags:
         tag_names.extend(tags)
-    for t in tag_names:
-        name = t.strip().lower().lstrip("#")
-        if not name:
-            continue
-        query = query.filter(Position.tags.any(Tag.name == name))
+    cleaned = [t.strip().lower().lstrip("#") for t in tag_names]
+    cleaned = [n for n in cleaned if n]
+    if cleaned:
+        query = query.filter(or_(*(Position.tags.any(Tag.name == n) for n in cleaned)))
 
     if search:
         pattern = f"%{search}%"
@@ -139,6 +139,31 @@ def list_positions(
         )
 
     return query.order_by(Position.created_at.desc()).all()
+
+
+@router.get("/random", response_model=PositionBrief)
+def random_position(
+    position_type: Optional[PositionType] = None,
+    tags: list[str] | None = Query(default=None),
+    exclude_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(Position).options(joinedload(Position.tags))
+    if position_type:
+        query = query.filter(Position.position_type == position_type)
+    if tags:
+        cleaned = [t.strip().lower().lstrip("#") for t in tags]
+        cleaned = [n for n in cleaned if n]
+        if cleaned:
+            query = query.filter(
+                or_(*(Position.tags.any(Tag.name == n) for n in cleaned))
+            )
+    if exclude_id:
+        query = query.filter(Position.id != exclude_id)
+    pos = query.order_by(func.random()).first()
+    if not pos:
+        raise HTTPException(status_code=404, detail="No matching positions")
+    return pos
 
 
 @router.get("/{position_id}", response_model=PositionOut)
@@ -280,12 +305,13 @@ def get_puzzle_navigation(
     # Build query for puzzles only
     query = db.query(Position).filter(Position.position_type == PositionType.puzzle)
     
-    # Apply tag filters if provided
     if tags:
-        for tag in tags:
-            name = tag.strip().lower().lstrip("#")
-            if name:
-                query = query.filter(Position.tags.any(Tag.name == name))
+        cleaned = [t.strip().lower().lstrip("#") for t in tags]
+        cleaned = [n for n in cleaned if n]
+        if cleaned:
+            query = query.filter(
+                or_(*(Position.tags.any(Tag.name == n) for n in cleaned))
+            )
     
     # Get all puzzle IDs in order (newest first by default)
     all_puzzles = query.order_by(Position.created_at.desc()).with_entities(Position.id).all()
