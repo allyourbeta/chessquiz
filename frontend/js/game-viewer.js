@@ -31,6 +31,7 @@ async function loadGameDetail(id) {
         mode: 'analysis',
         onPositionChange: function (newFen) {
             EngineUI.setPosition(newFen);
+            AnnotationPanel.setPosition(newFen);
         },
     });
     MoveNavigator.create('game-nav', {
@@ -43,11 +44,14 @@ async function loadGameDetail(id) {
             AppState.currentPly = idx;
             highlightCurrentMove();
             EngineUI.setPosition(fen);
+            AnnotationPanel.setPosition(fen);
         },
     });
     highlightCurrentMove();
     if (typeof updateBatchNav === 'function') updateBatchNav();
 
+    AnnotationPanel.mount('game-annotation-container');
+    AnnotationPanel.setPosition(game.fens[0]);
     EngineUI.mount('game-engine-container');
     EngineUI.setPosition(game.fens[0]);
 }

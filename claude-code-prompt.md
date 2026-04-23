@@ -1,10 +1,21 @@
-Read CLAUDE.md and BOOTSTRAP-REFACTOR-DIFFS.md. This is a small structural refactor — 4 steps, each precisely described.
+Read CLAUDE.md and GLOBAL-FEN-ANNOTATIONS-SPEC.md. This adds a new feature: per-position annotations that persist globally by FEN.
 
-Step 1: Create a new file (main.js) with exactly the content in the spec.
-Step 2: Delete 8 lines from the end of board.js. Do NOT change anything else in board.js.
-Step 3: Replace one script tag in index.html. Do NOT change anything else in index.html.
-Step 4: No backend changes needed.
+Work in this order:
 
-This moves 8 lines from one file to another. Do NOT modify any logic, any function, any other file. After changes, run the backend tests and confirm they pass.
+1. Create the SQLAlchemy model in a new file backend/models/annotation_models.py
+2. Add the migration to backend/database.py (additive only, do not alter existing tables)
+3. Create backend/api/annotations.py with three endpoints (GET, PUT, POST batch)
+4. Register the router in backend/api/__init__.py and backend/main.py
+5. Create frontend/js/annotation-panel.js as a shared component with mount/setPosition/unmount
+6. Integrate into position-detail.js, game-viewer.js, and practice-viewer.js — mount the panel and call setPosition wherever EngineUI.setPosition is called
+7. Add the annotation container div in index.html for each view (below FEN, above engine)
 
-If anything goes wrong: git restore .
+PAY ATTENTION TO:
+- The race condition protection (_loadVersion) — this is critical
+- The dirty-state model (_loadedText, _draftText, _isDirty)
+- Save semantics: trim only for emptiness check, preserve formatting, delete row if empty, no-op if unchanged
+- Batch endpoint is POST, not GET
+- Board editor is EXCLUDED — do not add annotations there
+- The panel gets its FEN from setPosition(), never from a DOM text field
+- After all changes, verify no JS file exceeds 300 lines
+- Run backend tests: python test.py && python test_games.py && python test_game_api.py && python test_practice.py && python test_position_types.py

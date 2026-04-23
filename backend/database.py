@@ -20,10 +20,15 @@ Base = declarative_base()
 
 def run_lightweight_migrations():
     """Apply additive column migrations for SQLite. Safe to run at startup."""
+    from backend.models.annotation_models import FenAnnotation
+
     insp = inspect(engine)
     
     # Check if tables exist before trying to migrate
     table_names = insp.get_table_names()
+
+    if "fen_annotations" not in table_names:
+        FenAnnotation.__table__.create(engine)
     
     # Migrate games table
     if "games" in table_names:

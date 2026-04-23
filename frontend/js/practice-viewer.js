@@ -124,6 +124,8 @@ const PracticeViewer = (function () {
 
         _renderMoves();
         BoardManager.create('pv-board', _fens[_ply] || _rootFen, { flipped: _flipped });
+        AnnotationPanel.mount('pv-annotation-container');
+        AnnotationPanel.setPosition(_fens[_ply] || _rootFen);
     }
     
     function _onNotesInput() {
@@ -243,6 +245,7 @@ const PracticeViewer = (function () {
         if (!_fens.length) return;
         _ply = Math.max(0, Math.min(ply, _fens.length - 1));
         BoardManager.setPosition('pv-board', _fens[_ply]);
+        AnnotationPanel.setPosition(_fens[_ply]);
         _highlight();
     }
     function first() { goTo(0); }

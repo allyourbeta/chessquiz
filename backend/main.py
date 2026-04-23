@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.api import (
+    annotations_router,
     chess_router,
     collections_router,
     games_router,
@@ -34,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(annotations_router, prefix="/api")
 app.include_router(positions_router, prefix="/api")
 app.include_router(tags_router, prefix="/api")
 app.include_router(chess_router, prefix="/api")

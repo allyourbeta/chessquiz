@@ -127,6 +127,7 @@ function _applyPositionFilters(params) {
 }
 function renderRoute(route) {
     EngineUI.unmount();
+    AnnotationPanel.unmount();
     const params = (route && route.params) || {};
     switch (route.view) {
         case 'tabiyas':

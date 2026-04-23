@@ -61,6 +61,7 @@ async function loadPositionDetail(id) {
         keyScope: navKeyScope,
         onNavigate: function (fen) {
             EngineUI.setPosition(fen);
+            AnnotationPanel.setPosition(fen);
             document.getElementById('detail-fen').textContent = fen;
         },
     });
@@ -70,10 +71,13 @@ async function loadPositionDetail(id) {
         onPositionChange: function (newFen) {
             MoveNavigator.push('detail-nav', newFen);
             EngineUI.setPosition(newFen);
+            AnnotationPanel.setPosition(newFen);
             document.getElementById('detail-fen').textContent = newFen;
         },
     });
 
+    AnnotationPanel.mount('detail-annotation-container');
+    AnnotationPanel.setPosition(pos.fen);
     EngineUI.mount('detail-engine-container');
     EngineUI.setPosition(pos.fen);
 }

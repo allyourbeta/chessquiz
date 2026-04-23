@@ -61,7 +61,7 @@ const Practice = (function () {
         MoveNavigator.create('detail-nav', {
             fens: [AppState.currentDetailFen], startIndex: 0,
             containerId: 'detail-move-nav',
-            onNavigate: function (fen) { EngineUI.setPosition(fen); },
+            onNavigate: function (fen) { EngineUI.setPosition(fen); AnnotationPanel.setPosition(fen); },
         });
         _setPlayingUI(true);
         toast('Practice: ' + userColor + ' vs Stockfish (' + level + ')');
@@ -134,6 +134,7 @@ const Practice = (function () {
         BoardManager.setPosition(_playBoardId, _playChess.fen());
         MoveNavigator.push('detail-nav', _playChess.fen());
         EngineUI.setPosition(_playChess.fen());
+        AnnotationPanel.setPosition(_playChess.fen());
         _updatePracticeMoveList();
         if (_playChess.game_over()) { _onGameOver(); return true; }
         setTimeout(_makeEngineMove, 200);
@@ -157,6 +158,7 @@ const Practice = (function () {
             BoardManager.setPosition(_playBoardId, _playChess.fen());
             MoveNavigator.push('detail-nav', _playChess.fen());
             EngineUI.setPosition(_playChess.fen());
+            AnnotationPanel.setPosition(_playChess.fen());
             _updatePracticeMoveList();
             if (_playChess.game_over()) _onGameOver();
         };

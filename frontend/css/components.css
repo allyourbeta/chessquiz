@@ -220,6 +220,46 @@
 }
 
 /* ------------------------------------------------------------------
+   Annotation panel (position notes)
+   ------------------------------------------------------------------ */
+.annotation-panel {
+  margin-top: var(--sp-1);
+}
+.annotation-label {
+  font-size: var(--fs-11);
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+.annotation-textarea {
+  width: 100%;
+  min-height: 60px;
+  max-height: 150px;
+  resize: vertical;
+  font-size: var(--fs-13);
+  font-family: inherit;
+  padding: 6px var(--sp-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+.annotation-textarea:focus {
+  outline: none;
+  border-color: var(--primary-300);
+  box-shadow: 0 0 0 2px var(--primary-050);
+}
+.annotation-status {
+  font-size: var(--fs-11);
+  color: var(--success-600, var(--text-muted));
+  text-align: right;
+  min-height: 16px;
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------
    Empty states
    ------------------------------------------------------------------ */
 .empty-state {

@@ -161,6 +161,7 @@
             <button class="btn btn-success btn-sm" onclick="saveBoardPosition('game-board','puzzle')">+ Tactic</button>
           </div>
         </div>
+        <div id="game-annotation-container" style="margin-top:8px"></div>
         <div id="game-engine-container" style="margin-top:8px"></div>
       </div>
       <div class="panel">
@@ -282,6 +283,7 @@
           <code id="detail-fen" class="fen-display" style="flex:1"></code>
           <button class="btn btn-sm" onclick="event.stopPropagation();copyFen()" title="Copy FEN">Copy</button>
         </div>
+        <div id="detail-annotation-container" style="margin-top:var(--sp-2)"></div>
         <div id="detail-engine-container" style="margin-top:var(--sp-2)"></div>
       </div>
       <div class="panel" style="display:flex;flex-direction:column;gap:0">
@@ -476,6 +478,7 @@ rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"></textarea>
     <div class="board-area">
       <div>
         <div id="pv-board" class="board-wrap"></div>
+        <div id="pv-annotation-container" style="margin-top:8px"></div>
         <div id="pv-nav-btns" class="nav-btns">
           <button class="btn btn-sm" onclick="PracticeViewer.first()">|&lt;</button>
           <button class="btn btn-sm" onclick="PracticeViewer.prev()">&lt;</button>
@@ -522,6 +525,7 @@ rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"></textarea>
 <script src="/js/practice-history.js"></script>
 <script src="/js/bulk-add.js"></script>
 <script src="/js/practice.js"></script>
+<script src="/js/annotation-panel.js"></script>
 <script src="/js/practice-viewer.js"></script>
 <script src="/js/sound.js"></script>
 <script src="/js/board-editor.js"></script>
