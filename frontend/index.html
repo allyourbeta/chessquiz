@@ -18,53 +18,64 @@
 </head>
 <body>
 <header>
-  <h1>ChessQuiz</h1>
+  <h1>♞ ChessQuiz</h1>
   <nav>
-    <button class="active" onclick="Router.navigate({view:'tabiyas'})">Tabiyas</button>
     <button onclick="Router.navigate({view:'tactics'})">Tactics</button>
+    <button onclick="Router.navigate({view:'tabiyas'})">Tabiyas</button>
     <button onclick="Router.navigate({view:'games'})">Games</button>
     <button onclick="Router.navigate({view:'search'})">Search</button>
-    <button onclick="Router.navigate({view:'gameImport'})">Import PGN</button>
-    <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
   </nav>
+  <div class="nav-right">
+    <div class="nav-dropdown" id="new-dropdown">
+      <button class="btn btn-primary btn-sm" onclick="toggleNewMenu()">+ New ▾</button>
+      <div class="nav-dropdown-menu" id="new-dropdown-menu" style="display:none">
+        <button onclick="Router.navigate({view:'addPosition', params:{type:'puzzle'}}); closeNewMenu()">+ New Tactic</button>
+        <button onclick="Router.navigate({view:'addPosition', params:{type:'tabiya'}}); closeNewMenu()">+ New Tabiya</button>
+        <div class="nav-dropdown-divider"></div>
+        <button onclick="Router.navigate({view:'bulkAdd'}); closeNewMenu()">Bulk Add</button>
+        <button onclick="Router.navigate({view:'editor'}); closeNewMenu()">Editor</button>
+        <button onclick="Router.navigate({view:'gameImport'}); closeNewMenu()">Import PGN</button>
+      </div>
+    </div>
+    <button class="mute-btn" onclick="toggleMute()" id="mute-btn" title="Toggle sound">&#x1f50a;</button>
+  </div>
 </header>
 <div id="notification-banner" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1000;padding:16px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:16px;font-weight:500;text-align:center;min-width:300px;max-width:500px"></div>
 <div class="container">
-  <div id="view-tabiyas" class="view active">
+  <div id="view-tabiyas" class="view">
     <div class="list-header">
       <div class="list-header-top">
         <h2>Tabiyas</h2>
-        <button class="btn btn-primary btn-sm" onclick="Router.navigate({view:'addPosition', params:{type:'tabiya'}})">+ New Tabiya</button>
+        <button class="btn btn-sm" onclick="randomFromList('tabiya')">Shuffle</button>
       </div>
       <div class="list-header-bar">
         <div id="tabiyas-tag-filters" class="tag-row"></div>
-        <div class="list-header-tools">
-          <button class="btn btn-sm" onclick="randomFromList('tabiya')">Shuffle</button>
-          <button class="btn btn-sm btn-ghost" onclick="Router.navigate({view:'bulkAdd', params:{type:'tabiya'}})">Bulk Add</button>
-          <button class="btn btn-sm btn-ghost" onclick="Router.navigate({view:'editor', params:{type:'tabiya'}})">Editor</button>
-        </div>
       </div>
     </div>
     <div id="tabiyas-count" class="text-muted" style="font-size:13px;margin-bottom:4px"></div>
     <div id="tabiyas-list" class="pos-list"></div>
   </div>
-  <div id="view-tactics" class="view">
-    <div class="list-header">
-      <div class="list-header-top">
-        <h2>Tactics</h2>
-        <button class="btn btn-primary btn-sm" onclick="Router.navigate({view:'addPosition', params:{type:'puzzle'}})">+ New Tactic</button>
-      </div>
-      <div class="list-header-bar">
-        <div id="tactics-tag-filters" class="tag-row"></div>
-        <div class="list-header-tools">
-          <button class="btn btn-sm" onclick="randomFromList('puzzle')">Shuffle</button>
-          <button class="btn btn-sm btn-ghost" onclick="Router.navigate({view:'bulkAdd', params:{type:'puzzle'}})">Bulk Add</button>
-          <button class="btn btn-sm btn-ghost" onclick="Router.navigate({view:'editor', params:{type:'puzzle'}})">Editor</button>
+  <div id="view-tactics" class="view active">
+    <div class="tactics-landing">
+      <div class="tactics-featured">
+        <div id="tactics-featured-board" class="board-wrap" style="width:100%;height:auto;aspect-ratio:1;margin:0 auto"></div>
+        <div style="display:flex;gap:6px;margin-top:10px;justify-content:center">
+          <button class="btn btn-sm" onclick="flipFeaturedBoard()">Flip</button>
+          <button class="btn btn-sm" onclick="loadRandomFeatured()">Shuffle</button>
         </div>
+        <h3 id="tactics-featured-title" style="margin-top:14px;font-size:16px;font-weight:600;cursor:pointer;text-align:center"></h3>
+        <div id="tactics-featured-tags" style="margin-top:6px;text-align:center"></div>
+        <div id="tactics-featured-engine" style="margin-top:14px"></div>
+      </div>
+      <div class="tactics-browse">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h2 style="font-size:20px;font-weight:700;color:var(--text)">Tactics</h2>
+          <div id="tactics-tag-filters" class="tag-row"></div>
+        </div>
+        <div id="tactics-count" class="text-muted" style="font-size:13px;margin-bottom:12px"></div>
+        <div id="tactics-list" class="pos-list"></div>
       </div>
     </div>
-    <div id="tactics-count" class="text-muted" style="font-size:13px;margin-bottom:4px"></div>
-    <div id="tactics-list" class="pos-list"></div>
   </div>
   <div id="view-add" class="view">
     <div class="board-area">
@@ -234,8 +245,8 @@
         <span id="import-file-name" class="text-muted" style="font-size:12px"></span>
         <button class="btn btn-sm" onclick="clearImportFile()" style="margin-left:auto">Clear file</button>
       </div>
-      <label style="margin-top:12px">Tags (comma separated)</label>
-      <input type="text" id="import-tags" placeholder="e.g. sicilian, tournament">
+      <label style="margin-top:12px">Tags</label>
+      <div id="import-tags-container"></div>
       <label>Collection</label>
       <select id="import-collection-select" class="select-input" style="width:100%"></select>
       <label>Or create new collection</label>
@@ -390,8 +401,8 @@
       <textarea id="bulk-fen-input" style="min-height:200px" placeholder="Paste FENs here, one per line...
 rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
 rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"></textarea>
-      <label style="margin-top:12px">Tags (comma separated, applied to all)</label>
-      <input type="text" id="bulk-tags-input" placeholder="e.g. sicilian, opening">
+      <label style="margin-top:12px">Tags</label>
+      <div id="bulk-tags-container"></div>
       <div id="bulk-progress" style="display:none;margin-top:12px">
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
           <span id="bulk-progress-text">Importing...</span>

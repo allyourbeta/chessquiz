@@ -153,6 +153,36 @@ async function randomFromList(posType) {
     showDetail(pick.id);
 }
 
+function loadRandomFeatured() {
+    var tactics = AppState.allPositions.filter(function(p) {
+        return p.position_type === 'puzzle';
+    });
+    if (!tactics.length) return;
+    var pick = tactics[Math.floor(Math.random() * tactics.length)];
+    AppState.featuredTacticId = pick.id;
+    BoardManager.create('tactics-featured-board', pick.fen, {
+        mode: 'analysis',
+        onPositionChange: function(newFen) {
+            EngineUI.setPosition(newFen);
+        },
+    });
+    EngineUI.mount('tactics-featured-engine');
+    EngineUI.setPosition(pick.fen);
+    document.getElementById('tactics-featured-title').textContent = pick.title || 'Untitled';
+    document.getElementById('tactics-featured-tags').innerHTML =
+        pick.tags.map(function(t) { return '<span class="tag">#' + t.name + '</span>'; }).join('');
+    document.getElementById('tactics-featured-title').onclick = function() {
+        showDetail(pick.id);
+    };
+    document.getElementById('tactics-featured-title').style.cursor = 'pointer';
+}
+
+function flipFeaturedBoard() {
+    BoardManager.flip('tactics-featured-board');
+}
+
+window.loadRandomFeatured = loadRandomFeatured;
+window.flipFeaturedBoard = flipFeaturedBoard;
 window.loadPositions = loadPositions;
 window.loadTabiyas = loadTabiyas;
 window.loadTactics = loadTactics;

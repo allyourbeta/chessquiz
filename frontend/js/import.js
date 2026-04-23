@@ -1,6 +1,7 @@
 let _importFile = null;
 let _importJobId = null;
 let _importAbort = null;
+var _importTagState = { tags: [] };
 
 function formatBytes(n) {
     if (n < 1024) return n + ' B';
@@ -20,7 +21,13 @@ function _fmtEta(seconds) {
 
 function resetImportView() {
     document.getElementById('import-pgn').value = '';
-    document.getElementById('import-tags').value = '';
+    _importTagState.tags = [];
+    TagFilter.mount({
+        containerId: 'import-tags-container',
+        state: _importTagState,
+        onChange: function() {},
+        placeholder: 'Add tags...'
+    });
     document.getElementById('import-new-coll').value = '';
     document.getElementById('import-result').innerHTML = '';
     document.getElementById('import-file-name').textContent = '';
@@ -194,7 +201,7 @@ async function doImport() {
         return;
     }
 
-    const tags = document.getElementById('import-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const tags = _importTagState.tags.slice();
     const collSelect = document.getElementById('import-collection-select');
     const collIds = collSelect.value ? [parseInt(collSelect.value)] : [];
     const force = document.getElementById('import-force').checked;

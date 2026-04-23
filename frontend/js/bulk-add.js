@@ -1,4 +1,6 @@
 var BulkAdd = (function () {
+    var _bulkTagState = { tags: [] };
+
     function init(params) {
         var type = (params && params.type) || 'tabiya';
         var title = type === 'puzzle' ? 'Bulk Add Tactics' : 'Bulk Add Tabiyas';
@@ -6,7 +8,13 @@ var BulkAdd = (function () {
         var radios = document.querySelectorAll('input[name="bulk-type"]');
         radios.forEach(function (r) { r.checked = r.value === (type === 'puzzle' ? 'puzzle' : 'tabiya'); });
         document.getElementById('bulk-fen-input').value = '';
-        document.getElementById('bulk-tags-input').value = '';
+        _bulkTagState.tags = [];
+        TagFilter.mount({
+            containerId: 'bulk-tags-container',
+            state: _bulkTagState,
+            onChange: function() {},
+            placeholder: 'Add tags...'
+        });
         document.getElementById('bulk-progress').style.display = 'none';
         document.getElementById('bulk-results').style.display = 'none';
         document.getElementById('bulk-import-btn').disabled = false;
@@ -37,8 +45,7 @@ var BulkAdd = (function () {
 
         var type = _getType();
         var posType = type === 'puzzle' ? 'puzzle' : 'tabiya';
-        var tagsRaw = document.getElementById('bulk-tags-input').value;
-        var tags = tagsRaw ? tagsRaw.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+        var tags = _bulkTagState.tags.slice();
 
         var fens = [];
         for (var i = 0; i < lines.length; i++) {

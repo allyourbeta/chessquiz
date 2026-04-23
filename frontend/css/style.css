@@ -140,8 +140,7 @@ body {
 header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-4) var(--sp-6);
+  padding: 12px var(--sp-6);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
@@ -149,24 +148,28 @@ header {
   top: 0;
   z-index: 20;
 }
-
 header h1 {
-  font-size: var(--fs-22);
+  font-size: var(--fs-20);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  flex-shrink: 0;
 }
-
-nav { display: flex; gap: var(--sp-1); align-items: center; }
+nav {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  margin: 0 auto;
+}
 nav button {
   position: relative;
   background: none;
   border: 1px solid transparent;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: var(--fs-15);
+  font-size: var(--fs-14);
   font-weight: 500;
-  padding: 8px var(--sp-4);
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: color .15s ease, background-color .15s ease;
@@ -178,6 +181,70 @@ nav button.active {
   font-weight: 600;
 }
 nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+.nav-new-btn {
+  font-family: inherit;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary-500);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nav-new-btn:hover {
+  background: var(--primary-600);
+}
+.nav-dropdown {
+  position: relative;
+}
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 180px;
+  z-index: 50;
+}
+.nav-dropdown-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: var(--fs-13);
+  font-weight: 400;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.nav-dropdown-menu button:hover {
+  background: var(--primary-050);
+  color: var(--primary-700);
+}
+.nav-dropdown-menu button.dd-primary {
+  font-weight: 600;
+  color: var(--primary-700);
+}
+.nav-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
 
 .mute-btn {
   font-size: var(--fs-14) !important;

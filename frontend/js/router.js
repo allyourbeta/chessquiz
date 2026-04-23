@@ -46,7 +46,7 @@ const Router = (function () {
         const q = _parseQuery(search || '');
         const parts = path.split('/').filter(Boolean);
         // '/' or no parts -> tabiyas
-        if (!parts.length) return { view: 'tabiyas', params: q };
+        if (!parts.length) return { view: 'tactics', params: q };
 
         const [a, b] = parts;
         if (a === 'tabiyas') {
@@ -91,7 +91,7 @@ const Router = (function () {
         if (a === 'editor') return { view: 'editor', params: q };
         if (a === 'add') return { view: 'addPosition', params: q };
 
-        return { view: 'tabiyas', params: q };
+        return { view: 'tactics', params: q };
     }
 
     // route object -> URL path + query

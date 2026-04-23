@@ -1,5 +1,4 @@
 const API = '/api';
-
 const PIECE_SVG = {
     "wK": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1Ii8+PHBhdGggZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIGQ9Ik0yMi41IDI1czQuNS03LjUgMy0xMC41YzAgMC0xLTIuNS0zLTIuNXMtMyAyLjUtMyAyLjVjLTEuNSAzIDMgMTAuNSAzIDEwLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6Ii8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==",
     "wQ": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGQ9Ik04IDEyYTIgMiAwIDEgMS00IDAgMiAyIDAgMSAxIDQgMHptMTYuNS00LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwek00MSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTE2IDguNWEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTMzIDlhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAweiIvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJidXR0IiBkPSJNOSAyNmM4LjUtMS41IDIxLTEuNSAyNyAwbDItMTItNyAxMVYxMWwtNS41IDEzLjUtMy0xNS0zIDE1LTUuNS0xNFYyNUw3IDE0bDIgMTJ6Ii8+PHBhdGggc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIGQ9Ik05IDI2YzAgMiAxLjUgMiAyLjUgNCAxIDEuNSAxIDEgLjUgMy41LTEuNSAxLTEuNSAyLjUtMS41IDIuNS0xLjUgMS41LjUgMi41LjUgMi41IDYuNSAxIDE2LjUgMSAyMyAwIDAgMCAxLjUtMSAwLTIuNSAwIDAgLjUtMS41LTEtMi41LS41LTIuNS0uNS0yIC41LTMuNSAxLTIgMi41LTIgMi41LTQtOC41LTEuNS0xOC41LTEuNS0yNyAweiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0xMS41IDMwYzMuNS0xIDE4LjUtMSAyMiAwTTEyIDMzLjVjNi0xIDE1LTEgMjEgMCIvPjwvZz48L3N2Zz4=",
@@ -14,12 +13,10 @@ const PIECE_SVG = {
     "bN": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIxLjUiPjxwYXRoIGZpbGw9IiMwMDAiIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIvPjxwYXRoIGZpbGw9IiMwMDAiIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQtLjk0IDEuNDEtMy4wNCAwLTMtMSAwIC4xOSAxLjIzLTEgMi0xIDAtNCAxLTQtNCAwLTIgNi0xMiA2LTEyczEuODktMS45IDItMy41Yy0uNzMtMS0uNS0yLS41LTMgMS0xIDMgMi41IDMgMi41aDJzLjc4LTIgMi41LTNjMSAwIDEgMyAxIDMiLz48cGF0aCBmaWxsPSIjZWNlY2VjIiBzdHJva2U9IiNlY2VjZWMiIGQ9Ik05LjUgMjUuNWEuNS41IDAgMSAxLTEgMCAuNS41IDAgMSAxIDEgMHptNS40My05Ljc1YS41IDEuNSAzMCAxIDEtLjg2LS41LjUgMS41IDMwIDEgMSAuODYuNXoiLz48cGF0aCBmaWxsPSIjZWNlY2VjIiBzdHJva2U9Im5vbmUiIGQ9Im0yNC41NSAxMC40LS40NSAxLjQ1LjUuMTVjMy4xNSAxIDUuNjUgMi40OSA3LjkgNi43NVMzNS43NSAyOS4wNiAzNS4yNSAzOWwtLjA1LjVoMi4yNWwuMDUtLjVjLjUtMTAuMDYtLjg4LTE2Ljg1LTMuMjUtMjEuMzQtMi4zNy00LjQ5LTUuNzktNi42NC05LjE5LTcuMTZsLS41MS0uMXoiLz48L2c+PC9zdmc+",
     "bP": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NSA0NSI+PHBhdGggc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41IiBkPSJNMjIuNSA5YTQgNCAwIDAgMC0zLjIyIDYuMzggNi40OCA2LjQ4IDAgMCAwLS44NyAxMC42NWMtMyAxLjA2LTcuNDEgNS41NS03LjQxIDEzLjQ3aDIzYzAtNy45Mi00LjQxLTEyLjQxLTcuNDEtMTMuNDdhNi40NiA2LjQ2IDAgMCAwLS44Ny0xMC42NUE0LjAxIDQuMDEgMCAwIDAgMjIuNSA5eiIvPjwvc3ZnPg==",
 };
-
 function pieceKey(ch) {
     const c = ch === ch.toUpperCase() ? 'w' : 'b';
     return c + ch.toUpperCase();
 }
-
 function toast(msg, type, duration) {
     var cls = 'toast';
     if (type === true || type === 'error') cls += ' error';
@@ -31,11 +28,8 @@ function toast(msg, type, duration) {
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, ms);
 }
-
-// Button loading state helpers
 function setButtonLoading(btn, loading = true) {
     if (!btn) return;
-    
     if (loading) {
         btn.disabled = true;
         btn.dataset.originalText = btn.textContent;
@@ -48,8 +42,6 @@ function setButtonLoading(btn, loading = true) {
         }
     }
 }
-
-// Top banner notification for important feedback
 function topBanner(msg, duration = 3000) {
     const banner = document.getElementById('notification-banner');
     if (!banner) return;
@@ -64,14 +56,10 @@ function topBanner(msg, duration = 3000) {
         }, duration);
     }
 }
-
-// Prominent notification for draw offers and other important events
 let notificationTimeout = null;
 function showProminentNotification(msg, type = 'info', minDuration = 3000) {
     const banner = document.getElementById('notification-banner');
     if (!banner) return;
-    
-    // Clear any existing timeout
     if (notificationTimeout) {
         clearTimeout(notificationTimeout);
         notificationTimeout = null;
@@ -79,14 +67,12 @@ function showProminentNotification(msg, type = 'info', minDuration = 3000) {
     
     banner.textContent = msg;
     banner.style.display = 'block';
-    
-    // Style based on type
     if (type === 'accept' || type === 'success') {
-        banner.style.background = '#10b981';  // green
+        banner.style.background = '#10b981';
         banner.style.color = 'white';
         banner.style.border = 'none';
     } else if (type === 'decline' || type === 'warning') {
-        banner.style.background = '#f59e0b';  // amber
+        banner.style.background = '#f59e0b';
         banner.style.color = 'white';
         banner.style.border = 'none';
     } else {
@@ -94,13 +80,9 @@ function showProminentNotification(msg, type = 'info', minDuration = 3000) {
         banner.style.color = 'var(--text)';
         banner.style.border = '1px solid var(--border)';
     }
-    
-    // Add dismiss button for long notifications
     if (minDuration >= 3000) {
         banner.innerHTML = msg + ' <button onclick="hideProminentNotification()" style="margin-left:16px;padding:4px 8px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:inherit;cursor:pointer">Dismiss</button>';
     }
-    
-    // Auto-hide after duration
     if (minDuration > 0) {
         notificationTimeout = setTimeout(() => {
             banner.style.display = 'none';
@@ -108,7 +90,6 @@ function showProminentNotification(msg, type = 'info', minDuration = 3000) {
         }, minDuration);
     }
 }
-
 function hideProminentNotification() {
     const banner = document.getElementById('notification-banner');
     if (banner) banner.style.display = 'none';
@@ -117,8 +98,6 @@ function hideProminentNotification() {
         notificationTimeout = null;
     }
 }
-
-// DOM swap + nav highlight. Does NOT load data — that happens in renderRoute.
 function _activateView(viewId, navLabel) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const el = document.getElementById('view-' + viewId);
@@ -130,9 +109,6 @@ function _activateView(viewId, navLabel) {
         });
     }
 }
-
-// Apply query-string filters from route.params into AppState so data
-// loaders pick them up. Safe to call during render (no navigate calls).
 function _applyGameFilters(params) {
     const tags = Array.isArray(params.tags) ? params.tags.slice() : [];
     AppState.gameTagFilters = tags;
@@ -145,13 +121,10 @@ function _applyGameFilters(params) {
     const rf = document.getElementById('game-result-filter');
     if (rf) rf.value = AppState.gameResultFilter;
 }
-
 function _applyPositionFilters(params) {
     const tags = Array.isArray(params.tags) ? params.tags.slice() : [];
     AppState.positionTagFilters = tags;
 }
-
-// Main route renderer. Called by Router on navigate() / popstate / init.
 function renderRoute(route) {
     EngineUI.unmount();
     const params = (route && route.params) || {};
@@ -166,7 +139,7 @@ function renderRoute(route) {
             _applyPositionFilters(params);
             _activateView('tactics', 'Tactics');
             mountTacticsTagFilter();
-            loadTactics();
+            loadTactics().then(function() { loadRandomFeatured(); });
             break;
         case 'positionDetail':
             _applyPositionFilters(params);
@@ -231,13 +204,11 @@ function renderRoute(route) {
             PracticeViewer._load(route.id);
             break;
         default:
-            _activateView('positions', 'Positions');
-            loadPositions();
+            _activateView('tactics', 'Tactics');
+            mountTacticsTagFilter();
+            loadTactics().then(function() { loadRandomFeatured(); });
     }
 }
-
-// Backwards-compat shim: map legacy showView(name) calls to router navigate.
-// Also used internally by renderRoute for views that don't need custom logic.
 const _LEGACY_VIEWS = {
     positions: { view: 'positions' },
     add: { view: 'addPosition' },
@@ -247,23 +218,18 @@ const _LEGACY_VIEWS = {
     practice: { view: 'practice' },
     import: { view: 'gameImport' },
 };
-
 function showView(name) {
     const route = _LEGACY_VIEWS[name];
     if (route) {
-        // Preserve current filters when navigating to games via legacy call
         if (route.view === 'games' && AppState.gameCollectionFilter) {
             route.params = { collection_id: AppState.gameCollectionFilter };
         }
         Router.navigate(route);
         return;
     }
-    // Views like 'detail' / 'game-viewer' are reached via renderRoute; legacy
-    // callers for these are replaced elsewhere. Fall back to plain activation.
     const labels = { detail: 'Positions', 'game-viewer': 'Games' };
     _activateView(name, labels[name]);
 }
-
 async function saveBoardPosition(boardId, positionType) {
     var fen = BoardManager.getPosition(boardId);
     if (!fen) { toast('No position on board', true); return; }
@@ -287,15 +253,25 @@ async function saveBoardPosition(boardId, positionType) {
         else toast(err.detail || 'Error saving', 'error');
     }
 }
-
 window.API = API;
 window.PIECE_SVG = PIECE_SVG;
 window.pieceKey = pieceKey;
 window.toast = toast;
 window.showView = showView;
 window.saveBoardPosition = saveBoardPosition;
-window.addEventListener('beforeunload', function () {
-    StockfishService.destroy();
+window.addEventListener('beforeunload', function () { StockfishService.destroy(); });
+function toggleNewMenu() {
+    var menu = document.getElementById('new-dropdown-menu');
+    if (menu) menu.style.display = menu.style.display === 'none' ? '' : 'none';
+}
+function closeNewMenu() {
+    var menu = document.getElementById('new-dropdown-menu');
+    if (menu) menu.style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#new-dropdown')) closeNewMenu();
 });
 
+window.toggleNewMenu = toggleNewMenu;
+window.closeNewMenu = closeNewMenu;
 window.renderRoute = renderRoute;
