@@ -51,7 +51,16 @@ class Position(Base):
     )
     solution_san = Column(String, nullable=True)  # Required for puzzles
     theme = Column(String, nullable=True)  # Tactical theme for puzzles
-    
+
+    # Display orientation for the saved board view: "white" (default) or "black".
+    # Independent of FEN — FEN doesn't encode display orientation.
+    orientation = Column(
+        String,
+        nullable=False,
+        default="white",
+        server_default="white",
+    )
+
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,

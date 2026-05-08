@@ -29,7 +29,15 @@ class PositionCreate(BaseModel):
     position_type: PositionType = PositionType.tabiya
     solution_san: Optional[str] = None
     theme: Optional[str] = None
+    orientation: str = "white"  # "white" or "black" — default if not derived from FEN client-side
     tags: list[str] = []  # Tag names — created if they don't exist
+
+    @field_validator("orientation")
+    @classmethod
+    def _check_orientation(cls, v: str) -> str:
+        if v not in ("white", "black"):
+            raise ValueError("orientation must be 'white' or 'black'")
+        return v
 
 
 class PositionUpdate(BaseModel):
@@ -40,7 +48,17 @@ class PositionUpdate(BaseModel):
     position_type: Optional[PositionType] = None
     solution_san: Optional[str] = None
     theme: Optional[str] = None
+    orientation: Optional[str] = None
     tags: list[str] | None = None  # If provided, replaces all tags
+
+    @field_validator("orientation")
+    @classmethod
+    def _check_orientation(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if v not in ("white", "black"):
+            raise ValueError("orientation must be 'white' or 'black'")
+        return v
 
 
 class PositionOut(BaseModel):
@@ -52,6 +70,7 @@ class PositionOut(BaseModel):
     position_type: PositionType
     solution_san: Optional[str]
     theme: Optional[str]
+    orientation: str
     tags: list[TagOut]
     created_at: datetime
     updated_at: datetime
@@ -68,6 +87,7 @@ class PositionBrief(BaseModel):
     position_type: PositionType
     solution_san: Optional[str]
     theme: Optional[str]
+    orientation: str
     tags: list[TagOut]
 
     class Config:

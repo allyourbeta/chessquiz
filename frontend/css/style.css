@@ -70,7 +70,9 @@
 
   /* Type scale
      Body reads at 16px; all UI controls use 12/13/14 so the interface feels
-     tight without making text unreadable. Headings cap at 22 to stay calm. */
+     tight without making text unreadable. Headings cap at 22 to stay calm.
+     Larger tokens (--fs-26 .. --fs-36) added for desktop-comfort sizing of
+     nav, section headers, and prominent counts. */
   --fs-11: 11px;
   --fs-12: 12px;
   --fs-13: 13px;
@@ -81,7 +83,11 @@
   --fs-20: 20px;
   --fs-22: 22px;
   --fs-24: 24px;
+  --fs-26: 26px;
+  --fs-28: 28px;
   --fs-30: 30px;
+  --fs-32: 32px;
+  --fs-36: 36px;
 
   /* Spacing scale (4/8 grid) */
   --sp-1: 4px;
@@ -149,7 +155,7 @@ header {
   z-index: 20;
 }
 header h1 {
-  font-size: var(--fs-20);
+  font-size: var(--fs-26);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
@@ -157,7 +163,7 @@ header h1 {
 }
 nav {
   display: flex;
-  gap: 2px;
+  gap: var(--sp-1);
   align-items: center;
   margin: 0 auto;
 }
@@ -167,9 +173,9 @@ nav button {
   border: 1px solid transparent;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: var(--fs-14);
-  font-weight: 500;
-  padding: 8px 16px;
+  font-size: var(--fs-22);
+  font-weight: 600;
+  padding: 12px 24px;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: color .15s ease, background-color .15s ease;
@@ -178,7 +184,7 @@ nav button:hover { color: var(--text); background: var(--grey-050); }
 nav button.active {
   color: var(--primary-700);
   background: var(--primary-050);
-  font-weight: 600;
+  font-weight: 700;
 }
 nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .nav-right {
@@ -189,9 +195,9 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 }
 .nav-new-btn {
   font-family: inherit;
-  font-size: var(--fs-13);
-  font-weight: 600;
-  padding: 8px 16px;
+  font-size: var(--fs-20);
+  font-weight: 700;
+  padding: 12px 24px;
   border-radius: var(--radius-md);
   border: none;
   background: var(--primary-500);
@@ -207,24 +213,24 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 }
 .nav-dropdown-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   right: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  padding: 4px;
-  min-width: 180px;
+  padding: 6px;
+  min-width: 240px;
   z-index: 50;
 }
 .nav-dropdown-menu button {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 8px 12px;
+  padding: 12px 20px;
   font-family: inherit;
-  font-size: var(--fs-13);
-  font-weight: 400;
+  font-size: var(--fs-18);
+  font-weight: 600;
   color: var(--text);
   background: none;
   border: none;
@@ -237,13 +243,13 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   color: var(--primary-700);
 }
 .nav-dropdown-menu button.dd-primary {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--primary-700);
 }
 .nav-dropdown-divider {
   height: 1px;
   background: var(--border);
-  margin: 4px 0;
+  margin: 8px 4px;
 }
 
 .mute-btn {
@@ -356,7 +362,7 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   gap: var(--sp-2);
 }
 .view-header h2 {
-  font-size: var(--fs-20);
+  font-size: var(--fs-32);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;
@@ -372,7 +378,7 @@ nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
   margin-bottom: var(--sp-3);
 }
 .list-header-top h2 {
-  font-size: var(--fs-24);
+  font-size: var(--fs-36);
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;

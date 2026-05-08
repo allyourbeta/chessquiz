@@ -18,13 +18,20 @@ async function savePosition() {
     const notes = document.getElementById('pos-notes').value.trim();
     const sf = document.getElementById('pos-stockfish').value.trim();
     if (!fen) { toast('FEN is required', true); return; }
-    const body = { 
-        fen, 
-        title: title || null, 
-        notes: notes || null, 
-        stockfish_analysis: sf || null, 
-        position_type: AppState.addPositionType || 'tabiya',
-        tags 
+    // Capture position type BEFORE clearForm() resets AppState.addPositionType.
+    // We use this both for the submitted body and for post-save navigation.
+    const savedType = AppState.addPositionType || 'tabiya';
+    // Read orientation from the editor board: whichever side is on the bottom
+    // when the user hits Save is what gets persisted.
+    const orientation = BoardManager.isFlipped('board') ? 'black' : 'white';
+    const body = {
+        fen,
+        title: title || null,
+        notes: notes || null,
+        stockfish_analysis: sf || null,
+        position_type: savedType,
+        orientation,
+        tags
     };
     let res;
     if (editId) res = await fetch(API + '/positions/' + editId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -32,7 +39,7 @@ async function savePosition() {
     if (res.ok) {
         toast(editId ? 'Position updated!' : 'Position saved!');
         clearForm();
-        const viewToGo = AppState.addPositionType === 'puzzle' ? 'tactics' : 'tabiyas';
+        const viewToGo = savedType === 'puzzle' ? 'tactics' : 'tabiyas';
         Router.navigate({ view: viewToGo });
     } else {
         const err = await res.json();
@@ -44,7 +51,7 @@ async function savePosition() {
             formTitle.textContent = err.detail;
             setTimeout(() => {
                 formTitle.style.color = '';
-                formTitle.textContent = AppState.addPositionType === 'puzzle' ? 'New Tactic' : 'New Tabiya';
+                formTitle.textContent = savedType === 'puzzle' ? 'New Tactic' : 'New Tabiya';
             }, 3000);
         }
     }
@@ -60,11 +67,31 @@ async function deletePosition() {
     }
 }
 
+// Returns 'white' or 'black' based on the side-to-move field of a FEN string.
+// FEN format: "<placement> <side> <castling> <ep> <halfmove> <fullmove>"
+// Used to default board orientation when loading a FEN into the editor.
+function _orientationForFen(fen) {
+    if (!fen || typeof fen !== 'string') return 'white';
+    const parts = fen.trim().split(/\s+/);
+    return parts[1] === 'b' ? 'black' : 'white';
+}
+
+// Apply orientation to the editor board only if it's currently wrong.
+// (We avoid an unconditional flip so an explicit user flip isn't undone.)
+function _applyFormOrientation(orientation) {
+    const wantFlipped = orientation === 'black';
+    const isFlipped = BoardManager.isFlipped('board');
+    if (wantFlipped !== isFlipped) {
+        BoardManager.flip('board');
+    }
+}
+
 function loadFen() {
     const f = document.getElementById('fen-input').value.trim();
     if (f) {
         AppState.boardFen = f;
         BoardManager.setPosition('board', AppState.boardFen);
+        _applyFormOrientation(_orientationForFen(f));
     }
 }
 
@@ -73,6 +100,7 @@ function setStartPos() {
     document.getElementById('fen-input').value = f;
     AppState.boardFen = f;
     BoardManager.setPosition('board', AppState.boardFen);
+    _applyFormOrientation('white');
 }
 
 function flipBoard() {
@@ -102,6 +130,7 @@ function setupAutoLoad() {
         if (v.includes('/') && v.length > 10) {
             AppState.boardFen = v;
             BoardManager.setPosition('board', AppState.boardFen);
+            _applyFormOrientation(_orientationForFen(v));
         }
     });
 }
@@ -224,6 +253,8 @@ window.setupKeyboardSave = setupKeyboardSave;
 window.setupUrlParams = setupUrlParams;
 window._formTagState = _formTagState;
 window._initFormTagFilter = _initFormTagFilter;
+window._applyFormOrientation = _applyFormOrientation;
+window._orientationForFen = _orientationForFen;
 window.loadPuzzleNavigation = loadPuzzleNavigation;
 window.navigateToPuzzle = navigateToPuzzle;
 window.navigatePuzzle = navigatePuzzle;

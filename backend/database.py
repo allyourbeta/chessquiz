@@ -50,6 +50,20 @@ def run_lightweight_migrations():
                 conn.execute(text("ALTER TABLE positions ADD COLUMN solution_san VARCHAR"))
             if "theme" not in cols:
                 conn.execute(text("ALTER TABLE positions ADD COLUMN theme VARCHAR"))
+            if "orientation" not in cols:
+                # Add column with default 'white', then backfill existing rows
+                # to match side-to-move encoded in FEN (field 2 of the FEN string).
+                conn.execute(text(
+                    "ALTER TABLE positions ADD COLUMN orientation VARCHAR "
+                    "NOT NULL DEFAULT 'white'"
+                ))
+                # Backfill: when FEN's side-to-move is 'b', orient board for Black.
+                # FEN format: "<placement> <side> <castling> <ep> <halfmove> <fullmove>"
+                # We use SUBSTR/INSTR to find the char immediately after the first space.
+                conn.execute(text(
+                    "UPDATE positions SET orientation = 'black' "
+                    "WHERE SUBSTR(fen, INSTR(fen, ' ') + 1, 1) = 'b'"
+                ))
 
 
 def get_db():

@@ -3,7 +3,9 @@ async function loadPositionDetail(id) {
     AppState.currentDetailId = id;
     AppState.currentDetailFen = pos.fen;
     AppState.currentDetailType = pos.position_type || 'tabiya';
-    AppState.detailFlipped = false;
+    // Honor the saved per-position orientation (default 'white' if missing).
+    const flipped = pos.orientation === 'black';
+    AppState.detailFlipped = flipped;
     
     document.getElementById('detail-title').textContent = pos.title || 'Untitled';
     document.getElementById('detail-fen').textContent = pos.fen;
@@ -66,7 +68,7 @@ async function loadPositionDetail(id) {
         },
     });
     BoardManager.create('detail-board', pos.fen, {
-        flipped: false,
+        flipped: flipped,
         mode: 'analysis',
         onPositionChange: function (newFen) {
             MoveNavigator.push('detail-nav', newFen);
@@ -157,6 +159,10 @@ function editPosition() {
         AppState.addPositionType = pos.position_type || 'tabiya';
         Router.navigate({ view: 'addPosition', params: { type: pos.position_type || 'tabiya' } });
         BoardManager.setPosition('board', AppState.boardFen);
+        // Honor the saved orientation when bringing the position into the edit form.
+        if (typeof window._applyFormOrientation === 'function') {
+            window._applyFormOrientation(pos.orientation || 'white');
+        }
     });
 }
 

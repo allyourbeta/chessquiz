@@ -64,6 +64,7 @@ def create_position(data: PositionCreate, db: Session = Depends(get_db)):
         position_type=data.position_type,
         solution_san=data.solution_san if data.position_type == PositionType.puzzle else None,
         theme=data.theme if data.position_type == PositionType.puzzle else None,
+        orientation=data.orientation,
         tags=tags,
     )
     db.add(position)
@@ -200,6 +201,8 @@ def update_position(
         position.notes = data.notes
     if data.stockfish_analysis is not None:
         position.stockfish_analysis = data.stockfish_analysis
+    if data.orientation is not None:
+        position.orientation = data.orientation
     if data.tags is not None:
         position.tags = _get_or_create_tags(db, data.tags)
     

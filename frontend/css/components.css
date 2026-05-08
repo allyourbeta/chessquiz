@@ -5,13 +5,13 @@
   display: inline-block;
   background: var(--primary-050);
   color: var(--primary-700);
-  font-size: var(--fs-11);
-  font-weight: 500;
-  padding: 1px 8px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  padding: 4px 12px;
   border-radius: var(--radius-pill);
-  margin: 2px 3px 2px 0;
+  margin: 3px 4px 3px 0;
   border: 1px solid transparent;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 .tag-filter {
   cursor: pointer;
@@ -57,13 +57,13 @@
   box-shadow: var(--shadow-sm);
 }
 .pos-item-body {
-  padding: var(--sp-3);
+  padding: var(--sp-4);
 }
 .pos-item .title {
-  font-size: var(--fs-14);
-  font-weight: 600;
+  font-size: var(--fs-18);
+  font-weight: 700;
   color: var(--text);
-  margin-bottom: var(--sp-1);
+  margin-bottom: var(--sp-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
