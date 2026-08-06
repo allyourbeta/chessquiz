@@ -12,37 +12,37 @@ session. When in doubt about priority, refer here rather than re-deriving it.
 
 ## Recently shipped (most recent first)
 
-- [x] Phase 16A: Nightly automated backups via launchd, manual backup and restore scripts using SQLite native backup API
+- [x] Phase 16A: Nightly automated backups via launchd, manual backup and restore scripts using SQLite native backup API ^dq-l2houv
 
-- [x] Phase 15: Position types — puzzle vs tabiya split, separate nav tabs, type-specific detail views, migration with case fix and test pollution cleanup
+- [x] Phase 15: Position types — puzzle vs tabiya split, separate nav tabs, type-specific detail views, migration with case fix and test pollution cleanup ^dq-d3q2pb
 
-- [x] Phase 10 follow-up: Practice game viewer (click row to review), Resign button distinct from Stop Playing
+- [x] Phase 10 follow-up: Practice game viewer (click row to review), Resign button distinct from Stop Playing ^dq-qjfoqu
 
-- [x] Phase 10: Practice sessions with per-position drilling, engine difficulty, verdict tracking, history
+- [x] Phase 10: Practice sessions with per-position drilling, engine difficulty, verdict tracking, history ^dq-zkrwbc
 
-- [x] UI Cleanup A-E: Chess notation throughout (1-0, 0-1, ½-½), prominent notifications, card-based layout, pagination/filtering for Practice History, inline editing replacing modals
+- [x] UI Cleanup A-E: Chess notation throughout (1-0, 0-1, ½-½), prominent notifications, card-based layout, pagination/filtering for Practice History, inline editing replacing modals ^dq-6wikge
 
-- [x] PGN import overhaul: Atomic transactions, SSE streaming progress, cancel button, bulk_insert_mappings performance (15k games in ~1 minute)
+- [x] PGN import overhaul: Atomic transactions, SSE streaming progress, cancel button, bulk_insert_mappings performance (15k games in ~1 minute) ^dq-o64bhj
 
-- [x] Phase 9: Collections, batch review, position search (exact + pawn structure), tag autocomplete with chips, DB-style game list with pagination
+- [x] Phase 9: Collections, batch review, position search (exact + pawn structure), tag autocomplete with chips, DB-style game list with pagination ^dq-gjmren
 
-- [x] Phase 7: Engine eval, play vs engine, flip board, Eval/Engine separation
+- [x] Phase 7: Engine eval, play vs engine, flip board, Eval/Engine separation ^dq-nxdhtb
 
-- [x] Phase 6: Opening tree explorer with W/D/L stats
+- [x] Phase 6: Opening tree explorer with W/D/L stats ^dq-lxh7ra
 
-- [x] Phase 5: Game viewer, PGN import, save-position-from-game
+- [x] Phase 5: Game viewer, PGN import, save-position-from-game ^dq-pubm3a
 
-- [x] Phase 4: Game/Collection API endpoints, position search
+- [x] Phase 4: Game/Collection API endpoints, position search ^dq-blthii
 
-- [x] Phase 3: Game models, PGN parser, Zobrist hashing, pawn signatures
+- [x] Phase 3: Game models, PGN parser, Zobrist hashing, pawn signatures ^dq-gg4yse
 
-- [x] Phase 2: cm-chessboard interactive board with arrows/markers
+- [x] Phase 2: cm-chessboard interactive board with arrows/markers ^dq-ayb7fb
 
-- [x] Phase 1: Frontend modular split, BoardManager abstraction
+- [x] Phase 1: Frontend modular split, BoardManager abstraction ^dq-n6b744
 
-- [x] CSS redesign: Light Scandinavian theme with Refactoring UI tokens (indigo + cool grey)
+- [x] CSS redesign: Light Scandinavian theme with Refactoring UI tokens (indigo + cool grey) ^dq-y4nw7r
 
-- [x] Client-side routing: History API for browser back button support
+- [x] Client-side routing: History API for browser back button support ^dq-n4lpou
 
 ---
 
@@ -54,7 +54,7 @@ session. When in doubt about priority, refer here rather than re-deriving it.
 
 ## Up next (priority order)
 
-- [ ] Phase 17: Lichess Studies Import
+- [ ] Phase 17: Lichess Studies Import ^dq-lywv4e
   Estimate ~45 min. Pull all of the user's Lichess studies (public AND private) via
   the Lichess API in one operation. Cleaner than depending on the LiChess Tools
   browser extension. Doubles as a learning step for Phase 13 (Lichess Bots), which
@@ -119,7 +119,7 @@ session. When in doubt about priority, refer here rather than re-deriving it.
   - Required scope: `study:read`
   - Save token in a password manager — only shown once
 
-- [ ] Import Lichess studies content
+- [ ] Import Lichess studies content ^dq-iu5wwt
   Estimate ~30 min after Phase 17 ships. Use the new Lichess Studies import to pull
   StanFurd studies into Chessdirbek. Then manually walk through each tactical study
   chapter and save the critical position as a Puzzle.
@@ -131,7 +131,7 @@ session. When in doubt about priority, refer here rather than re-deriving it.
   tedious enough to warrant building auto-puzzle-extraction (where the chapter's
   first move = the solution).
 
-- [ ] Phase 13: Lichess Bots integration
+- [ ] Phase 13: Lichess Bots integration ^dq-azcu23
   Estimate ~half day. Variety of opponents at varied strengths. The thing I said I
   wanted most. Phase 17's Lichess API code provides the auth pattern this builds on.
   - See: `SPEC-v2.md` Phase 13
@@ -146,43 +146,43 @@ session. When in doubt about priority, refer here rather than re-deriving it.
 
 Loosely ordered.
 
-- [ ] Phase 16B: Test isolation enforcement
+- [ ] Phase 16B: Test isolation enforcement ^dq-qkvzu2
   Estimate ~1 hour. Permanent fix for the test pollution bug.
 
-- [ ] Phase 14: Generic engine pluggability + Maia
+- [ ] Phase 14: Generic engine pluggability + Maia ^dq-hyfcgz
   Estimate ~half day. Local human-like opponents.
 
-- [ ] Auto-puzzle-extraction from Lichess studies
+- [ ] Auto-puzzle-extraction from Lichess studies ^dq-3u26yp
   Estimate ~1-2 hours. If manual save-as-puzzle proves tedious, build a tool that
   walks each imported chapter and creates a Puzzle position with the first move as
   the solution.
 
 ## Backlog — Tier 3 (build when actually needed)
 
-- [ ] Phase 8: Variation tree navigation
+- [ ] Phase 8: Variation tree navigation ^dq-jydbv6
   Only matters once I'm studying annotated PGNs.
 
-- [ ] Phase 11: Repertoire builder + trainer
+- [ ] Phase 11: Repertoire builder + trainer ^dq-4sa63g
   Chessable-like personal repertoire.
 
-- [ ] Phase 12: Auto-annotation + eval graph
+- [ ] Phase 12: Auto-annotation + eval graph ^dq-xal2fy
   Analyze my own losses.
 
-- [ ] Phase 16C: Alembic for proper migrations
+- [ ] Phase 16C: Alembic for proper migrations ^dq-zem6tb
 
-- [ ] Phase 16D: OPERATIONS.md runbook
+- [ ] Phase 16D: OPERATIONS.md runbook ^dq-mdrakl
 
-- [ ] Phase 16E: Auto-backup hooks before risky operations
+- [ ] Phase 16E: Auto-backup hooks before risky operations ^dq-fmwwis
 
 ## Backlog — Tier 4 (polish)
 
-- [ ] PWA wrapper for mobile/desktop install
+- [ ] PWA wrapper for mobile/desktop install ^dq-vmbnh6
 
-- [ ] Final UI design pass referencing Refactoring UI doc
+- [ ] Final UI design pass referencing Refactoring UI doc ^dq-xtlu6q
 
-- [ ] Position search UI cleanup
+- [ ] Position search UI cleanup ^dq-3tp6js
 
-- [ ] Quiz tab UX polish
+- [ ] Quiz tab UX polish ^dq-v6ngfk
 
 ---
 
