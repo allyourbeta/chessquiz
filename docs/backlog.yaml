@@ -6,20 +6,25 @@ items:
     title: 'Phase 16A: Nightly automated backups via launchd'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 16A: Manual backup and restore scripts using SQLite native backup API'
+  - id: dq-ifgsl6
+    title: 'Phase 16A: Manual backup and restore scripts using SQLite native backup
+      API'
     status: done
     section: Recently shipped (most recent first)
   - id: dq-d3q2pb
     title: 'Phase 15: Position types — puzzle vs tabiya split'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 15: Separate nav tabs for position types'
+  - id: dq-okkvas
+    title: 'Phase 15: Separate nav tabs for position types'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 15: Type-specific detail views for position types'
+  - id: dq-tgoo6g
+    title: 'Phase 15: Type-specific detail views for position types'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 15: Migration with case fix and test pollution cleanup'
+  - id: dq-ppdqc3
+    title: 'Phase 15: Migration with case fix and test pollution cleanup'
     status: done
     section: Recently shipped (most recent first)
   - id: dq-qjfoqu
@@ -36,45 +41,57 @@ items:
     title: 'UI Cleanup A: Chess notation throughout (1-0, 0-1, ½-½)'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'UI Cleanup B: Prominent notifications'
+  - id: dq-62ea6i
+    title: 'UI Cleanup B: Prominent notifications'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'UI Cleanup C: Card-based layout'
+  - id: dq-5fhb73
+    title: 'UI Cleanup C: Card-based layout'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'UI Cleanup D: Pagination/filtering for Practice History'
+  - id: dq-6mglbm
+    title: 'UI Cleanup D: Pagination/filtering for Practice History'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'UI Cleanup E: Inline editing replacing modals'
+  - id: dq-eflp7b
+    title: 'UI Cleanup E: Inline editing replacing modals'
     status: done
     section: Recently shipped (most recent first)
   - id: dq-o64bhj
     title: 'PGN import overhaul: Atomic transactions'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'PGN import overhaul: SSE streaming progress'
+  - id: dq-4se6iq
+    title: 'PGN import overhaul: SSE streaming progress'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'PGN import overhaul: Cancel button'
+  - id: dq-aioegz
+    title: 'PGN import overhaul: Cancel button'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'PGN import overhaul: bulk_insert_mappings performance (15k games in ~1 minute)'
+  - id: dq-kki2u4
+    title: 'PGN import overhaul: bulk_insert_mappings performance (15k games in ~1
+      minute)'
     status: done
     section: Recently shipped (most recent first)
   - id: dq-gjmren
     title: 'Phase 9: Collections'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 9: Batch review'
+  - id: dq-zcgtzv
+    title: 'Phase 9: Batch review'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 9: Position search (exact + pawn structure)'
+  - id: dq-wf23fg
+    title: 'Phase 9: Position search (exact + pawn structure)'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 9: Tag autocomplete with chips'
+  - id: dq-lbdx4e
+    title: 'Phase 9: Tag autocomplete with chips'
     status: done
     section: Recently shipped (most recent first)
-  - title: 'Phase 9: DB-style game list with pagination'
+  - id: dq-ageag2
+    title: 'Phase 9: DB-style game list with pagination'
     status: done
     section: Recently shipped (most recent first)
   - id: dq-nxdhtb
