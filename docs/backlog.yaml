@@ -1,0 +1,237 @@
+version: 1
+project: chessdirbek
+prefix: dq
+items:
+  - id: dq-l2houv
+    title: 'Phase 16A: Nightly automated backups via launchd, manual backup and restore
+      scripts using SQLite native backup API'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-d3q2pb
+    title: 'Phase 15: Position types — puzzle vs tabiya split, separate nav tabs,
+      type-specific detail views, migration with case fix and test pollution cleanup'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-qjfoqu
+    title: 'Phase 10 follow-up: Practice game viewer (click row to review), Resign
+      button distinct from Stop Playing'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-zkrwbc
+    title: 'Phase 10: Practice sessions with per-position drilling, engine difficulty,
+      verdict tracking, history'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-6wikge
+    title: 'UI Cleanup A-E: Chess notation throughout (1-0, 0-1, ½-½), prominent notifications,
+      card-based layout, pagination/filtering for Practice History, inline editing
+      replacing modals'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-o64bhj
+    title: 'PGN import overhaul: Atomic transactions, SSE streaming progress, cancel
+      button, bulk_insert_mappings performance (15k games in ~1 minute)'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-gjmren
+    title: 'Phase 9: Collections, batch review, position search (exact + pawn structure),
+      tag autocomplete with chips, DB-style game list with pagination'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-nxdhtb
+    title: 'Phase 7: Engine eval, play vs engine, flip board, Eval/Engine separation'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-lxh7ra
+    title: 'Phase 6: Opening tree explorer with W/D/L stats'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-pubm3a
+    title: 'Phase 5: Game viewer, PGN import, save-position-from-game'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-blthii
+    title: 'Phase 4: Game/Collection API endpoints, position search'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-gg4yse
+    title: 'Phase 3: Game models, PGN parser, Zobrist hashing, pawn signatures'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-ayb7fb
+    title: 'Phase 2: cm-chessboard interactive board with arrows/markers'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-n6b744
+    title: 'Phase 1: Frontend modular split, BoardManager abstraction'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-y4nw7r
+    title: 'CSS redesign: Light Scandinavian theme with Refactoring UI tokens (indigo
+      + cool grey)'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-n4lpou
+    title: 'Client-side routing: History API for browser back button support'
+    status: done
+    section: Recently shipped (most recent first)
+  - id: dq-lywv4e
+    title: 'Phase 17: Lichess Studies Import'
+    status: open
+    section: Up next (priority order)
+    body: |-
+      Estimate ~45 min. Pull all of the user's Lichess studies (public AND private) via
+      the Lichess API in one operation. Cleaner than depending on the LiChess Tools
+      browser extension. Doubles as a learning step for Phase 13 (Lichess Bots), which
+      uses the same auth pattern.
+
+      **Goal**: One-click "import all my Lichess studies" that downloads every study
+      (public AND private) for a given Lichess username, saves them as a combined PGN
+      file, then optionally imports them via the existing PGN flow. Each study chapter
+      becomes a Game record. From there, the user can save individual positions as
+      Puzzles or Tabiyas.
+
+      **Architecture — backend:**
+
+      - New endpoint: `POST /api/lichess/import-studies`
+      - Accepts: `{ "lichess_username": "...", "lichess_api_token": "..." }`
+      - Returns: SSE streaming progress (mirroring existing PGN import flow)
+      - Steps:
+
+      **Architecture — frontend:**
+
+      - New page under Games called "Import from Lichess"
+      - Form: Lichess username (text), Lichess API token (password input — never stored)
+      - Helper text linking to https://lichess.org/account/oauth/token explaining the
+        `study:read` scope requirement
+      - SSE progress display reusing existing import progress UI components
+      - On completion: summary + button "Import as games" triggering existing PGN
+        import flow
+
+      **Token handling:**
+
+      - Token is NEVER stored in the database
+      - User enters token each time (for now; can add encrypted token storage later if
+        it becomes annoying)
+      - Show clear instructions for getting a token: visit
+        https://lichess.org/account/oauth/token, create new token with `study:read`
+        scope only
+
+      **Error handling:**
+
+      - 401 from Lichess → "Invalid token. Get a new one at..."
+      - 404 from Lichess → "Username not found"
+      - Network failure → retry once, then fail with clear error
+      - Single study failing should NOT stop batch — log, continue, include in summary
+        as failed
+
+      **Tests:**
+
+      - Mock Lichess API responses
+      - Test: successful flow, bad token, network error, partial failure (one study
+        fails out of three)
+      - Add to test_lichess_import.py
+
+      **Why first**: Without this, my Phase 15 puzzle UI is empty. My puzzle positions
+      all live in Lichess studies. Manual download via the LiChess Tools extension
+      turned out to be a maze.
+
+      **Required setup before running:**
+
+      - Get a Lichess API token at https://lichess.org/account/oauth/token
+      - Required scope: `study:read`
+      - Save token in a password manager — only shown once
+  - id: dq-iu5wwt
+    title: Import Lichess studies content
+    status: open
+    section: Up next (priority order)
+    body: |-
+      Estimate ~30 min after Phase 17 ships. Use the new Lichess Studies import to pull
+      StanFurd studies into Chessdirbek. Then manually walk through each tactical study
+      chapter and save the critical position as a Puzzle.
+
+      This is content work — populating the puzzle UI with real data from my own
+      curated studies (Tactics 1-4, Tactics missed, etc.).
+
+      After doing the manual save-as-puzzle for ~10 chapters, decide whether it feels
+      tedious enough to warrant building auto-puzzle-extraction (where the chapter's
+      first move = the solution).
+  - id: dq-azcu23
+    title: 'Phase 13: Lichess Bots integration'
+    status: open
+    section: Up next (priority order)
+    body: |-
+      Estimate ~half day. Variety of opponents at varied strengths. The thing I said I
+      wanted most. Phase 17's Lichess API code provides the auth pattern this builds on.
+
+      - See: `SPEC-v2.md` Phase 13
+      - Lichess API token setup (already familiar after Phase 17)
+      - Bot discovery and challenge flow
+      - 200+ bots become potential practice opponents
+      - Practice History distinguishes bot opponents from local Stockfish
+  - id: dq-qkvzu2
+    title: 'Phase 16B: Test isolation enforcement'
+    status: open
+    section: Backlog — Tier 2 (substantive next steps)
+    body: |-
+      Estimate ~1 hour. Permanent fix for the test pollution bug.
+  - id: dq-hyfcgz
+    title: 'Phase 14: Generic engine pluggability + Maia'
+    status: open
+    section: Backlog — Tier 2 (substantive next steps)
+    body: |-
+      Estimate ~half day. Local human-like opponents.
+  - id: dq-3u26yp
+    title: Auto-puzzle-extraction from Lichess studies
+    status: open
+    section: Backlog — Tier 2 (substantive next steps)
+    body: |-
+      Estimate ~1-2 hours. If manual save-as-puzzle proves tedious, build a tool that
+      walks each imported chapter and creates a Puzzle position with the first move as
+      the solution.
+  - id: dq-jydbv6
+    title: 'Phase 8: Variation tree navigation'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+    body: |-
+      Only matters once I'm studying annotated PGNs.
+  - id: dq-4sa63g
+    title: 'Phase 11: Repertoire builder + trainer'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+    body: |-
+      Chessable-like personal repertoire.
+  - id: dq-xal2fy
+    title: 'Phase 12: Auto-annotation + eval graph'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+    body: |-
+      Analyze my own losses.
+  - id: dq-zem6tb
+    title: 'Phase 16C: Alembic for proper migrations'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+  - id: dq-mdrakl
+    title: 'Phase 16D: OPERATIONS.md runbook'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+  - id: dq-fmwwis
+    title: 'Phase 16E: Auto-backup hooks before risky operations'
+    status: open
+    section: Backlog — Tier 3 (build when actually needed)
+  - id: dq-vmbnh6
+    title: PWA wrapper for mobile/desktop install
+    status: open
+    section: Backlog — Tier 4 (polish)
+  - id: dq-xtlu6q
+    title: Final UI design pass referencing Refactoring UI doc
+    status: open
+    section: Backlog — Tier 4 (polish)
+  - id: dq-3tp6js
+    title: Position search UI cleanup
+    status: open
+    section: Backlog — Tier 4 (polish)
+  - id: dq-v6ngfk
+    title: Quiz tab UX polish
+    status: open
+    section: Backlog — Tier 4 (polish)
